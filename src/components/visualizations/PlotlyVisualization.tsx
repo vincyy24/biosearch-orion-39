@@ -4,6 +4,9 @@ import Plot from 'react-plotly.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Import Plotly types
+import * as Plotly from 'plotly.js';
+
 interface PlotlyVisualizationProps {
   title: string;
   description: string;
