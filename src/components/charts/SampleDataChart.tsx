@@ -70,50 +70,53 @@ const SampleDataChart = () => {
       config={chartConfig}
       className="w-full aspect-[4/3] sm:aspect-[16/9]"
     >
-      <BarChart
-        data={data}
-        margin={{ top: 10, right: 30, left: 40, bottom: 60 }}
-      >
-        <CartesianGrid vertical={false} strokeDasharray="3 3" />
-        <XAxis
-          dataKey="name"
-          tick={{ fill: 'var(--foreground)' }}
-          tickLine={{ stroke: 'var(--foreground)' }}
-          axisLine={{ stroke: 'var(--border)' }}
-          angle={-45}
-          textAnchor="end"
-          height={80}
-        />
-        <YAxis
-          tick={{ fill: 'var(--foreground)' }}
-          tickLine={{ stroke: 'var(--foreground)' }}
-          axisLine={{ stroke: 'var(--border)' }}
-          tickFormatter={(value) => {
-            if (value >= 1000) {
-              return `${value / 1000}k`;
+      {/* Wrap the chart components in a single React Fragment to make it a single child */}
+      <>
+        <BarChart
+          data={data}
+          margin={{ top: 10, right: 30, left: 40, bottom: 60 }}
+        >
+          <CartesianGrid vertical={false} strokeDasharray="3 3" />
+          <XAxis
+            dataKey="name"
+            tick={{ fill: 'var(--foreground)' }}
+            tickLine={{ stroke: 'var(--foreground)' }}
+            axisLine={{ stroke: 'var(--border)' }}
+            angle={-45}
+            textAnchor="end"
+            height={80}
+          />
+          <YAxis
+            tick={{ fill: 'var(--foreground)' }}
+            tickLine={{ stroke: 'var(--foreground)' }}
+            axisLine={{ stroke: 'var(--border)' }}
+            tickFormatter={(value) => {
+              if (value >= 1000) {
+                return `${value / 1000}k`;
+              }
+              return value;
+            }}
+          />
+          <Bar
+            dataKey="count"
+            fill="var(--color-genes)"
+            radius={[4, 4, 0, 0]}
+            maxBarSize={50}
+          />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                labelFormatter={(label) => `${label} Data`}
+                formatter={(value) => [
+                  value.toLocaleString(),
+                  "Count",
+                ]}
+              />
             }
-            return value;
-          }}
-        />
-        <Bar
-          dataKey="count"
-          fill="var(--color-genes)"
-          radius={[4, 4, 0, 0]}
-          maxBarSize={50}
-        />
-        <ChartTooltip
-          content={
-            <ChartTooltipContent
-              labelFormatter={(label) => `${label} Data`}
-              formatter={(value) => [
-                value.toLocaleString(),
-                "Count",
-              ]}
-            />
-          }
-        />
-      </BarChart>
-      <ChartLegend content={<ChartLegendContent />} />
+          />
+        </BarChart>
+        <ChartLegend content={<ChartLegendContent />} />
+      </>
     </ChartContainer>
   );
 };

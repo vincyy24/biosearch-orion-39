@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Database, FileText, Tool, BarChart4 } from "lucide-react";
+import { Search, Database, FileText, Wrench, BarChart4 } from "lucide-react";
 import MainLayout from "@/components/layouts/MainLayout";
 import FeatureCard from "@/components/FeatureCard";
 import StatCard from "@/components/StatCard";
@@ -82,7 +81,7 @@ const Index = () => {
             />
             
             <FeatureCard 
-              icon={<Tool className="h-10 w-10" />}
+              icon={<Wrench className="h-10 w-10" />}
               title="Computational Tools"
               description="Utilize powerful analytical tools for data processing and visualization."
               link="/tools"

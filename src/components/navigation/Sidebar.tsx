@@ -16,7 +16,7 @@ import {
   Home,
   Database,
   FileText,
-  Tool,
+  Wrench,
   LayoutDashboard,
   Users,
   BookOpen,
@@ -49,7 +49,7 @@ const Sidebar = () => {
       path: "/publications",
     },
     {
-      icon: Tool,
+      icon: Wrench,
       label: "Tools",
       path: "/tools",
     },

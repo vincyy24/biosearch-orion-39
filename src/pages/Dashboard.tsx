@@ -1,4 +1,3 @@
-
 import MainLayout from "@/components/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import {
   BarChart2,
   FileText,
   Database,
-  Tool,
+  Wrench,
   Plus,
   ArrowUpRight,
   BookmarkPlus,
@@ -76,7 +75,7 @@ const savedItems = [
     type: "tool",
     title: "ProteinVisualizer",
     date: "September 22, 2023",
-    icon: Tool,
+    icon: Wrench,
   },
   {
     id: "save4",
@@ -108,7 +107,7 @@ const recommendations = [
     type: "tool",
     title: "GenomeMapper",
     relevance: "Compatible with your recent analyses",
-    icon: Tool,
+    icon: Wrench,
   },
 ];
 
@@ -189,7 +188,7 @@ const Dashboard = () => {
                   <h4 className="text-2xl font-bold">7</h4>
                 </div>
                 <div className="bg-primary/10 p-3 rounded-full">
-                  <Tool className="h-5 w-5 text-primary" />
+                  <Wrench className="h-5 w-5 text-primary" />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">

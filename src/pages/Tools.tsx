@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import {
   Search,
-  Tool,
+  Wrench,
   BarChart,
   Database,
   GitMerge,
@@ -234,7 +233,7 @@ const Tools = () => {
                           size="sm"
                           onClick={() => handleLaunchTool(tool.name)}
                         >
-                          <Tool className="mr-2 h-3 w-3" /> Launch
+                          <Wrench className="mr-2 h-3 w-3" /> Launch
                         </Button>
                       </CardFooter>
                     </Card>
