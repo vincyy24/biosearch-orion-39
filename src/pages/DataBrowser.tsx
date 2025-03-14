@@ -10,27 +10,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Download, LayoutGrid, List } from "lucide-react";
+import { Download, LayoutGrid, List, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DataBrowserFilters from "@/components/data-browser/DataBrowserFilters";
 import DataBrowserTable from "@/components/data-browser/DataBrowserTable";
 import DataBrowserVisualizations from "@/components/data-browser/DataBrowserVisualizations";
+import DataUploader from "@/components/data-browser/DataUploader";
 import { sampleData } from "@/components/data-browser/types";
 
 const DataBrowser = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dataType, setDataType] = useState("all");
+  const [species, setSpecies] = useState("all");
   const [currentView, setCurrentView] = useState("table");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [visibleColumns, setVisibleColumns] = useState(['id', 'name', 'type', 'species', 'description']);
   const { toast } = useToast();
+  
+  // Simulate authenticated user - in a real app, this would come from an auth context
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
       title: "Search executed",
-      description: `Searching for: ${searchQuery}, Type: ${dataType}`,
+      description: `Searching for: ${searchQuery}, Type: ${dataType}, Species: ${species}`,
     });
   };
 
@@ -51,7 +56,16 @@ const DataBrowser = () => {
     }
   };
 
-  // Filter data based on search query and selected type
+  // Toggle authentication for demo purposes
+  const toggleAuth = () => {
+    setIsAuthenticated(!isAuthenticated);
+    toast({
+      title: isAuthenticated ? "Logged out" : "Logged in",
+      description: isAuthenticated ? "You are now logged out" : "You are now logged in as a demo user",
+    });
+  };
+
+  // Filter data based on search query, selected type, and species
   const filteredData = sampleData.filter(item => {
     const matchesSearch = searchQuery === "" || 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -60,7 +74,9 @@ const DataBrowser = () => {
     
     const matchesType = dataType === "all" || item.type.toLowerCase() === dataType.toLowerCase();
     
-    return matchesSearch && matchesType;
+    const matchesSpecies = species === "all" || item.species.toLowerCase() === species.toLowerCase();
+    
+    return matchesSearch && matchesType && matchesSpecies;
   });
 
   // Pagination logic
@@ -100,6 +116,11 @@ const DataBrowser = () => {
                 <SelectItem value="50">50 per page</SelectItem>
               </SelectContent>
             </Select>
+            
+            {/* Demo auth toggle */}
+            <Button onClick={toggleAuth} variant={isAuthenticated ? "destructive" : "default"}>
+              {isAuthenticated ? "Logout" : "Login"}
+            </Button>
           </div>
         </div>
 
@@ -108,36 +129,47 @@ const DataBrowser = () => {
           setSearchQuery={setSearchQuery}
           dataType={dataType}
           setDataType={setDataType}
+          species={species}
+          setSpecies={setSpecies}
           visibleColumns={visibleColumns}
           toggleColumn={toggleColumn}
           handleSearch={handleSearch}
+          isAuthenticated={isAuthenticated}
         />
 
-        <Tabs defaultValue="table" value={currentView} onValueChange={setCurrentView} className="mb-8">
-          <TabsList className="mb-4">
-            <TabsTrigger value="table" className="flex items-center gap-1">
-              <List className="h-4 w-4" /> Table View
-            </TabsTrigger>
-            <TabsTrigger value="visual" className="flex items-center gap-1">
-              <LayoutGrid className="h-4 w-4" /> Visual Analysis
-            </TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="md:col-span-3">
+            <Tabs defaultValue="table" value={currentView} onValueChange={setCurrentView}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="table" className="flex items-center gap-1">
+                  <List className="h-4 w-4" /> Table View
+                </TabsTrigger>
+                <TabsTrigger value="visual" className="flex items-center gap-1">
+                  <LayoutGrid className="h-4 w-4" /> Visual Analysis
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="table" className="border rounded-lg p-4">
+                <DataBrowserTable 
+                  paginatedData={paginatedData}
+                  visibleColumns={visibleColumns}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  totalPages={totalPages}
+                  filteredData={filteredData}
+                />
+              </TabsContent>
+              
+              <TabsContent value="visual" className="border rounded-lg p-6">
+                <DataBrowserVisualizations />
+              </TabsContent>
+            </Tabs>
+          </div>
           
-          <TabsContent value="table" className="border rounded-lg p-4">
-            <DataBrowserTable 
-              paginatedData={paginatedData}
-              visibleColumns={visibleColumns}
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              totalPages={totalPages}
-              filteredData={filteredData}
-            />
-          </TabsContent>
-          
-          <TabsContent value="visual" className="border rounded-lg p-6">
-            <DataBrowserVisualizations />
-          </TabsContent>
-        </Tabs>
+          <div className="md:col-span-1">
+            <DataUploader isAuthenticated={isAuthenticated} />
+          </div>
+        </div>
       </div>
     </MainLayout>
   );
