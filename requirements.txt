@@ -1,0 +1,11 @@
+
+Django>=4.2.0
+channels>=4.0.0
+django-plotly-dash>=2.2.0
+plotly>=5.14.0
+pandas>=2.0.0
+dash>=2.9.0
+dash-core-components>=2.0.0
+dash-html-components>=2.0.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.0.0
