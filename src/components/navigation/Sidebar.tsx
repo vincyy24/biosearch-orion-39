@@ -11,6 +11,8 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   Home,
@@ -22,11 +24,13 @@ import {
   BookOpen,
   Settings,
   HelpCircle,
+  ChevronLeft,
 } from "lucide-react";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { open } = useSidebar();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -81,8 +85,13 @@ const Sidebar = () => {
   return (
     <UISidebar>
       <SidebarHeader>
-        <div className="flex items-center justify-center p-2">
+        <div className="flex items-center justify-between p-2">
           <span className="font-bold text-xl">BiomediResearch</span>
+          {open && (
+            <SidebarTrigger>
+              <ChevronLeft className="h-5 w-5" />
+            </SidebarTrigger>
+          )}
         </div>
       </SidebarHeader>
       

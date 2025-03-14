@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { 
   Sun, 
   Moon, 
@@ -26,6 +26,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { open } = useSidebar();
   
   // This is a placeholder for authentication state
   const isAuthenticated = false;
@@ -52,7 +53,7 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        <SidebarTrigger className="mr-2" />
+        {!open && <SidebarTrigger className="mr-2" />}
         
         <div className="mr-4 hidden md:flex">
           <a href="/" className="flex items-center space-x-2">
