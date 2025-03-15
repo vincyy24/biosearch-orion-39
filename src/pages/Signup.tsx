@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,70 +8,58 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import AuthLayout from "@/components/layouts/AuthLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Signup = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signup, loginWithGoogle, isAuthenticated, loading } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage("");
     
-    if (!agreeTerms) {
-      toast({
-        title: "Terms and Conditions",
-        description: "You must agree to the terms and conditions to continue.",
-        variant: "destructive",
-      });
+    if (!fullName || !email || !password) {
+      setErrorMessage("Please fill in all required fields");
       return;
     }
     
-    setIsLoading(true);
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match");
+      return;
+    }
     
-    // This is a placeholder for the actual registration logic
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (fullName && email && password) {
-        toast({
-          title: "Account created",
-          description: "Your account has been created successfully.",
-        });
-        navigate("/login");
-      } else {
-        toast({
-          title: "Registration failed",
-          description: "Please fill in all required fields and try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "An error occurred during registration. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    if (!agreeTerms) {
+      setErrorMessage("You must agree to the terms and conditions");
+      return;
+    }
+    
+    const success = await signup(fullName, email, password);
+    if (success) {
+      navigate("/dashboard");
     }
   };
 
-  const handleGoogleSignup = () => {
-    setIsLoading(true);
-    
-    // Placeholder for Google authentication
-    setTimeout(() => {
-      toast({
-        title: "Google signup initiated",
-        description: "Redirecting to Google authentication...",
-      });
-      setIsLoading(false);
-    }, 1000);
+  const handleGoogleSignup = async () => {
+    const success = await loginWithGoogle();
+    if (success) {
+      navigate("/dashboard");
+    }
   };
 
   return (
@@ -79,6 +67,13 @@ const Signup = () => {
       title="Create an account" 
       description="Sign up for access to the BiomediResearch platform"
     >
+      {errorMessage && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="fullName">Full Name</Label>
@@ -89,6 +84,8 @@ const Signup = () => {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
+            aria-required="true"
+            aria-invalid={errorMessage ? "true" : "false"}
           />
         </div>
 
@@ -101,6 +98,8 @@ const Signup = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            aria-required="true"
+            aria-invalid={errorMessage ? "true" : "false"}
           />
         </div>
 
@@ -113,10 +112,26 @@ const Signup = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            aria-required="true"
+            aria-invalid={errorMessage ? "true" : "false"}
           />
           <p className="text-xs text-muted-foreground">
             Password must be at least 8 characters long and include a mix of letters, numbers, and special characters.
           </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            placeholder="Confirm your password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            aria-required="true"
+            aria-invalid={errorMessage ? "true" : "false"}
+          />
         </div>
 
         <div className="flex items-center space-x-2">
@@ -125,6 +140,7 @@ const Signup = () => {
             checked={agreeTerms}
             onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
             required
+            aria-required="true"
           />
           <label
             htmlFor="terms"
@@ -137,8 +153,8 @@ const Signup = () => {
           </label>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Creating account..." : "Create account"}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Creating account..." : "Create account"}
         </Button>
       </form>
 
@@ -157,7 +173,8 @@ const Signup = () => {
             variant="outline" 
             className="w-full" 
             onClick={handleGoogleSignup}
-            disabled={isLoading}
+            disabled={loading}
+            type="button"
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path

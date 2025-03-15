@@ -8,59 +8,47 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import AuthLayout from "@/components/layouts/AuthLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, loginWithGoogle, isAuthenticated, loading } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setErrorMessage("");
     
-    // This is a placeholder for the actual authentication logic
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (email && password) {
-        toast({
-          title: "Login successful",
-          description: "You have been logged in successfully.",
-        });
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Please check your credentials and try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "An error occurred during login. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    if (!email || !password) {
+      setErrorMessage("Please enter both email and password");
+      return;
+    }
+    
+    const success = await login(email, password);
+    if (success) {
+      navigate("/dashboard");
     }
   };
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    
-    // Placeholder for Google authentication
-    setTimeout(() => {
-      toast({
-        title: "Google login initiated",
-        description: "Redirecting to Google authentication...",
-      });
-      setIsLoading(false);
-    }, 1000);
+  const handleGoogleLogin = async () => {
+    const success = await loginWithGoogle();
+    if (success) {
+      navigate("/dashboard");
+    }
   };
 
   return (
@@ -69,6 +57,13 @@ const Login = () => {
       description="Enter your credentials to access your account"
       showBackButton={false}
     >
+      {errorMessage && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
@@ -79,6 +74,8 @@ const Login = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            aria-required="true"
+            aria-invalid={errorMessage ? "true" : "false"}
           />
         </div>
 
@@ -99,6 +96,8 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            aria-required="true"
+            aria-invalid={errorMessage ? "true" : "false"}
           />
         </div>
 
@@ -116,8 +115,8 @@ const Login = () => {
           </label>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Signing in..." : "Sign in"}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
 
@@ -136,7 +135,8 @@ const Login = () => {
             variant="outline" 
             className="w-full" 
             onClick={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={loading}
+            type="button"
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path

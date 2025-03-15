@@ -35,3 +35,62 @@ export const fetchVisualizationUrl = (vizType: string) => {
   // This will return the URL to the Django-Plotly-Dash visualization
   return `${API_BASE_URL}/dash/app/${vizType}/`;
 };
+
+export const fetchDataTypes = async () => {
+  try {
+    // Simulate API call to get data types
+    // In a real app, this would fetch from the Django backend
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Mock data types for now
+    return [
+      { id: 'protein', name: 'Protein' },
+      { id: 'genome', name: 'Genome' },
+      { id: 'pathway', name: 'Pathway' },
+      { id: 'dataset', name: 'Dataset' },
+      { id: 'voltammetry', name: 'Voltammetry Data' }
+    ];
+    
+    // Once Django backend is set up, uncomment this:
+    // const response = await fetch(`${API_BASE_URL}/data-types/`);
+    // if (!response.ok) throw new Error('Failed to fetch data types');
+    // return await response.json();
+  } catch (error) {
+    console.error("Error fetching data types:", error);
+    throw error;
+  }
+};
+
+export const uploadFile = async (formData: FormData, token: string) => {
+  try {
+    // In a real app, this would upload to the Django backend
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Simulate successful upload
+    return {
+      message: 'File uploaded successfully',
+      fileName: formData.get('file') ? (formData.get('file') as File).name : 'unknown',
+      dataType: formData.get('dataType'),
+    };
+    
+    // Once Django backend is set up, uncomment this:
+    // const response = await fetch(`${API_BASE_URL}/upload/`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Authorization': `Bearer ${token}`,
+    //   },
+    //   body: formData,
+    // });
+    
+    // if (!response.ok) {
+    //   const errorData = await response.json();
+    //   throw new Error(errorData.error || 'Upload failed');
+    // }
+    
+    // return await response.json();
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    throw error;
+  }
+};
