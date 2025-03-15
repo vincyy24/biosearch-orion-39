@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import PlotlyVisualization from './PlotlyVisualization';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,14 @@ const scanRates = [50, 100, 200, 500];
 interface VoltammetryPlotProps {
   height?: number | string;
   showControls?: boolean;
+}
+
+// Define a type for the data used in the plot
+interface VoltammetryData {
+  scanRate: number;
+  potential: number[];
+  current: number[];
+  time: number[];
 }
 
 const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({ 
@@ -80,6 +89,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
       const { potential, current } = generateSampleData();
       
       const scanRateVoltsPerSecond = scanRate / 1000;
+      // Calculate time values based on potential and scan rate
       const time = potential.map((p, i) => i * 0.01 / scanRateVoltsPerSecond);
       
       return { scanRate, potential, current, time };
@@ -88,12 +98,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
     updatePlotData(allData);
   }, [visibleScans, normalizeY, displayMode]);
   
-  const updatePlotData = (allData: Array<{
-    scanRate: number;
-    potential: number[];
-    current: number[];
-    time: number[];
-  }>) => {
+  const updatePlotData = (allData: Array<VoltammetryData>) => {
     // Filter by visible scan rates
     const filteredData = allData.filter(d => visibleScans.includes(d.scanRate));
     
