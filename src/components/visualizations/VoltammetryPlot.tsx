@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PlotlyVisualization from './PlotlyVisualization';
 import { Button } from '@/components/ui/button';
@@ -89,7 +88,12 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
     updatePlotData(allData);
   }, [visibleScans, normalizeY, displayMode]);
   
-  const updatePlotData = (allData: any[]) => {
+  const updatePlotData = (allData: Array<{
+    scanRate: number;
+    potential: number[];
+    current: number[];
+    time: number[];
+  }>) => {
     // Filter by visible scan rates
     const filteredData = allData.filter(d => visibleScans.includes(d.scanRate));
     

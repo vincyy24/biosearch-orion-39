@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -15,11 +14,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { UploadCloud, File, X, Check, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 
-// Sample data types, in a real application these would come from the API
 const DATA_TYPES = [
   { id: "voltammetry", name: "Voltammetry Data" },
   { id: "protein", name: "Protein Sequence" },
@@ -89,7 +87,6 @@ const Upload = () => {
     setUploading(true);
     setUploadProgress(0);
 
-    // Simulate upload progress
     const interval = setInterval(() => {
       setUploadProgress((prevProgress) => {
         if (prevProgress >= 100) {
@@ -101,7 +98,6 @@ const Upload = () => {
     }, 300);
 
     try {
-      // TODO: Replace with actual API call to upload the file
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       clearInterval(interval);
@@ -113,7 +109,6 @@ const Upload = () => {
         description: `${file.name} has been uploaded successfully.`,
       });
       
-      // Reset form after success
       setTimeout(() => {
         setFile(null);
         setDataType("");
@@ -166,7 +161,7 @@ const Upload = () => {
               )}
               
               {uploadSuccess && (
-                <Alert variant="success" className="bg-green-50 border-green-200">
+                <Alert variant="default" className="bg-green-50 border-green-200">
                   <Check className="h-4 w-4 text-green-600" />
                   <AlertTitle>Success</AlertTitle>
                   <AlertDescription>
