@@ -2,6 +2,7 @@
 import { useState } from "react";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -9,21 +10,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Download, LayoutGrid, List } from "lucide-react";
+import { Search, Filter, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import DataBrowserFilters from "@/components/data-browser/DataBrowserFilters";
-import DataBrowserTable from "@/components/data-browser/DataBrowserTable";
-import DataBrowserVisualizations from "@/components/data-browser/DataBrowserVisualizations";
-import { sampleData } from "@/components/data-browser/types";
+import SampleDataChart from "@/components/charts/SampleDataChart";
+
+// Sample data for demonstration
+const sampleData = [
+  { id: "GENE001", name: "BRCA1", type: "Gene", species: "Human", description: "Breast cancer type 1 susceptibility protein" },
+  { id: "GENE002", name: "TP53", type: "Gene", species: "Human", description: "Cellular tumor antigen p53" },
+  { id: "GENE003", name: "EGFR", type: "Gene", species: "Human", description: "Epidermal growth factor receptor" },
+  { id: "PROT001", name: "P53_HUMAN", type: "Protein", species: "Human", description: "Cellular tumor antigen p53" },
+  { id: "PROT002", name: "BRCA1_HUMAN", type: "Protein", species: "Human", description: "Breast cancer type 1 susceptibility protein" },
+  { id: "PATH001", name: "p53 Pathway", type: "Pathway", species: "Human", description: "p53 signaling pathway" },
+  { id: "PATH002", name: "EGFR Signaling", type: "Pathway", species: "Human", description: "EGFR signaling pathway" },
+  { id: "DSET001", name: "Cancer Genome Atlas", type: "Dataset", species: "Human", description: "Comprehensive cancer genomics dataset" },
+];
 
 const DataBrowser = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dataType, setDataType] = useState("all");
   const [currentView, setCurrentView] = useState("table");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [visibleColumns, setVisibleColumns] = useState(['id', 'name', 'type', 'species', 'description']);
   const { toast } = useToast();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -41,35 +56,16 @@ const DataBrowser = () => {
     });
   };
 
-  const toggleColumn = (columnId: string) => {
-    if (visibleColumns.includes(columnId)) {
-      if (visibleColumns.length > 1) { // Prevent removing all columns
-        setVisibleColumns(visibleColumns.filter(id => id !== columnId));
-      }
-    } else {
-      setVisibleColumns([...visibleColumns, columnId]);
-    }
-  };
-
   // Filter data based on search query and selected type
   const filteredData = sampleData.filter(item => {
     const matchesSearch = searchQuery === "" || 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchQuery.toLowerCase());
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesType = dataType === "all" || item.type.toLowerCase() === dataType.toLowerCase();
     
     return matchesSearch && matchesType;
   });
-
-  // Pagination logic
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-  
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   return (
     <MainLayout>
@@ -82,60 +78,118 @@ const DataBrowser = () => {
             </p>
           </div>
           
-          <div className="mt-4 md:mt-0 flex gap-2">
+          <div className="mt-4 md:mt-0">
             <Button variant="outline" onClick={handleDownload}>
               <Download className="mr-2 h-4 w-4" /> Export Data
             </Button>
-            <Select
-              value={itemsPerPage.toString()}
-              onValueChange={(value) => setItemsPerPage(parseInt(value))}
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Items per page" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 per page</SelectItem>
-                <SelectItem value="10">10 per page</SelectItem>
-                <SelectItem value="20">20 per page</SelectItem>
-                <SelectItem value="50">50 per page</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
-        <DataBrowserFilters 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          dataType={dataType}
-          setDataType={setDataType}
-          visibleColumns={visibleColumns}
-          toggleColumn={toggleColumn}
-          handleSearch={handleSearch}
-        />
+        <div className="bg-card rounded-lg shadow-sm border p-6 mb-8">
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search genes, proteins, pathways..."
+                    className="pl-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="w-full md:w-48">
+                <Select value={dataType} onValueChange={setDataType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Data Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="gene">Genes</SelectItem>
+                    <SelectItem value="protein">Proteins</SelectItem>
+                    <SelectItem value="pathway">Pathways</SelectItem>
+                    <SelectItem value="dataset">Datasets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button type="submit" className="md:w-auto">
+                <Filter className="mr-2 h-4 w-4" /> Apply Filters
+              </Button>
+            </div>
+          </form>
+        </div>
 
         <Tabs defaultValue="table" value={currentView} onValueChange={setCurrentView} className="mb-8">
           <TabsList className="mb-4">
-            <TabsTrigger value="table" className="flex items-center gap-1">
-              <List className="h-4 w-4" /> Table View
-            </TabsTrigger>
-            <TabsTrigger value="visual" className="flex items-center gap-1">
-              <LayoutGrid className="h-4 w-4" /> Visual Analysis
-            </TabsTrigger>
+            <TabsTrigger value="table">Table View</TabsTrigger>
+            <TabsTrigger value="visual">Visual Analysis</TabsTrigger>
           </TabsList>
           
           <TabsContent value="table" className="border rounded-lg p-4">
-            <DataBrowserTable 
-              paginatedData={paginatedData}
-              visibleColumns={visibleColumns}
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              totalPages={totalPages}
-              filteredData={filteredData}
-            />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Species</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredData.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.id}</TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>{item.type}</TableCell>
+                    <TableCell>{item.species}</TableCell>
+                    <TableCell className="max-w-xs truncate">{item.description}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No results found. Try adjusting your search criteria.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </TabsContent>
           
           <TabsContent value="visual" className="border rounded-lg p-6">
-            <DataBrowserVisualizations />
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold mb-2">Data Distribution</h3>
+              <p className="text-muted-foreground mb-4">
+                Visual representation of the data distribution by type
+              </p>
+              <div className="h-80">
+                <SampleDataChart />
+              </div>
+            </div>
+            
+            <div className="bg-muted/30 p-6 rounded-lg">
+              <h3 className="text-lg font-medium mb-2">Genome Browser Integration</h3>
+              <p className="text-muted-foreground mb-4">
+                The genome browser visualization will be integrated here, 
+                allowing researchers to explore genomic regions interactively.
+              </p>
+              <div className="border border-dashed border-muted-foreground/50 rounded-lg p-8 text-center">
+                <p className="text-muted-foreground">
+                  Genome Browser Placeholder (IGV.js Integration)
+                </p>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
