@@ -24,23 +24,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Navbar = () => {
-  const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { open } = useSidebar();
   const { isAuthenticated, user, logout } = useAuth();
-  
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    // In a real app, you would apply the theme change to the document here
-    toast({
-      title: "Theme changed",
-      description: `Theme set to ${!darkMode ? "dark" : "light"} mode`,
-    });
-  };
+  const { theme, toggleTheme } = useTheme();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +81,9 @@ const Navbar = () => {
             size="icon"
             onClick={toggleTheme}
             className="mr-1"
-            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
-            {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
           
           <Button
