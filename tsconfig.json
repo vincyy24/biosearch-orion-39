@@ -5,8 +5,11 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "./",
     "paths": {
+      "plotly.js-basic-dist": [
+      "node_modules/@types/plotly.js"
+      ],
       "@/*": ["./src/*"]
     },
     "noImplicitAny": false,
