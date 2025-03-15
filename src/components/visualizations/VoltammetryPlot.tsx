@@ -44,7 +44,7 @@ interface VoltammetryData {
   scanRate: number;
   potential: number[];
   current: number[];
-  time: number[];
+  time?: number[]; // Make time optional to handle cases where it's not calculated yet
 }
 
 const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({ 
@@ -98,7 +98,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
     updatePlotData(allData);
   }, [visibleScans, normalizeY, displayMode]);
   
-  const updatePlotData = (allData: Array<VoltammetryData>) => {
+  const updatePlotData = (allData: VoltammetryData[]) => {
     // Filter by visible scan rates
     const filteredData = allData.filter(d => visibleScans.includes(d.scanRate));
     
@@ -111,15 +111,18 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
       
       let xData, yData, mode, name;
       
+      // Generate time data if needed but not present
+      const timeData = data.time || data.potential.map((_, i) => i * 0.01 / (data.scanRate / 1000));
+      
       switch (displayMode) {
         case 'time-current':
-          xData = data.time;
+          xData = timeData;
           yData = normalizedCurrent;
           mode = 'lines';
           name = `${data.scanRate} mV/s`;
           break;
         case 'time-voltage':
-          xData = data.time;
+          xData = timeData;
           yData = data.potential;
           mode = 'lines';
           name = `${data.scanRate} mV/s`;
@@ -185,7 +188,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
     // Add data rows (just using the sample data for demonstration)
     scanRates.forEach(scanRate => {
       if (visibleScans.includes(scanRate)) {
-        const { potential, current, time } = generateSampleData();
+        const { potential, current } = generateSampleData();
         
         const scanRateVoltsPerSecond = scanRate / 1000;
         const timeValues = potential.map((p, i) => i * 0.01 / scanRateVoltsPerSecond);
