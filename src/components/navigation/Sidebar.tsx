@@ -25,12 +25,15 @@ import {
   Settings,
   HelpCircle,
   ChevronLeft,
+  Upload,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { open } = useSidebar();
+  const { isAuthenticated } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -57,10 +60,20 @@ const Sidebar = () => {
       label: "Tools",
       path: "/tools",
     },
+  ];
+
+  const authenticatedMenuItems = [
     {
       icon: LayoutDashboard,
       label: "Dashboard",
       path: "/dashboard",
+      requiresAuth: true,
+    },
+    {
+      icon: Upload,
+      label: "Upload",
+      path: "/upload",
+      requiresAuth: true,
     },
   ];
 
@@ -112,6 +125,19 @@ const Sidebar = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              {isAuthenticated && authenticatedMenuItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton
+                    onClick={() => navigate(item.path)}
+                    isActive={isActive(item.path)}
+                    tooltip={item.label}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -139,16 +165,18 @@ const Sidebar = () => {
       
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => navigate('/settings')}
-              isActive={isActive('/settings')}
-              tooltip="Settings"
-            >
-              <Settings />
-              <span>Settings</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {isAuthenticated && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => navigate('/settings')}
+                isActive={isActive('/settings')}
+                tooltip="Settings"
+              >
+                <Settings />
+                <span>Settings</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarFooter>
     </UISidebar>

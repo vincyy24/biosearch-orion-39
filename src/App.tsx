@@ -18,6 +18,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Upload from "./pages/Upload";
 import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -35,12 +36,24 @@ const App = () => (
             <Route path="/data-browser" element={<DataBrowser />} />
             <Route path="/publications" element={<Publications />} />
             <Route path="/tools" element={<Tools />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/community" element={<Community />} />
             <Route path="/support" element={<Support />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/upload" element={<Upload />} />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/upload" element={
+              <ProtectedRoute>
+                <Upload />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

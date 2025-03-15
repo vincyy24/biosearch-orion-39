@@ -10,7 +10,10 @@ import {
   Search, 
   Bell, 
   User,
-  LogIn
+  LogIn,
+  LogOut,
+  Settings as SettingsIcon,
+  LayoutDashboard
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -20,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -27,9 +31,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { open } = useSidebar();
-  
-  // This is a placeholder for authentication state
-  const isAuthenticated = false;
+  const { isAuthenticated, user, logout } = useAuth();
   
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -48,6 +50,15 @@ const Navbar = () => {
         description: `Searching for: ${searchQuery}`,
       });
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
   };
 
   return (
@@ -100,17 +111,27 @@ const Navbar = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    <User className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex flex-col space-y-0.5">
+                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
                   Dashboard
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  <SettingsIcon className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
