@@ -1,4 +1,6 @@
+
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -9,14 +11,24 @@ import StatCard from "@/components/StatCard";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
   const { toast } = useToast();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      // Navigate to search results page with query parameter
+      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+      
       toast({
         title: "Search initiated",
         description: `Searching for: ${searchQuery}`,
+      });
+    } else {
+      toast({
+        title: "Empty search",
+        description: "Please enter a search term",
+        variant: "destructive"
       });
     }
   };

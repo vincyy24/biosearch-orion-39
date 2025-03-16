@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import DataBrowser from "./pages/DataBrowser";
+import SearchResults from "./pages/SearchResults";
 import Publications from "./pages/Publications";
 import Tools from "./pages/Tools";
 import Dashboard from "./pages/Dashboard";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/search" element={<SearchResults />} />
               <Route path="/data-browser" element={<DataBrowser />} />
               <Route path="/publications" element={<Publications />} />
               <Route path="/tools" element={<Tools />} />
