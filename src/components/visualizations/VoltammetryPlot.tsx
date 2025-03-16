@@ -13,21 +13,21 @@ const generateSampleData = () => {
   const potentialEnd = 0.5;
   const numPoints = 100;
   const potentialStep = (potentialEnd - potentialStart) / numPoints;
-  
+
   const potential = Array.from({ length: numPoints }, (_, i) => potentialStart + i * potentialStep);
-  
+
   // Generate a voltammogram with two peaks
   const current = potential.map(p => {
     // Create a base current with some noise
     const baseCurrent = -5 + Math.random() * 0.5;
-    
+
     // Add peaks
     const peak1 = p >= -0.2 && p <= 0.0 ? 15 * Math.exp(-Math.pow((p + 0.1) / 0.05, 2)) : 0;
     const peak2 = p >= 0.2 && p <= 0.4 ? -10 * Math.exp(-Math.pow((p - 0.3) / 0.05, 2)) : 0;
-    
+
     return baseCurrent + peak1 + peak2;
   });
-  
+
   return { potential, current };
 };
 
@@ -47,73 +47,73 @@ interface VoltammetryData {
   time?: number[]; // Make time optional to handle cases where it's not calculated yet
 }
 
-const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({ 
-  height = 400, 
-  showControls = true 
+const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
+  height = 400,
+  showControls = true
 }) => {
   const [loading, setLoading] = useState(true);
   const [visibleScans, setVisibleScans] = useState<number[]>(scanRates);
   const [plotData, setPlotData] = useState<any[]>([]);
   const [normalizeY, setNormalizeY] = useState(false);
   const [displayMode, setDisplayMode] = useState<'voltage-current' | 'time-current' | 'time-voltage'>('voltage-current');
-  
+
   useEffect(() => {
     setLoading(true);
-    
+
     // Simulate API data loading
     setTimeout(() => {
       // Generate data for each scan rate
       const allData = scanRates.map(scanRate => {
         const { potential, current } = generateSampleData();
-        
+
         // Calculate time values (in seconds) based on scan rate (mV/s)
         // Time = ΔE / scan rate
         const scanRateVoltsPerSecond = scanRate / 1000;
-        const time = potential.map((p, i) => {
+        const time = potential.map((_p, i) => {
           if (i === 0) return 0;
           const deltaE = Math.abs(potential[i] - potential[i - 1]);
           return i * deltaE / scanRateVoltsPerSecond;
         });
-        
+
         return { scanRate, potential, current, time };
       });
-      
+
       updatePlotData(allData);
       setLoading(false);
     }, 1500);
   }, []);
-  
+
   // Update plot data when visibility, normalization or display mode changes
   useEffect(() => {
     const allData = scanRates.map(scanRate => {
       const { potential, current } = generateSampleData();
-      
+
       const scanRateVoltsPerSecond = scanRate / 1000;
       // Calculate time values based on potential and scan rate
-      const time = potential.map((p, i) => i * 0.01 / scanRateVoltsPerSecond);
-      
+      const time = potential.map((_p, i) => i * 0.01 / scanRateVoltsPerSecond);
+
       return { scanRate, potential, current, time };
     });
-    
+
     updatePlotData(allData);
   }, [visibleScans, normalizeY, displayMode]);
-  
+
   const updatePlotData = (allData: VoltammetryData[]) => {
     // Filter by visible scan rates
     const filteredData = allData.filter(d => visibleScans.includes(d.scanRate));
-    
+
     // Create plot traces
-    const traces = filteredData.map(data => {
+    const traces: Plotly.Data[] = filteredData.map(data => {
       // Normalize current if needed
-      const normalizedCurrent = normalizeY 
+      const normalizedCurrent = normalizeY
         ? data.current.map((c: number) => c / Math.max(...data.current.map(Math.abs)))
         : data.current;
-      
-      let xData, yData, mode, name;
-      
+
+      let xData: number[], yData: number[], name: string, mode: "number" | "text" | "delta" | "gauge" | "lines" | "markers" | "lines+markers" | "text+markers" | "text+lines" | "text+lines+markers" | "none" | "number+delta" | "gauge+number" | "gauge+number+delta" | "gauge+delta";
+
       // Generate time data if needed but not present
       const timeData = data.time || data.potential.map((_, i) => i * 0.01 / (data.scanRate / 1000));
-      
+
       switch (displayMode) {
         case 'time-current':
           xData = timeData;
@@ -135,7 +135,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
           name = `${data.scanRate} mV/s`;
           break;
       }
-      
+
       return {
         x: xData,
         y: yData,
@@ -147,10 +147,10 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
         }
       };
     });
-    
+
     setPlotData(traces);
   };
-  
+
   const getAxisLabels = () => {
     switch (displayMode) {
       case 'time-current':
@@ -171,11 +171,11 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
         };
     }
   };
-  
+
   const handleDownload = () => {
     // Simple CSV generation for demonstration
     let csvContent = "data:text/csv;charset=utf-8,";
-    
+
     // Headers based on display mode
     if (displayMode === 'voltage-current') {
       csvContent += "Scan Rate (mV/s),Potential (V),Current (μA)\n";
@@ -184,15 +184,15 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
     } else {
       csvContent += "Scan Rate (mV/s),Time (s),Potential (V)\n";
     }
-    
+
     // Add data rows (just using the sample data for demonstration)
     scanRates.forEach(scanRate => {
       if (visibleScans.includes(scanRate)) {
         const { potential, current } = generateSampleData();
-        
+
         const scanRateVoltsPerSecond = scanRate / 1000;
-        const timeValues = potential.map((p, i) => i * 0.01 / scanRateVoltsPerSecond);
-        
+        const timeValues = potential.map((_p, i) => i * 0.01 / scanRateVoltsPerSecond);
+
         potential.forEach((p, i) => {
           if (displayMode === 'voltage-current') {
             csvContent += `${scanRate},${p},${current[i]}\n`;
@@ -204,7 +204,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
         });
       }
     });
-    
+
     // Create download link and trigger click
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -214,7 +214,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
     link.click();
     document.body.removeChild(link);
   };
-  
+
   const toggleScanRate = (scanRate: number) => {
     if (visibleScans.includes(scanRate)) {
       setVisibleScans(visibleScans.filter(sr => sr !== scanRate));
@@ -222,7 +222,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
       setVisibleScans([...visibleScans, scanRate]);
     }
   };
-  
+
   return (
     <div className="space-y-4">
       {showControls && (
@@ -245,7 +245,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <p className="text-sm font-medium mb-2">Normalize Y-Axis</p>
                 <Toggle
@@ -255,12 +255,12 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
                   {normalizeY ? 'On' : 'Off'}
                 </Toggle>
               </div>
-              
+
               <div className="ml-auto">
                 <p className="text-sm font-medium mb-2">Actions</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleDownload}
                   className="h-9"
                 >
@@ -269,7 +269,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
                 </Button>
               </div>
             </div>
-            
+
             <div className="mt-4">
               <p className="text-sm font-medium mb-2">Scan Rates</p>
               <div className="flex flex-wrap gap-2">
@@ -293,7 +293,7 @@ const VoltammetryPlot: React.FC<VoltammetryPlotProps> = ({
           </CardContent>
         </Card>
       )}
-      
+
       <PlotlyVisualization
         title="Cyclic Voltammetry"
         description="Interactive visualization of voltammetry data"

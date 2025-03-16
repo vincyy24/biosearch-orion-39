@@ -1,17 +1,16 @@
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import AuthLayout from "@/components/layouts/AuthLayout";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import AuthLayout from "@/components/layouts/AuthLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");

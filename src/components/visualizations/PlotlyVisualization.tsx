@@ -9,7 +9,7 @@ import * as Plotly from 'plotly.js';
 interface PlotlyVisualizationProps {
   title: string;
   description: string;
-  data: any[];
+  data: Plotly.Data[];
   layout?: Partial<Plotly.Layout>;
   config?: Partial<Plotly.Config>;
   height?: number | string;
@@ -19,7 +19,7 @@ interface PlotlyVisualizationProps {
 const PlotlyVisualization = ({ 
   title, 
   description, 
-  data, 
+  data,
   layout = {}, 
   config = { responsive: true },
   height = '300px',
