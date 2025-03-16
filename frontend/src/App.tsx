@@ -18,6 +18,8 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Upload from "./pages/Upload";
+import Download from "./pages/Download";
+import ResetPassword from "./pages/ResetPassword";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -36,10 +38,12 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/search" element={<SearchResults />} />
               <Route path="/data-browser" element={<DataBrowser />} />
               <Route path="/publications" element={<Publications />} />
               <Route path="/tools" element={<Tools />} />
+              <Route path="/download" element={<Download />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />

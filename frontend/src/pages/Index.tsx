@@ -11,6 +11,7 @@ import StatCard from "@/components/StatCard";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -19,11 +20,6 @@ const Index = () => {
     if (searchQuery.trim()) {
       // Navigate to search results page with query parameter
       navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
-      
-      toast({
-        title: "Search initiated",
-        description: `Searching for: ${searchQuery}`,
-      });
     } else {
       toast({
         title: "Empty search",
@@ -47,24 +43,62 @@ const Index = () => {
               and computational tools to accelerate your research.
             </p>
             
-            <form onSubmit={handleSearch} className="flex w-full max-w-lg gap-2 mb-8">
-              <Input
-                type="text"
-                placeholder="Search genes, publications, tools..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit">
-                <Search className="mr-2 h-4 w-4" /> Search
-              </Button>
+            <form onSubmit={handleSearch} className="flex flex-col w-full max-w-lg gap-2 mb-8">
+              <div className="flex w-full gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search genes, publications, tools..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button type="submit">
+                  <Search className="mr-2 h-4 w-4" /> Search
+                </Button>
+              </div>
+              
+              {showFilters && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                  {/* Filter options would go here */}
+                  <select className="rounded border p-2 bg-background">
+                    <option>All Categories</option>
+                    <option>Genes</option>
+                    <option>Proteins</option>
+                    <option>Publications</option>
+                  </select>
+                  
+                  <select className="rounded border p-2 bg-background">
+                    <option>All Years</option>
+                    <option>2023</option>
+                    <option>2022</option>
+                    <option>2021</option>
+                  </select>
+                  
+                  <select className="rounded border p-2 bg-background">
+                    <option>All Sources</option>
+                    <option>Internal Database</option>
+                    <option>External References</option>
+                  </select>
+                </div>
+              )}
+              
+              <button 
+                type="button" 
+                onClick={() => setShowFilters(!showFilters)}
+                className="text-sm text-primary self-start mt-1"
+              >
+                {showFilters ? "Hide advanced filters" : "Show advanced filters"}
+              </button>
             </form>
             
             <div className="flex flex-wrap gap-4">
-              <Button variant="default" size="lg">
+              <Button variant="default" size="lg" onClick={() => navigate('/data-browser')}>
                 Explore Data
               </Button>
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={() => navigate('/documentation')}>
                 Learn More
               </Button>
             </div>

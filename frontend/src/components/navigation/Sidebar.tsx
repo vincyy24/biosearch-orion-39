@@ -25,14 +25,17 @@ import {
   Settings,
   HelpCircle,
   ChevronLeft,
+  ChevronRight,
   Upload,
+  Download,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { open } = useSidebar();
+  const { open, toggle } = useSidebar();
   const { isAuthenticated } = useAuth();
 
   const isActive = (path: string) => {
@@ -59,6 +62,11 @@ const Sidebar = () => {
       icon: Wrench,
       label: "Tools",
       path: "/tools",
+    },
+    {
+      icon: Download,
+      label: "Download",
+      path: "/download",
     },
   ];
 
@@ -96,21 +104,28 @@ const Sidebar = () => {
   ];
 
   return (
-    <UISidebar>
+    <UISidebar className="transition-all duration-300">
       <SidebarHeader>
         <div className="flex items-center justify-between p-2">
-          <span className="font-bold text-xl">BiomediResearch</span>
-          {open && (
-            <SidebarTrigger>
+          {open && <span className="font-bold text-xl">BiomediResearch</span>}
+          <SidebarTrigger onClick={toggle} className="ml-auto">
+            {open ? (
               <ChevronLeft className="h-5 w-5" />
-            </SidebarTrigger>
-          )}
+            ) : (
+              <ChevronRight className="h-5 w-5" />
+            )}
+          </SidebarTrigger>
         </div>
       </SidebarHeader>
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className={cn(
+            "transition-opacity duration-300",
+            open ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
+          )}>
+            Main Menu
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainMenuItems.map((item) => (
@@ -119,9 +134,15 @@ const Sidebar = () => {
                     onClick={() => navigate(item.path)}
                     isActive={isActive(item.path)}
                     tooltip={item.label}
+                    className="flex items-center gap-2"
                   >
-                    <item.icon />
-                    <span>{item.label}</span>
+                    <item.icon className="h-5 w-5" />
+                    <span className={cn(
+                      "transition-opacity duration-300",
+                      open ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+                    )}>
+                      {item.label}
+                    </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -132,9 +153,15 @@ const Sidebar = () => {
                     onClick={() => navigate(item.path)}
                     isActive={isActive(item.path)}
                     tooltip={item.label}
+                    className="flex items-center gap-2"
                   >
-                    <item.icon />
-                    <span>{item.label}</span>
+                    <item.icon className="h-5 w-5" />
+                    <span className={cn(
+                      "transition-opacity duration-300",
+                      open ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+                    )}>
+                      {item.label}
+                    </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -143,7 +170,12 @@ const Sidebar = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Resources</SidebarGroupLabel>
+          <SidebarGroupLabel className={cn(
+            "transition-opacity duration-300",
+            open ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
+          )}>
+            Resources
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {resourcesMenuItems.map((item) => (
@@ -152,9 +184,15 @@ const Sidebar = () => {
                     onClick={() => navigate(item.path)}
                     isActive={isActive(item.path)}
                     tooltip={item.label}
+                    className="flex items-center gap-2"
                   >
-                    <item.icon />
-                    <span>{item.label}</span>
+                    <item.icon className="h-5 w-5" />
+                    <span className={cn(
+                      "transition-opacity duration-300",
+                      open ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+                    )}>
+                      {item.label}
+                    </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -171,9 +209,15 @@ const Sidebar = () => {
                 onClick={() => navigate('/settings')}
                 isActive={isActive('/settings')}
                 tooltip="Settings"
+                className="flex items-center gap-2"
               >
-                <Settings />
-                <span>Settings</span>
+                <Settings className="h-5 w-5" />
+                <span className={cn(
+                  "transition-opacity duration-300",
+                  open ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+                )}>
+                  Settings
+                </span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
