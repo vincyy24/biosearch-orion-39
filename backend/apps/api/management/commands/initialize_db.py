@@ -11,7 +11,7 @@ class Command(BaseCommand):
         self.stdout.write('Initializing database with initial data...')
         
         # Path to the SQL file
-        sql_file_path = os.path.join(settings.BASE_DIR, 'api', 'migrations', 'initial_data.sql')
+        sql_file_path = os.path.join(settings.BASE_DIR, 'apps', 'api', 'migrations', 'initial_data.sql')
         
         # Read SQL file
         with open(sql_file_path, 'r') as sql_file:
