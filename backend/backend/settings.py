@@ -44,8 +44,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'channels',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
-    'api',
-    'dashboard',
+    'apps.api',
+    'apps.dashboard',
 ]
 
 MIDDLEWARE = [
