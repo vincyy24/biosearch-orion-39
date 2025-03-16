@@ -104,7 +104,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <UISidebar className="transition-all duration-300 min-h-screen w-auto">
+    <UISidebar className="transition-all duration-300 min-h-screen">
       <SidebarHeader className="flex items-center justify-between p-2">
         {open && <span className="font-bold text-xl">BiomediResearch</span>}
         <SidebarTrigger onClick={toggle} className={open ? "" : "mx-auto"}>

@@ -11,7 +11,8 @@ from .views import (
     PasswordResetConfirmView,
     UserProfileView,
     SearchView,
-    DownloadView
+    DownloadView,
+    VoltammetryDataView
 )
 
 urlpatterns = [
@@ -32,4 +33,8 @@ urlpatterns = [
     
     # Download endpoint
     path('download/', DownloadView.as_view(), name='download'),
+    
+    # Voltammetry endpoints
+    path('voltammetry/', VoltammetryDataView.as_view(), name='voltammetry-list'),
+    path('voltammetry/<str:experiment_id>/', VoltammetryDataView.as_view(), name='voltammetry-detail'),
 ]

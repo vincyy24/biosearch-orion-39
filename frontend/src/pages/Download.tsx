@@ -1,263 +1,305 @@
 
-import { useState } from "react";
-import MainLayout from "@/components/layouts/MainLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
-import { Download as DownloadIcon, FileSpreadsheet, FileText, Check, AlertCircle, FileDown } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, FileText, Download as DownloadIcon, AlertCircle, CheckCircle } from "lucide-react";
+import MainLayout from "@/components/layouts/MainLayout";
+import { downloadData, fetchVoltammetryData } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
-const datasetOptions = [
-  { label: "Complete Genomic Dataset", value: "genomic" },
-  { label: "Protein Database", value: "protein" },
-  { label: "Voltammetry Records", value: "voltammetry" },
-  { label: "Publications Index", value: "publications" },
-];
+interface DatasetOption {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+}
 
 const Download = () => {
-  const [selectedDataset, setSelectedDataset] = useState("genomic");
-  const [downloadFormat, setDownloadFormat] = useState("csv");
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [downloadComplete, setDownloadComplete] = useState(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [datasetType, setDatasetType] = useState("voltammetry");
+  const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
+  const [fileFormat, setFileFormat] = useState<'csv' | 'excel'>('csv');
+  const [datasets, setDatasets] = useState<DatasetOption[]>([]);
   const { toast } = useToast();
 
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    setProgress(0);
-    setDownloadComplete(false);
-    setDownloadError(null);
-
-    try {
-      // Simulate download progress
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
+  useEffect(() => {
+    const fetchDatasets = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Fetch datasets based on the selected type
+        if (datasetType === "voltammetry") {
+          const voltammetryData = await fetchVoltammetryData();
+          
+          // Transform the data to match our interface
+          const formattedData = Array.isArray(voltammetryData) 
+            ? voltammetryData.map((item: any) => ({
+                id: item.experiment_id,
+                title: item.title,
+                description: `${item.experiment_type} voltammetry experiment`,
+                type: 'voltammetry'
+              }))
+            : [];
+          
+          setDatasets(formattedData);
+          
+          // Set the first dataset as selected if available
+          if (formattedData.length > 0 && !selectedDataset) {
+            setSelectedDataset(formattedData[0].id);
           }
-          return prev + 10;
-        });
-      }, 300);
+        } else {
+          // Mock data for other dataset types
+          const mockData = [
+            {
+              id: "sample-dataset-1",
+              title: "Sample Dataset 1",
+              description: "This is a sample dataset for demonstration purposes",
+              type: datasetType
+            },
+            {
+              id: "sample-dataset-2",
+              title: "Sample Dataset 2",
+              description: "Another sample dataset for demonstration purposes",
+              type: datasetType
+            }
+          ];
+          
+          setDatasets(mockData);
+          
+          // Set the first dataset as selected if available
+          if (mockData.length > 0 && !selectedDataset) {
+            setSelectedDataset(mockData[0].id);
+          }
+        }
+      } catch (err) {
+        setError("Failed to fetch datasets. Please try again later.");
+        console.error("Error fetching datasets:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDatasets();
+  }, [datasetType]);
 
-      // In a real implementation, this would be an API call to the Django backend
-      // const response = await fetch(`/api/download/${selectedDataset}?format=${downloadFormat}`);
-      // if (!response.ok) throw new Error('Download failed');
-      
-      // For demo purposes, we'll simulate a network request
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      
-      clearInterval(interval);
-      setProgress(100);
-      setDownloadComplete(true);
+  const handleDownload = async () => {
+    if (!selectedDataset) {
+      setError("Please select a dataset to download");
+      return;
+    }
+    
+    setDownloading(true);
+    setDownloadSuccess(false);
+    setError(null);
+    
+    try {
+      await downloadData(selectedDataset, fileFormat);
+      setDownloadSuccess(true);
       
       toast({
-        title: "Download Complete",
-        description: `Your ${getDatasetLabel(selectedDataset)} has been downloaded successfully.`,
+        title: "Download successful",
+        description: `The file has been downloaded as ${selectedDataset}.${fileFormat === 'excel' ? 'xlsx' : 'csv'}`,
       });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Download failed. Please try again.";
+      setError(errorMessage);
       
-      // Simulate file download
-      const fileName = `${selectedDataset}_data.${downloadFormat}`;
-      const link = document.createElement("a");
-      link.href = "#"; // In a real app, this would be the download URL
-      link.setAttribute("download", fileName);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      setDownloadError("An error occurred during download. Please try again.");
       toast({
-        title: "Download Failed",
-        description: "There was an error downloading your data. Please try again.",
+        title: "Download failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setIsDownloading(false);
+      setDownloading(false);
     }
-  };
-
-  const getDatasetLabel = (value: string) => {
-    return datasetOptions.find(option => option.value === value)?.label || value;
   };
 
   return (
     <MainLayout>
-      <div className="container mx-auto py-10 px-4">
-        <h1 className="text-3xl font-bold mb-6">Download Research Data</h1>
-        <p className="text-muted-foreground mb-8">
-          Export complete datasets in your preferred format for offline analysis or integration with other tools.
+      <div className="container mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold mb-2">Download Data</h1>
+        <p className="text-muted-foreground mb-6">
+          Download research data in various formats for your analysis
         </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
+        
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Export Dataset</CardTitle>
+                <CardTitle>Available Datasets</CardTitle>
                 <CardDescription>
                   Select a dataset and format to download
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Select Dataset</label>
-                  <Select value={selectedDataset} onValueChange={setSelectedDataset}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a dataset" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {datasetOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Choose Format</label>
-                  <Tabs defaultValue="csv" value={downloadFormat} onValueChange={setDownloadFormat}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="csv">CSV</TabsTrigger>
-                      <TabsTrigger value="excel">Excel</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="csv">
-                      <div className="p-4 bg-muted/40 rounded-md mt-2">
-                        <div className="flex items-start space-x-2">
-                          <FileText className="h-5 w-5 text-primary mt-0.5" />
-                          <div>
-                            <h4 className="font-medium">CSV Format</h4>
+              <CardContent>
+                <Tabs defaultValue="voltammetry" value={datasetType} onValueChange={setDatasetType} className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="voltammetry">Voltammetry</TabsTrigger>
+                    <TabsTrigger value="genomics">Genomics</TabsTrigger>
+                    <TabsTrigger value="clinical">Clinical</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="voltammetry" className="mt-0">
+                    {loading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    ) : datasets.length > 0 ? (
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Select Dataset</label>
+                          <Select value={selectedDataset || ''} onValueChange={setSelectedDataset}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a dataset" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {datasets.map((dataset) => (
+                                <SelectItem key={dataset.id} value={dataset.id}>
+                                  {dataset.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedDataset && (
                             <p className="text-sm text-muted-foreground">
-                              Comma-separated values format, suitable for most data analysis tools and spreadsheet applications.
+                              {datasets.find(d => d.id === selectedDataset)?.description}
                             </p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">File Format</label>
+                          <div className="flex gap-2">
+                            <Button
+                              variant={fileFormat === 'csv' ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setFileFormat('csv')}
+                              className="flex-1"
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              CSV
+                            </Button>
+                            <Button
+                              variant={fileFormat === 'excel' ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setFileFormat('excel')}
+                              className="flex-1"
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Excel
+                            </Button>
                           </div>
                         </div>
+                        
+                        <Button 
+                          onClick={handleDownload} 
+                          disabled={downloading || !selectedDataset}
+                          className="w-full"
+                        >
+                          {downloading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Downloading...
+                            </>
+                          ) : (
+                            <>
+                              <DownloadIcon className="h-4 w-4 mr-2" />
+                              Download
+                            </>
+                          )}
+                        </Button>
+                        
+                        {error && (
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                          </Alert>
+                        )}
+                        
+                        {downloadSuccess && (
+                          <Alert className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900">
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <AlertTitle>Success</AlertTitle>
+                            <AlertDescription>
+                              Your file has been downloaded successfully.
+                            </AlertDescription>
+                          </Alert>
+                        )}
                       </div>
-                    </TabsContent>
-                    <TabsContent value="excel">
-                      <div className="p-4 bg-muted/40 rounded-md mt-2">
-                        <div className="flex items-start space-x-2">
-                          <FileSpreadsheet className="h-5 w-5 text-primary mt-0.5" />
-                          <div>
-                            <h4 className="font-medium">Excel Format</h4>
-                            <p className="text-sm text-muted-foreground">
-                              Native Microsoft Excel format with formatting preserved, best for direct use in Excel.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-
-                {downloadError && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{downloadError}</AlertDescription>
-                  </Alert>
-                )}
-
-                {isDownloading && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Downloading...</span>
-                      <span>{progress}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2" />
-                  </div>
-                )}
-
-                {downloadComplete && !isDownloading && (
-                  <Alert variant="default" className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900">
-                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <AlertTitle>Success</AlertTitle>
-                    <AlertDescription>Your download has completed successfully!</AlertDescription>
-                  </Alert>
-                )}
-
-                <Button 
-                  className="w-full"
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                >
-                  <DownloadIcon className="mr-2 h-4 w-4" />
-                  {isDownloading ? "Downloading..." : "Download Data"}
-                </Button>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>No datasets available</AlertTitle>
+                        <AlertDescription>
+                          There are currently no voltammetry datasets available for download.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="genomics" className="mt-0">
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Coming Soon</AlertTitle>
+                      <AlertDescription>
+                        Genomics datasets will be available for download in the near future.
+                      </AlertDescription>
+                    </Alert>
+                  </TabsContent>
+                  
+                  <TabsContent value="clinical" className="mt-0">
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Coming Soon</AlertTitle>
+                      <AlertDescription>
+                        Clinical datasets will be available for download in the near future.
+                      </AlertDescription>
+                    </Alert>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
-
+          
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Dataset Information</CardTitle>
-                <CardDescription>
-                  Details about the selected dataset
-                </CardDescription>
+                <CardTitle>Download Information</CardTitle>
+                <CardDescription>Data usage guidelines</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-medium">Dataset</h3>
-                  <p className="text-sm text-muted-foreground">{getDatasetLabel(selectedDataset)}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Records</h3>
+                  <h3 className="font-medium mb-1">Data Citation</h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedDataset === "genomic" && "150,421 entries"}
-                    {selectedDataset === "protein" && "84,752 entries"}
-                    {selectedDataset === "voltammetry" && "12,385 entries"}
-                    {selectedDataset === "publications" && "42,937 entries"}
+                    When using downloaded data in publications, please cite the original source:
+                  </p>
+                  <p className="text-sm mt-2 border p-2 rounded">
+                    BiomediResearch Database (2023). Dataset ID: {selectedDataset || 'dataset_id'}. Retrieved on {new Date().toISOString().split('T')[0]}.
                   </p>
                 </div>
+                
                 <div>
-                  <h3 className="font-medium">Last Updated</h3>
+                  <h3 className="font-medium mb-1">Data License</h3>
                   <p className="text-sm text-muted-foreground">
-                    {new Date().toLocaleDateString()}
+                    All datasets are provided under the Creative Commons Attribution 4.0 International License (CC BY 4.0).
                   </p>
                 </div>
+                
                 <div>
-                  <h3 className="font-medium">Format</h3>
+                  <h3 className="font-medium mb-1">Data Format Description</h3>
                   <p className="text-sm text-muted-foreground">
-                    {downloadFormat.toUpperCase()} file
+                    CSV files are comma-separated value files that can be opened in spreadsheet software.
+                    Excel files are in the XLSX format compatible with Microsoft Excel and other spreadsheet programs.
                   </p>
                 </div>
-                <div>
-                  <h3 className="font-medium">License</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Research use only, see terms of service for details
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Usage Guidelines</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <FileDown className="h-4 w-4 mt-0.5 text-primary" />
-                    <span>Downloaded data should be cited according to our citation guidelines</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <FileDown className="h-4 w-4 mt-0.5 text-primary" />
-                    <span>For large datasets, expect longer download times</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <FileDown className="h-4 w-4 mt-0.5 text-primary" />
-                    <span>Excel format is limited to datasets under 1 million rows</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <FileDown className="h-4 w-4 mt-0.5 text-primary" />
-                    <span>See documentation for API access to these datasets</span>
-                  </li>
-                </ul>
               </CardContent>
             </Card>
           </div>

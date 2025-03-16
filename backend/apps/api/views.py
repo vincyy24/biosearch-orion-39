@@ -1,4 +1,3 @@
-
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,6 +13,10 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 import os
 import json
+import pandas as pd
+import io
+from django.http import HttpResponse
+from wsgiref.util import FileWrapper
 
 from .models import Publication, DataType, FileUpload
 
@@ -348,9 +351,20 @@ class SearchView(APIView):
         # Search in publications
         publications = Publication.objects.filter(
             title__icontains=query
-        ).values('id', 'title', 'author', 'year', 'citations')[:5]
+        ).values('id', 'title', 'author', 'year', 'citations')
         
         # In a real app, we would search in other models as well
+        # Example of filterable search
+        data_type = request.query_params.get('data_type', None)
+        year_from = request.query_params.get('year_from', None)
+        year_to = request.query_params.get('year_to', None)
+        
+        # Apply filters to publications
+        if year_from and year_from.isdigit():
+            publications = publications.filter(year__gte=int(year_from))
+        
+        if year_to and year_to.isdigit():
+            publications = publications.filter(year__lte=int(year_to))
         
         # Example of mock results for other types
         # In production, these would come from actual database queries
@@ -400,9 +414,95 @@ class DownloadView(APIView):
         if file_format not in ['csv', 'excel']:
             return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # In a real app, this would generate and return the actual file
-        # For now, just return a success message
-        return Response({
-            'message': f'Download initiated for {dataset} in {file_format} format',
-            'download_url': f'/media/downloads/{dataset}.{file_format}'
-        })
+        try:
+            # In a real app, fetch actual data based on the dataset ID
+            # For now, generate sample data
+            data = self.generate_sample_data(dataset)
+            
+            # Create appropriate file format
+            if file_format == 'csv':
+                # Create CSV file
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = f'attachment; filename="{dataset}.csv"'
+                
+                # Convert data to CSV
+                df = pd.DataFrame(data)
+                df.to_csv(path_or_buf=response, index=False)
+                
+                return response
+                
+            elif file_format == 'excel':
+                # Create Excel file
+                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = f'attachment; filename="{dataset}.xlsx"'
+                
+                # Convert data to Excel
+                df = pd.DataFrame(data)
+                with io.BytesIO() as output:
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        df.to_excel(writer, index=False)
+                    response.write(output.getvalue())
+                
+                return response
+                
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def generate_sample_data(self, dataset_id):
+        """Generate sample data for demonstration purposes."""
+        if 'voltammetry' in dataset_id.lower():
+            # Generate voltammetry data
+            import numpy as np
+            # Sample cyclic voltammetry data
+            potential = np.linspace(-0.5, 0.5, 100).tolist()
+            current = np.sin(potential).tolist()
+            time_us = np.linspace(0, 1000, 100).tolist()
+            
+            data = {
+                'Potential (V)': potential,
+                'Current (mA)': current,
+                'Time (μs)': time_us
+            }
+            return data
+        else:
+            # Generate generic research data
+            return {
+                'Sample ID': [f'S{i:03d}' for i in range(1, 101)],
+                'Value': [i * 1.5 for i in range(1, 101)],
+                'Category': ['A' if i % 3 == 0 else 'B' if i % 3 == 1 else 'C' for i in range(1, 101)]
+            }
+
+class VoltammetryDataView(APIView):
+    """
+    API view to handle voltammetry data.
+    """
+    def get(self, request, experiment_id=None):
+        from apps.dashboard.models import VoltammetryData
+        
+        if experiment_id:
+            # Get specific experiment
+            try:
+                experiment = VoltammetryData.objects.get(experiment_id=experiment_id)
+                return Response({
+                    'id': experiment.experiment_id,
+                    'title': experiment.title,
+                    'description': experiment.description,
+                    'experiment_type': experiment.experiment_type,
+                    'scan_rate': experiment.scan_rate,
+                    'electrode_material': experiment.electrode_material,
+                    'electrolyte': experiment.electrolyte,
+                    'temperature': experiment.temperature,
+                    'data_points': experiment.data_points,
+                    'peak_anodic_current': experiment.peak_anodic_current,
+                    'peak_cathodic_current': experiment.peak_cathodic_current,
+                    'peak_anodic_potential': experiment.peak_anodic_potential,
+                    'peak_cathodic_potential': experiment.peak_cathodic_potential,
+                })
+            except VoltammetryData.DoesNotExist:
+                return Response({'error': 'Experiment not found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # List all experiments
+            experiments = VoltammetryData.objects.all().values(
+                'experiment_id', 'title', 'experiment_type', 'date_created'
+            )
+            return Response(list(experiments))
