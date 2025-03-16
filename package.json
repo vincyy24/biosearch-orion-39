@@ -4,12 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "cd frontend && npm run preview",
+    "backend": "cd backend && python manage.py runserver"
   },
+  "keywords": ["biomedical", "research", "django", "react"],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
