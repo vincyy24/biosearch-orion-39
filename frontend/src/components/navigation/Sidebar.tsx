@@ -31,12 +31,14 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { open, toggle } = useSidebar();
   const { isAuthenticated } = useAuth();
+  const isMobile = useIsMobile();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -104,10 +106,14 @@ const Sidebar = () => {
   ];
 
   return (
-    <UISidebar className="transition-all duration-300 min-h-screen">
+    <UISidebar 
+      className="transition-all duration-300 min-h-screen border-r" 
+      variant="sidebar" 
+      collapsible="icon"
+    >
       <SidebarHeader className="flex items-center justify-between p-2">
-        {open && <span className="font-bold text-xl">BiomediResearch</span>}
-        <SidebarTrigger onClick={toggle} className={open ? "" : "mx-auto"}>
+        {isMobile && open && <span className="font-bold text-xl">Menu</span>}
+        <SidebarTrigger onClick={toggle} className={open && !isMobile ? "" : "mx-auto"}>
           {open ? (
             <ChevronLeft className="h-5 w-5" />
           ) : (

@@ -1,275 +1,25 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 interface User {
   id: string;
+  username: string;
   email: string;
-  name: string;
-  role: "user" | "admin";
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  isAdmin: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  loginWithGoogle: () => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  signup: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
-  confirmResetPassword: (uid: string, token: string, password: string) => Promise<boolean>;
-  loading: boolean;
+  confirmResetPassword: (token: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  // Check for stored authentication on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user", error);
-        localStorage.removeItem("user");
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/auth/login/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include' // Important for session cookies
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Login failed');
-      }
-      
-      const userData = await response.json();
-      
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      
-      toast({
-        title: "Login successful",
-        description: "You have been logged in successfully.",
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "An error occurred during login. Please try again.",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loginWithGoogle = async (): Promise<boolean> => {
-    setLoading(true);
-    try {
-      toast({
-        title: "Google login",
-        description: "Google login is not implemented in this demo. Using mock authentication instead.",
-      });
-      
-      // Mock Google authentication - in a real app, this would redirect to Google OAuth
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: "g-123",
-        email: "user@example.com",
-        name: "Google User",
-        role: "user"
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
-      
-      toast({
-        title: "Google login successful",
-        description: "You have been logged in with Google successfully.",
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast({
-        title: "Google login failed",
-        description: "An error occurred during Google login. Please try again.",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signup = async (name: string, email: string, password: string): Promise<boolean> => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/auth/signup/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-        credentials: 'include' // Important for session cookies
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Signup failed');
-      }
-      
-      const userData = await response.json();
-      
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      
-      toast({
-        title: "Signup successful",
-        description: "Your account has been created successfully.",
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Signup error:", error);
-      toast({
-        title: "Signup failed",
-        description: error instanceof Error ? error.message : "An error occurred during signup. Please try again.",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async (): Promise<void> => {
-    try {
-      await fetch('/api/auth/logout/', {
-        method: 'POST',
-        credentials: 'include' // Important for session cookies
-      });
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      // Always clear local state even if API call fails
-      setUser(null);
-      localStorage.removeItem("user");
-      
-      toast({
-        title: "Logout successful",
-        description: "You have been logged out successfully.",
-      });
-    }
-  };
-
-  const resetPassword = async (email: string): Promise<boolean> => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/auth/password-reset/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Reset password request failed');
-      }
-      
-      toast({
-        title: "Password reset email sent",
-        description: "If an account with that email exists, you will receive a password reset link.",
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Reset password error:", error);
-      toast({
-        title: "Reset password failed",
-        description: error instanceof Error ? error.message : "An error occurred. Please try again.",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const confirmResetPassword = async (uid: string, token: string, password: string): Promise<boolean> => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/auth/password-reset/confirm/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ uid, token, password }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Password reset failed');
-      }
-      
-      toast({
-        title: "Password reset successful",
-        description: "Your password has been reset successfully. You can now log in with your new password.",
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Confirm reset password error:", error);
-      toast({
-        title: "Password reset failed",
-        description: error instanceof Error ? error.message : "An error occurred. Please try again.",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const value = {
-    user,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === "admin",
-    login,
-    loginWithGoogle,
-    signup,
-    logout,
-    resetPassword,
-    confirmResetPassword,
-    loading,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -277,4 +27,226 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+};
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if the user is already logged in on mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/profile/', {
+          credentials: 'include', // Important for cookies
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/auth/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: errorData.message || "Invalid email or password",
+        });
+        return false;
+      }
+
+      const data = await response.json();
+      setUser(data.user);
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signup = async (username: string, email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/auth/signup/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ username, email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast({
+          variant: "destructive",
+          title: "Signup failed",
+          description: errorData.message || "Failed to create an account",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Account created",
+        description: "Your account has been successfully created!",
+      });
+      return true;
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast({
+        variant: "destructive",
+        title: "Signup failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      await fetch('/api/auth/logout/', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/auth/password-reset/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast({
+          variant: "destructive",
+          title: "Password reset failed",
+          description: errorData.message || "Failed to send reset email",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Password reset email sent",
+        description: "Check your email for the password reset link",
+      });
+      return true;
+    } catch (error) {
+      console.error('Password reset error:', error);
+      toast({
+        variant: "destructive",
+        title: "Password reset failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const confirmResetPassword = async (token: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/auth/password-reset/confirm/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast({
+          variant: "destructive",
+          title: "Password reset failed",
+          description: errorData.message || "Failed to reset password",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Password reset successful",
+        description: "Your password has been updated. You can now log in with your new password.",
+      });
+      return true;
+    } catch (error) {
+      console.error('Password reset confirmation error:', error);
+      toast({
+        variant: "destructive",
+        title: "Password reset failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        signup,
+        logout,
+        resetPassword,
+        confirmResetPassword,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
