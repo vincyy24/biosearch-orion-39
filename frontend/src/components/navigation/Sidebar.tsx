@@ -36,7 +36,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { open, toggle } = useSidebar();
+  const { open, toggleSidebar } = useSidebar();
   const { isAuthenticated } = useAuth();
   const isMobile = useIsMobile();
 
@@ -106,14 +106,14 @@ const Sidebar = () => {
   ];
 
   return (
-    <UISidebar 
-      className="transition-all duration-300 min-h-screen border-r" 
-      variant="sidebar" 
+    <UISidebar
+      className="transition-all duration-300 min-h-screen border-r"
+      variant="sidebar"
       collapsible="icon"
     >
-      <SidebarHeader className="flex items-center justify-between p-2">
+      <SidebarHeader className={`flex justify-between p-2 ${!open ? "" : "mx-4"}`}>
         {isMobile && open && <span className="font-bold text-xl">Menu</span>}
-        <SidebarTrigger onClick={toggle} className={open && !isMobile ? "" : "mx-auto"}>
+        <SidebarTrigger onClick={toggleSidebar} className={open && !isMobile ? "" : "mx-auto"}>
           {open ? (
             <ChevronLeft className="h-5 w-5" />
           ) : (
@@ -121,7 +121,7 @@ const Sidebar = () => {
           )}
         </SidebarTrigger>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className={cn(
@@ -145,7 +145,7 @@ const Sidebar = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              
+
               {isAuthenticated && authenticatedMenuItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton
@@ -162,7 +162,7 @@ const Sidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         <SidebarGroup>
           <SidebarGroupLabel className={cn(
             "transition-opacity duration-300",
@@ -189,7 +189,7 @@ const Sidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
+
       <SidebarFooter>
         <SidebarMenu>
           {isAuthenticated && (
