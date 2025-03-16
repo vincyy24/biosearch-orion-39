@@ -37,9 +37,12 @@ const Navbar = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+    } else {
       toast({
-        title: "Search initiated",
-        description: `Searching for: ${searchQuery}`,
+        title: "Empty search",
+        description: "Please enter a search term",
+        variant: "destructive"
       });
     }
   };

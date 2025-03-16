@@ -1,106 +1,165 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import AuthLayout from "@/components/layouts/AuthLayout";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isResetMode, setIsResetMode] = useState(false);
+  const { resetPassword, confirmResetPassword, loading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  useEffect(() => {
+    // Check URL for reset token parameters
+    const params = new URLSearchParams(location.search);
+    const uid = params.get("uid");
+    const token = params.get("token");
     
-    // This is a placeholder for the actual password reset logic
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (email) {
-        setIsSubmitted(true);
-        toast({
-          title: "Reset email sent",
-          description: "If an account with that email exists, you will receive password reset instructions.",
-        });
-      } else {
-        toast({
-          title: "Email required",
-          description: "Please enter your email address.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Request failed",
-        description: "An error occurred while processing your request. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    if (uid && token) {
+      setIsResetMode(true);
+    }
+  }, [location]);
+
+  const handleRequestReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+    
+    if (!email) {
+      setErrorMessage("Please enter your email address");
+      return;
+    }
+    
+    const success = await resetPassword(email);
+    if (success) {
+      setSuccessMessage("We've sent a password reset link to your email address. Please check your inbox.");
     }
   };
 
-  if (isSubmitted) {
-    return (
-      <AuthLayout 
-        title="Check your email" 
-        description="We've sent you an email with a link to reset your password."
-      >
-        <div className="space-y-6">
-          <p className="text-center text-muted-foreground">
-            If you don't receive an email within a few minutes, please check your spam folder.
-          </p>
-          
-          <Button 
-            className="w-full" 
-            variant="outline"
-            onClick={() => navigate("/login")}
-          >
-            Back to login
-          </Button>
-        </div>
-      </AuthLayout>
-    );
-  }
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage("");
+    
+    if (!password || !confirmPassword) {
+      setErrorMessage("Please enter and confirm your new password");
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match");
+      return;
+    }
+    
+    const params = new URLSearchParams(location.search);
+    const uid = params.get("uid");
+    const token = params.get("token");
+    
+    if (!uid || !token) {
+      setErrorMessage("Invalid reset link");
+      return;
+    }
+    
+    const success = await confirmResetPassword(uid, token, password);
+    if (success) {
+      // Redirect to login page after successful password reset
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    }
+  };
 
   return (
     <AuthLayout 
-      title="Reset your password" 
-      description="Enter your email to receive a password reset link"
+      title={isResetMode ? "Reset your password" : "Forgot your password?"}
+      description={isResetMode 
+        ? "Enter your new password below"
+        : "Enter your email and we'll send you a link to reset your password"
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email address</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Sending reset link..." : "Send reset link"}
-        </Button>
-        
-        <Button 
-          type="button" 
-          className="w-full" 
-          variant="outline"
-          onClick={() => navigate("/login")}
-        >
-          Back to login
-        </Button>
-      </form>
+      {errorMessage && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+      
+      {successMessage && (
+        <Alert variant="default" className="mb-6 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900">
+          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
+      )}
+      
+      {isResetMode ? (
+        <form onSubmit={handleResetPassword} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="password">New Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your new password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Confirm your new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+          
+          <Button type="submit" className="w-full" disabled={loading || !!successMessage}>
+            {loading ? "Resetting Password..." : "Reset Password"}
+          </Button>
+        </form>
+      ) : (
+        <form onSubmit={handleRequestReset} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email address</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          
+          <Button type="submit" className="w-full" disabled={loading || !!successMessage}>
+            {loading ? "Sending Reset Link..." : "Send Reset Link"}
+          </Button>
+          
+          <div className="text-center">
+            <Button
+              variant="link"
+              className="text-sm text-muted-foreground"
+              onClick={() => navigate("/login")}
+            >
+              Back to login
+            </Button>
+          </div>
+        </form>
+      )}
     </AuthLayout>
   );
 };

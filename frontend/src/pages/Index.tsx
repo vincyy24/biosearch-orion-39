@@ -61,8 +61,7 @@ const Index = () => {
               </div>
               
               {showFilters && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-                  {/* Filter options would go here */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 animate-fade-in">
                   <select className="rounded border p-2 bg-background">
                     <option>All Categories</option>
                     <option>Genes</option>
@@ -184,7 +183,11 @@ const Index = () => {
             Join thousands of researchers who are advancing scientific discovery using our platform.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button variant="secondary" size="lg">
+            <Button 
+              variant="secondary" 
+              size="lg"
+              onClick={() => navigate('/signup')}
+            >
               Sign Up Now
             </Button>
             <Button variant="outline" size="lg" className="bg-transparent text-primary-foreground hover:bg-primary-foreground/10">

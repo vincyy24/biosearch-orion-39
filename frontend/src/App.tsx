@@ -20,6 +20,7 @@ import Signup from "./pages/Signup";
 import Upload from "./pages/Upload";
 import Download from "./pages/Download";
 import ResetPassword from "./pages/ResetPassword";
+import Voltammetry from "./pages/Voltammetry";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/publications" element={<Publications />} />
               <Route path="/tools" element={<Tools />} />
               <Route path="/download" element={<Download />} />
+              <Route path="/voltammetry/:id" element={<Voltammetry />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />

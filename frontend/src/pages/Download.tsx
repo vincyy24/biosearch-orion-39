@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Download as DownloadIcon, FileSpreadsheet, FileText, Check, AlertCircle } from "lucide-react";
+import { Download as DownloadIcon, FileSpreadsheet, FileText, Check, AlertCircle, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -44,12 +44,12 @@ const Download = () => {
         });
       }, 300);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      
-      // API call to backend would go here in a real implementation
+      // In a real implementation, this would be an API call to the Django backend
       // const response = await fetch(`/api/download/${selectedDataset}?format=${downloadFormat}`);
       // if (!response.ok) throw new Error('Download failed');
+      
+      // For demo purposes, we'll simulate a network request
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       
       clearInterval(interval);
       setProgress(100);
@@ -232,6 +232,32 @@ const Download = () => {
                     Research use only, see terms of service for details
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Usage Guidelines</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <FileDown className="h-4 w-4 mt-0.5 text-primary" />
+                    <span>Downloaded data should be cited according to our citation guidelines</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <FileDown className="h-4 w-4 mt-0.5 text-primary" />
+                    <span>For large datasets, expect longer download times</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <FileDown className="h-4 w-4 mt-0.5 text-primary" />
+                    <span>Excel format is limited to datasets under 1 million rows</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <FileDown className="h-4 w-4 mt-0.5 text-primary" />
+                    <span>See documentation for API access to these datasets</span>
+                  </li>
+                </ul>
               </CardContent>
             </Card>
           </div>

@@ -104,18 +104,16 @@ const Sidebar = () => {
   ];
 
   return (
-    <UISidebar className="transition-all duration-300">
-      <SidebarHeader>
-        <div className="flex items-center justify-between p-2">
-          {open && <span className="font-bold text-xl">BiomediResearch</span>}
-          <SidebarTrigger onClick={toggle} className="ml-auto">
-            {open ? (
-              <ChevronLeft className="h-5 w-5" />
-            ) : (
-              <ChevronRight className="h-5 w-5" />
-            )}
-          </SidebarTrigger>
-        </div>
+    <UISidebar className="transition-all duration-300 min-h-screen w-auto">
+      <SidebarHeader className="flex items-center justify-between p-2">
+        {open && <span className="font-bold text-xl">BiomediResearch</span>}
+        <SidebarTrigger onClick={toggle} className={open ? "" : "mx-auto"}>
+          {open ? (
+            <ChevronLeft className="h-5 w-5" />
+          ) : (
+            <ChevronRight className="h-5 w-5" />
+          )}
+        </SidebarTrigger>
       </SidebarHeader>
       
       <SidebarContent>
@@ -133,16 +131,11 @@ const Sidebar = () => {
                   <SidebarMenuButton
                     onClick={() => navigate(item.path)}
                     isActive={isActive(item.path)}
-                    tooltip={item.label}
+                    tooltip={!open ? item.label : undefined}
                     className="flex items-center gap-2"
                   >
                     <item.icon className="h-5 w-5" />
-                    <span className={cn(
-                      "transition-opacity duration-300",
-                      open ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-                    )}>
-                      {item.label}
-                    </span>
+                    {open && <span>{item.label}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -152,16 +145,11 @@ const Sidebar = () => {
                   <SidebarMenuButton
                     onClick={() => navigate(item.path)}
                     isActive={isActive(item.path)}
-                    tooltip={item.label}
+                    tooltip={!open ? item.label : undefined}
                     className="flex items-center gap-2"
                   >
                     <item.icon className="h-5 w-5" />
-                    <span className={cn(
-                      "transition-opacity duration-300",
-                      open ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-                    )}>
-                      {item.label}
-                    </span>
+                    {open && <span>{item.label}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -183,16 +171,11 @@ const Sidebar = () => {
                   <SidebarMenuButton
                     onClick={() => navigate(item.path)}
                     isActive={isActive(item.path)}
-                    tooltip={item.label}
+                    tooltip={!open ? item.label : undefined}
                     className="flex items-center gap-2"
                   >
                     <item.icon className="h-5 w-5" />
-                    <span className={cn(
-                      "transition-opacity duration-300",
-                      open ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-                    )}>
-                      {item.label}
-                    </span>
+                    {open && <span>{item.label}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -208,16 +191,11 @@ const Sidebar = () => {
               <SidebarMenuButton
                 onClick={() => navigate('/settings')}
                 isActive={isActive('/settings')}
-                tooltip="Settings"
+                tooltip={!open ? "Settings" : undefined}
                 className="flex items-center gap-2"
               >
                 <Settings className="h-5 w-5" />
-                <span className={cn(
-                  "transition-opacity duration-300",
-                  open ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
-                )}>
-                  Settings
-                </span>
+                {open && <span>Settings</span>}
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
