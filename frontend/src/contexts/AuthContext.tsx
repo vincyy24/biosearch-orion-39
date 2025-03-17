@@ -6,6 +6,7 @@ interface User {
   id: string;
   username: string;
   email: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -36,18 +37,19 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8000/api';
 
   // Check if the user is already logged in on mount
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const response = await fetch('/api/auth/profile/', {
+        const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
           credentials: 'include', // Important for cookies
         });
         
         if (response.ok) {
           const userData = await response.json();
-          setUser(userData.user);
+          setUser(userData);
         } else {
           setUser(null);
         }
@@ -60,12 +62,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     checkAuthStatus();
-  }, []);
+  }, [API_BASE_URL]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/login/', {
+      const response = await fetch(`${API_BASE_URL}/auth/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,18 +76,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorMessage = data.error || data.message || "Invalid email or password";
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: errorData.message || "Invalid email or password",
+          description: errorMessage,
         });
         return false;
       }
 
-      const data = await response.json();
-      setUser(data.user);
+      setUser(data);
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
       return true;
     } catch (error) {
       console.error('Login error:', error);
@@ -103,28 +112,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signup = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/signup/', {
+      const response = await fetch(`${API_BASE_URL}/auth/signup/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ username, email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorMessage = data.error || data.message || "Failed to create an account";
         toast({
           variant: "destructive",
           title: "Signup failed",
-          description: errorData.message || "Failed to create an account",
+          description: errorMessage,
         });
         return false;
       }
 
       toast({
         title: "Account created",
-        description: "Your account has been successfully created!",
+        description: "Your account has been successfully created! You can now log in.",
       });
       return true;
     } catch (error) {
@@ -143,13 +153,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      await fetch('/api/auth/logout/', {
+      const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
         method: 'POST',
         credentials: 'include',
       });
+      
+      if (response.ok) {
+        toast({
+          title: "Logout successful",
+          description: "You have been logged out.",
+        });
+      }
+      
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
+      toast({
+        variant: "destructive",
+        title: "Logout error",
+        description: "There was an issue during logout. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +181,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const resetPassword = async (email: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/password-reset/', {
+      const response = await fetch(`${API_BASE_URL}/auth/password-reset/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,12 +189,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         body: JSON.stringify({ email }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorMessage = data.error || data.message || "Failed to send reset email";
         toast({
           variant: "destructive",
           title: "Password reset failed",
-          description: errorData.message || "Failed to send reset email",
+          description: errorMessage,
         });
         return false;
       }
@@ -197,7 +222,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const confirmResetPassword = async (token: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/password-reset/confirm/', {
+      const response = await fetch(`${API_BASE_URL}/auth/password-reset/confirm/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -205,12 +230,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         body: JSON.stringify({ token, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorMessage = data.error || data.message || "Failed to reset password";
         toast({
           variant: "destructive",
           title: "Password reset failed",
-          description: errorData.message || "Failed to reset password",
+          description: errorMessage,
         });
         return false;
       }

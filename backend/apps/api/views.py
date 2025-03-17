@@ -1,3 +1,4 @@
+
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -46,6 +47,7 @@ class FileUploadView(APIView):
         file = request.FILES.get('file')
         data_type_id = request.data.get('dataType')
         description = request.data.get('description', '')
+        access_level = request.data.get('accessLevel', 'private')  # Default to private
         
         if not file:
             return Response(
@@ -85,7 +87,8 @@ class FileUploadView(APIView):
             file_size=file.size,
             data_type=data_type,
             description=description,
-            user=request.user
+            user=request.user,
+            is_public=(access_level == 'public')
         )
         
         return Response({
@@ -93,7 +96,8 @@ class FileUploadView(APIView):
             'file_name': file.name,
             'file_size': file.size,
             'data_type': data_type_id,
-            'description': description
+            'description': description,
+            'access_level': access_level
         }, status=status.HTTP_201_CREATED)
 
 class LoginView(APIView):
@@ -103,10 +107,10 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        username = request.data.get('email')
+        email = request.data.get('email')
         password = request.data.get('password')
         
-        if not username or not password:
+        if not email or not password:
             return Response(
                 {'error': 'Email and password are required'}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -114,12 +118,12 @@ class LoginView(APIView):
         
         # Check if user exists with provided email
         try:
-            user = User.objects.get(email=username)
+            user = User.objects.get(email=email)
             username = user.username  # Use username for authentication
         except User.DoesNotExist:
             return Response(
                 {'error': 'Invalid email or password'}, 
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_401_UNAUTHORIZED
             )
         
         # Authenticate user
@@ -133,6 +137,7 @@ class LoginView(APIView):
             
             return Response({
                 'id': user.id,
+                'username': user.username,
                 'email': user.email,
                 'name': user.get_full_name() or user.username,
                 'role': 'admin' if is_admin else 'user'
@@ -140,7 +145,7 @@ class LoginView(APIView):
         
         return Response(
             {'error': 'Invalid email or password'}, 
-            status=status.HTTP_400_BAD_REQUEST
+            status=status.HTTP_401_UNAUTHORIZED
         )
 
 class SignupView(APIView):
@@ -150,16 +155,23 @@ class SignupView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        name = request.data.get('name')
+        username = request.data.get('username')
         email = request.data.get('email')
         password = request.data.get('password')
         
-        if not name or not email or not password:
+        if not username or not email or not password:
             return Response(
-                {'error': 'Name, email and password are required'}, 
+                {'error': 'Username, email and password are required'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Check if username already exists
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {'error': 'Username already exists'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         # Check if email already exists
         if User.objects.filter(email=email).exists():
             return Response(
@@ -169,19 +181,9 @@ class SignupView(APIView):
         
         # Create user
         try:
-            # Generate username from email
-            username = email.split('@')[0]
-            base_username = username
-            counter = 1
-            
-            # Ensure username is unique
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
-            
-            # Split name into first_name and last_name
-            name_parts = name.split(' ', 1)
-            first_name = name_parts[0]
+            # Extract name parts from username if available
+            name_parts = username.split('_', 1)
+            first_name = name_parts[0] if len(name_parts) > 0 else ''
             last_name = name_parts[1] if len(name_parts) > 1 else ''
             
             user = User.objects.create_user(
@@ -192,15 +194,12 @@ class SignupView(APIView):
                 last_name=last_name
             )
             
-            # Log user in
-            login(request, user)
-            
             return Response({
                 'id': user.id,
+                'username': user.username,
                 'email': user.email,
-                'name': user.get_full_name() or user.username,
-                'role': 'user'
-            })
+                'message': 'User registered successfully'
+            }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
                 {'error': str(e)}, 
@@ -252,7 +251,7 @@ class PasswordResetRequestView(APIView):
             send_mail(
                 'Password Reset Request',
                 f'Please click the link to reset your password: {reset_link}',
-                'noreply@biomediresearch.com',
+                'noreply@potentiostat-data.com',
                 [email],
                 fail_silently=False,
             )
@@ -312,6 +311,7 @@ class UserProfileView(APIView):
         user = request.user
         return Response({
             'id': user.id,
+            'username': user.username,
             'email': user.email,
             'name': user.get_full_name() or user.username,
             'role': 'admin' if user.is_staff else 'user'
@@ -333,6 +333,7 @@ class UserProfileView(APIView):
         
         return Response({
             'id': user.id,
+            'username': user.username,
             'email': user.email,
             'name': user.get_full_name() or user.username,
             'role': 'admin' if user.is_staff else 'user'
@@ -348,12 +349,14 @@ class SearchView(APIView):
         if not query:
             return Response({'error': 'Search query is required'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Only show public datasets to non-authenticated users
+        is_authenticated = request.user.is_authenticated
+        
         # Search in publications
         publications = Publication.objects.filter(
             title__icontains=query
         ).values('id', 'title', 'author', 'year', 'citations')
         
-        # In a real app, we would search in other models as well
         # Example of filterable search
         data_type = request.query_params.get('data_type', None)
         year_from = request.query_params.get('year_from', None)
@@ -366,19 +369,29 @@ class SearchView(APIView):
         if year_to and year_to.isdigit():
             publications = publications.filter(year__lte=int(year_to))
         
+        # Search in file uploads (datasets)
+        # Only return public datasets for non-authenticated users
+        file_uploads_query = FileUpload.objects.filter(
+            file_name__icontains=query
+        )
+        
+        if not is_authenticated:
+            file_uploads_query = file_uploads_query.filter(is_public=True)
+        
+        file_uploads = file_uploads_query.values(
+            'id', 
+            'file_name', 
+            'data_type__name', 
+            'description', 
+            'upload_date',
+            'is_public'
+        )
+        
         # Example of mock results for other types
         # In production, these would come from actual database queries
         results = {
             'publications': list(publications),
-            'datasets': [
-                {
-                    'id': 'dataset-1',
-                    'title': f'Dataset containing "{query}"',
-                    'description': 'Sample dataset description',
-                    'year': 2023,
-                    'type': 'dataset'
-                }
-            ],
+            'datasets': list(file_uploads),
             'tools': [
                 {
                     'id': 'tool-1',
@@ -414,41 +427,82 @@ class DownloadView(APIView):
         if file_format not in ['csv', 'excel']:
             return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Check if dataset exists and is public (or user is authenticated)
         try:
-            # In a real app, fetch actual data based on the dataset ID
-            # For now, generate sample data
-            data = self.generate_sample_data(dataset)
+            file_upload = FileUpload.objects.get(id=dataset)
             
-            # Create appropriate file format
-            if file_format == 'csv':
-                # Create CSV file
-                response = HttpResponse(content_type='text/csv')
-                response['Content-Disposition'] = f'attachment; filename="{dataset}.csv"'
+            # Check if file is public or user is authenticated and is the owner
+            is_public = file_upload.is_public
+            is_owner = request.user.is_authenticated and request.user == file_upload.user
+            
+            if not (is_public or is_owner):
+                return Response(
+                    {'error': 'Access denied: This dataset is private'}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
                 
-                # Convert data to CSV
-                df = pd.DataFrame(data)
-                df.to_csv(path_or_buf=response, index=False)
+            # Check if file exists
+            if not os.path.exists(file_upload.file_path):
+                return Response(
+                    {'error': 'File not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
                 
-                return response
+            # Get file extension to determine file type
+            _, file_ext = os.path.splitext(file_upload.file_path)
+            
+            # If the file is CSV or Excel, we can return it directly
+            if file_ext.lower() in ['.csv', '.xlsx', '.xls']:
+                # Open the file for reading
+                with open(file_upload.file_path, 'rb') as file:
+                    response = HttpResponse(
+                        FileWrapper(file),
+                        content_type='application/octet-stream'
+                    )
+                    response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}"'
+                    return response
+            
+            # Otherwise, try to convert to the requested format
+            try:
+                # Read the data (assuming it's tabular)
+                if file_ext.lower() == '.csv':
+                    df = pd.read_csv(file_upload.file_path)
+                else:
+                    # Try to use pandas to read various file formats
+                    df = pd.read_csv(file_upload.file_path, sep=None, engine='python')
                 
-            elif file_format == 'excel':
-                # Create Excel file
-                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-                response['Content-Disposition'] = f'attachment; filename="{dataset}.xlsx"'
+                # Create appropriate file format
+                if file_format == 'csv':
+                    # Create CSV file
+                    response = HttpResponse(content_type='text/csv')
+                    response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}.csv"'
+                    df.to_csv(path_or_buf=response, index=False)
+                    return response
+                    
+                elif file_format == 'excel':
+                    # Create Excel file
+                    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                    response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}.xlsx"'
+                    with io.BytesIO() as output:
+                        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                            df.to_excel(writer, index=False)
+                        response.write(output.getvalue())
+                    return response
+            
+            except Exception as e:
+                # If conversion fails, return error
+                return Response(
+                    {'error': f'Failed to convert file: {str(e)}'}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
                 
-                # Convert data to Excel
-                df = pd.DataFrame(data)
-                with io.BytesIO() as output:
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        df.to_excel(writer, index=False)
-                    response.write(output.getvalue())
-                
-                return response
-                
+        except FileUpload.DoesNotExist:
+            # If dataset doesn't exist, generate sample data
+            return self._generate_sample_data(dataset, file_format)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    def generate_sample_data(self, dataset_id):
+    def _generate_sample_data(self, dataset_id, file_format):
         """Generate sample data for demonstration purposes."""
         if 'voltammetry' in dataset_id.lower():
             # Generate voltammetry data
@@ -463,14 +517,40 @@ class DownloadView(APIView):
                 'Current (mA)': current,
                 'Time (μs)': time_us
             }
-            return data
+            
         else:
             # Generate generic research data
-            return {
+            data = {
                 'Sample ID': [f'S{i:03d}' for i in range(1, 101)],
                 'Value': [i * 1.5 for i in range(1, 101)],
                 'Category': ['A' if i % 3 == 0 else 'B' if i % 3 == 1 else 'C' for i in range(1, 101)]
             }
+            
+        # Create appropriate file format
+        if file_format == 'csv':
+            # Create CSV file
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{dataset_id}.csv"'
+            
+            # Convert data to CSV
+            df = pd.DataFrame(data)
+            df.to_csv(path_or_buf=response, index=False)
+            
+            return response
+            
+        elif file_format == 'excel':
+            # Create Excel file
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename="{dataset_id}.xlsx"'
+            
+            # Convert data to Excel
+            df = pd.DataFrame(data)
+            with io.BytesIO() as output:
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df.to_excel(writer, index=False)
+                response.write(output.getvalue())
+            
+            return response
 
 class VoltammetryDataView(APIView):
     """
@@ -506,3 +586,26 @@ class VoltammetryDataView(APIView):
                 'experiment_id', 'title', 'experiment_type', 'date_created'
             )
             return Response(list(experiments))
+
+class RecentDatasetsView(APIView):
+    """
+    API view to get recent public datasets for the homepage.
+    """
+    def get(self, request):
+        # Only show public datasets
+        recent_datasets = FileUpload.objects.filter(
+            is_public=True
+        ).order_by('-upload_date')[:5]
+        
+        datasets = []
+        for dataset in recent_datasets:
+            datasets.append({
+                'id': dataset.id,
+                'file_name': dataset.file_name,
+                'data_type': dataset.data_type.name,
+                'description': dataset.description,
+                'upload_date': dataset.upload_date,
+                'user': dataset.user.username,
+            })
+        
+        return Response(datasets)

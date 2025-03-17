@@ -108,17 +108,15 @@ const Sidebar = () => {
   return (
     <UISidebar
       className="transition-all duration-300 min-h-screen border-r"
-      variant="sidebar"
+      variant={isMobile ? "floating" : "sidebar"}
       collapsible="icon"
     >
-      <SidebarHeader className={`flex justify-between p-2 ${!open ? "" : "mx-4"}`}>
-        {isMobile && open && <span className="font-bold text-xl">Menu</span>}
-        <SidebarTrigger onClick={toggleSidebar} className={open && !isMobile ? "" : "mx-auto"}>
-          {open ? (
-            <ChevronLeft className="h-5 w-5" />
-          ) : (
-            <ChevronRight className="h-5 w-5" />
-          )}
+      <SidebarHeader className="flex justify-between items-center p-2">
+        {isMobile && (
+          <span className={cn("font-bold text-xl", !open && "hidden")}>Menu</span>
+        )}
+        <SidebarTrigger onClick={toggleSidebar} className={cn("flex items-center justify-center h-7 w-7", isMobile && !open && "mx-auto")}>
+          {open ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </SidebarTrigger>
       </SidebarHeader>
 
