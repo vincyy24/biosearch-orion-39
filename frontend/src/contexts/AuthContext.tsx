@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { getUserProfile, loginUser, logoutUser, signupUser } from "@/services/api";
 
 interface User {
   id: string;
@@ -45,12 +46,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
-          credentials: 'include', // Important for cookies
-        });
+        setLoading(true);
+        const userData = await getUserProfile();
         
-        if (response.ok) {
-          const userData = await response.json();
+        if (userData) {
           setUser(userData);
         } else {
           setUser(null);
@@ -69,28 +68,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/auth/login/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errorMessage = data.error || data.message || "Invalid email or password";
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: errorMessage,
-        });
-        return false;
-      }
-
-      setUser(data);
+      
+      const userData = await loginUser(email, password);
+      setUser(userData);
       
       toast({
         title: "Login successful",
@@ -100,10 +80,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return true;
     } catch (error) {
       console.error('Login error:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "An unexpected error occurred. Please try again.";
+        
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
       });
       return false;
     } finally {
@@ -149,25 +133,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signup = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/auth/signup/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errorMessage = data.error || data.message || "Failed to create an account";
-        toast({
-          variant: "destructive",
-          title: "Signup failed",
-          description: errorMessage,
-        });
-        return false;
-      }
+      
+      await signupUser(username, email, password);
 
       toast({
         title: "Account created",
@@ -176,10 +143,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return true;
     } catch (error) {
       console.error('Signup error:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "An unexpected error occurred. Please try again.";
+        
       toast({
         variant: "destructive",
         title: "Signup failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
       });
       return false;
     } finally {
@@ -190,17 +161,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await logoutUser();
       
-      if (response.ok) {
-        toast({
-          title: "Logout successful",
-          description: "You have been logged out.",
-        });
-      }
+      toast({
+        title: "Logout successful",
+        description: "You have been logged out.",
+      });
       
       setUser(null);
     } catch (error) {
@@ -224,6 +190,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email }),
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -265,6 +232,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ token, password }),
+        credentials: 'include',
       });
 
       const data = await response.json();

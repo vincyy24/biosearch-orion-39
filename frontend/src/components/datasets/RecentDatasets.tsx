@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Download, Users, FileText, ArrowRight } from "lucide-react";
+import { Calendar, Download, Users, FileText, ArrowRight, Flask, Cpu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Dataset {
@@ -118,7 +118,7 @@ const RecentDatasets = () => {
           <Card key={dataset.id} className="flex flex-col">
             <CardHeader>
               <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">{dataset.title}</CardTitle>
+                <CardTitle className="text-lg truncate" title={dataset.title}>{dataset.title}</CardTitle>
                 <Badge variant={dataset.access === "public" ? "default" : "outline"}>
                   {dataset.access}
                 </Badge>
@@ -127,13 +127,20 @@ const RecentDatasets = () => {
             </CardHeader>
             
             <CardContent className="flex-grow">
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{dataset.description}</p>
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{dataset.description || "No description provided"}</p>
               
               <div className="space-y-2 text-sm">
                 {dataset.method && (
                   <div className="flex items-center text-muted-foreground">
-                    <FileText className="mr-2 h-4 w-4" /> 
+                    <Flask className="mr-2 h-4 w-4" /> 
                     Method: {dataset.method}
+                  </div>
+                )}
+                
+                {dataset.electrode && (
+                  <div className="flex items-center text-muted-foreground">
+                    <Cpu className="mr-2 h-4 w-4" /> 
+                    Electrode: {dataset.electrode}
                   </div>
                 )}
                 

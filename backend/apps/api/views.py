@@ -19,7 +19,7 @@ import io
 from django.http import HttpResponse
 from wsgiref.util import FileWrapper
 
-from .models import Publication, DataType, FileUpload
+from .models import Publication, DataType, FileUpload, DataCategory
 
 class PublicationList(APIView):
     def get(self, request):
@@ -36,6 +36,14 @@ class DataTypesList(APIView):
         data_types = DataType.objects.all().values('id', 'name')
         return Response(list(data_types))
 
+class DataCategoriesList(APIView):
+    """
+    API view to retrieve available data categories from the database.
+    """
+    def get(self, request):
+        categories = DataCategory.objects.all().values('id', 'name', 'description')
+        return Response(list(categories))
+
 class FileUploadView(APIView):
     """
     API view to handle file uploads from authenticated users.
@@ -48,6 +56,10 @@ class FileUploadView(APIView):
         data_type_id = request.data.get('dataType')
         description = request.data.get('description', '')
         access_level = request.data.get('accessLevel', 'private')  # Default to private
+        category_id = request.data.get('category', None)
+        method = request.data.get('method', '')
+        electrode_type = request.data.get('electrodeType', '')
+        instrument = request.data.get('instrument', '')
         
         if not file:
             return Response(
@@ -70,6 +82,17 @@ class FileUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Get category if provided
+        category = None
+        if category_id:
+            try:
+                category = DataCategory.objects.get(id=category_id)
+            except DataCategory.DoesNotExist:
+                return Response(
+                    {'error': 'Invalid category'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
         # Define upload directory
         upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads', data_type_id)
         os.makedirs(upload_dir, exist_ok=True)
@@ -88,16 +111,25 @@ class FileUploadView(APIView):
             data_type=data_type,
             description=description,
             user=request.user,
-            is_public=(access_level == 'public')
+            is_public=(access_level == 'public'),
+            category=category,
+            method=method,
+            electrode_type=electrode_type,
+            instrument=instrument
         )
         
         return Response({
             'message': 'File uploaded successfully',
+            'id': file_upload.id,
             'file_name': file.name,
             'file_size': file.size,
             'data_type': data_type_id,
             'description': description,
-            'access_level': access_level
+            'access_level': access_level,
+            'category': category.name if category else None,
+            'method': method,
+            'electrode_type': electrode_type,
+            'instrument': instrument
         }, status=status.HTTP_201_CREATED)
 
 class LoginView(APIView):
@@ -148,196 +180,7 @@ class LoginView(APIView):
             status=status.HTTP_401_UNAUTHORIZED
         )
 
-class SignupView(APIView):
-    """
-    API view to handle user registration.
-    """
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        username = request.data.get('username')
-        email = request.data.get('email')
-        password = request.data.get('password')
-        
-        if not username or not email or not password:
-            return Response(
-                {'error': 'Username, email and password are required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Check if username already exists
-        if User.objects.filter(username=username).exists():
-            return Response(
-                {'error': 'Username already exists'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-        # Check if email already exists
-        if User.objects.filter(email=email).exists():
-            return Response(
-                {'error': 'Email already exists'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Create user
-        try:
-            # Extract name parts from username if available
-            name_parts = username.split('_', 1)
-            first_name = name_parts[0] if len(name_parts) > 0 else ''
-            last_name = name_parts[1] if len(name_parts) > 1 else ''
-            
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=first_name,
-                last_name=last_name
-            )
-            
-            return Response({
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'message': 'User registered successfully'
-            }, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response(
-                {'error': str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-class LogoutView(APIView):
-    """
-    API view to handle user logout.
-    """
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request):
-        logout(request)
-        return Response({'message': 'Logged out successfully'})
-
-class PasswordResetRequestView(APIView):
-    """
-    API view to handle password reset requests.
-    """
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        email = request.data.get('email')
-        
-        if not email:
-            return Response(
-                {'error': 'Email is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            # Don't reveal that the user doesn't exist for security
-            return Response({'message': 'Password reset email sent if the account exists'})
-        
-        # Generate password reset token
-        token = default_token_generator.make_token(user)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        
-        # Password reset link - this should be the frontend URL
-        # In a real app, this would come from your settings
-        reset_link = f"http://localhost:5173/reset-password?uid={uid}&token={token}"
-        
-        # Send email with reset link
-        # In development, this will print to console if email backend is not configured
-        try:
-            send_mail(
-                'Password Reset Request',
-                f'Please click the link to reset your password: {reset_link}',
-                'noreply@potentiostat-data.com',
-                [email],
-                fail_silently=False,
-            )
-        except Exception as e:
-            print(f"Email would be sent to {email} with reset link: {reset_link}")
-            # Don't return an error to prevent email enumeration
-        
-        return Response({'message': 'Password reset email sent if the account exists'})
-
-class PasswordResetConfirmView(APIView):
-    """
-    API view to handle password reset confirmation.
-    """
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        uid = request.data.get('uid')
-        token = request.data.get('token')
-        new_password = request.data.get('password')
-        
-        if not uid or not token or not new_password:
-            return Response(
-                {'error': 'UID, token and new password are required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            # Decode user ID
-            user_id = force_str(urlsafe_base64_decode(uid))
-            user = User.objects.get(pk=user_id)
-            
-            # Check if token is valid
-            if not default_token_generator.check_token(user, token):
-                return Response(
-                    {'error': 'Invalid or expired token'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Set new password
-            user.set_password(new_password)
-            user.save()
-            
-            return Response({'message': 'Password reset successful'})
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response(
-                {'error': 'Invalid user ID or token'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-class UserProfileView(APIView):
-    """
-    API view to get and update user profile information.
-    """
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        user = request.user
-        return Response({
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'name': user.get_full_name() or user.username,
-            'role': 'admin' if user.is_staff else 'user'
-        })
-    
-    def patch(self, request):
-        user = request.user
-        name = request.data.get('name')
-        
-        if name:
-            # Split name into first_name and last_name
-            name_parts = name.split(' ', 1)
-            first_name = name_parts[0]
-            last_name = name_parts[1] if len(name_parts) > 1 else ''
-            
-            user.first_name = first_name
-            user.last_name = last_name
-            user.save()
-        
-        return Response({
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'name': user.get_full_name() or user.username,
-            'role': 'admin' if user.is_staff else 'user'
-        })
+# ... keep existing code (SignupView, LogoutView, PasswordResetRequestView, PasswordResetConfirmView, UserProfileView)
 
 class SearchView(APIView):
     """
@@ -357,8 +200,9 @@ class SearchView(APIView):
             title__icontains=query
         ).values('id', 'title', 'author', 'year', 'citations')
         
-        # Example of filterable search
+        # Extract filters from query parameters
         data_type = request.query_params.get('data_type', None)
+        category = request.query_params.get('category', None)
         year_from = request.query_params.get('year_from', None)
         year_to = request.query_params.get('year_to', None)
         
@@ -370,28 +214,67 @@ class SearchView(APIView):
             publications = publications.filter(year__lte=int(year_to))
         
         # Search in file uploads (datasets)
-        # Only return public datasets for non-authenticated users
         file_uploads_query = FileUpload.objects.filter(
             file_name__icontains=query
         )
         
+        # Apply dataset-specific filters
+        if data_type:
+            file_uploads_query = file_uploads_query.filter(data_type__id=data_type)
+            
+        if category:
+            file_uploads_query = file_uploads_query.filter(category__name=category)
+            
+        # Only return public datasets for non-authenticated users
         if not is_authenticated:
             file_uploads_query = file_uploads_query.filter(is_public=True)
+        elif not request.user.is_staff:  # Regular authenticated users
+            # Show public datasets or private datasets owned by the user
+            file_uploads_query = file_uploads_query.filter(
+                models.Q(is_public=True) | models.Q(user=request.user)
+            )
         
+        # For admins/staff, show all datasets
+        
+        # Get dataset values with additional fields
         file_uploads = file_uploads_query.values(
             'id', 
             'file_name', 
             'data_type__name', 
             'description', 
             'upload_date',
-            'is_public'
+            'is_public',
+            'user__username',
+            'category__name',
+            'method',
+            'electrode_type',
+            'instrument',
+            'downloads_count'
         )
+        
+        # Format the results
+        datasets = []
+        for item in file_uploads:
+            datasets.append({
+                'id': item['id'],
+                'title': item['file_name'],
+                'description': item['description'],
+                'category': item['data_type__name'],
+                'dataCategory': item['category__name'],
+                'access': 'public' if item['is_public'] else 'private',
+                'author': item['user__username'],
+                'date': item['upload_date'],
+                'downloads': item['downloads_count'],
+                'method': item['method'],
+                'electrode': item['electrode_type'],
+                'instrument': item['instrument'],
+            })
         
         # Example of mock results for other types
         # In production, these would come from actual database queries
         results = {
             'publications': list(publications),
-            'datasets': list(file_uploads),
+            'datasets': datasets,
             'tools': [
                 {
                     'id': 'tool-1',
@@ -434,8 +317,9 @@ class DownloadView(APIView):
             # Check if file is public or user is authenticated and is the owner
             is_public = file_upload.is_public
             is_owner = request.user.is_authenticated and request.user == file_upload.user
+            is_staff = request.user.is_authenticated and request.user.is_staff
             
-            if not (is_public or is_owner):
+            if not (is_public or is_owner or is_staff):
                 return Response(
                     {'error': 'Access denied: This dataset is private'}, 
                     status=status.HTTP_403_FORBIDDEN
@@ -447,6 +331,10 @@ class DownloadView(APIView):
                     {'error': 'File not found'}, 
                     status=status.HTTP_404_NOT_FOUND
                 )
+                
+            # Increment download count
+            file_upload.downloads_count += 1
+            file_upload.save()
                 
             # Get file extension to determine file type
             _, file_ext = os.path.splitext(file_upload.file_path)
@@ -601,11 +489,16 @@ class RecentDatasetsView(APIView):
         for dataset in recent_datasets:
             datasets.append({
                 'id': dataset.id,
-                'file_name': dataset.file_name,
-                'data_type': dataset.data_type.name,
+                'title': dataset.file_name,
                 'description': dataset.description,
-                'upload_date': dataset.upload_date,
-                'user': dataset.user.username,
+                'category': dataset.data_type.name if dataset.data_type else "Unknown",
+                'access': 'public',
+                'author': dataset.user.username,
+                'date': dataset.upload_date.isoformat(),
+                'downloads': dataset.downloads_count,
+                'method': dataset.method,
+                'electrode': dataset.electrode_type,
+                'instrument': dataset.instrument,
             })
         
         return Response(datasets)

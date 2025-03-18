@@ -28,20 +28,30 @@ import {
   ChevronRight,
   Upload,
   Download,
+  Menu,
+  Search,
+  LogOut,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { open, toggleSidebar } = useSidebar();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const isMobile = useIsMobile();
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   const mainMenuItems = [
@@ -66,6 +76,11 @@ const Sidebar = () => {
       path: "/tools",
     },
     {
+      icon: Search,
+      label: "Search",
+      path: "/search",
+    },
+    {
       icon: Download,
       label: "Download",
       path: "/download",
@@ -83,6 +98,12 @@ const Sidebar = () => {
       icon: Upload,
       label: "Upload",
       path: "/upload",
+      requiresAuth: true,
+    },
+    {
+      icon: User,
+      label: "Profile",
+      path: "/profile",
       requiresAuth: true,
     },
   ];
@@ -107,19 +128,29 @@ const Sidebar = () => {
 
   return (
     <UISidebar
-      className="transition-all duration-300 min-h-screen border-r"
+      className="transition-all duration-300 min-h-screen border-r z-50"
       variant={isMobile ? "floating" : "sidebar"}
       collapsible="icon"
     >
       <SidebarHeader className="flex justify-between items-center p-2">
         {open && !isMobile && (
-          <span className="font-bold text-xl">BiomediResearch</span>
+          <div className="flex items-center">
+            <span className="font-bold text-xl">BiomediResearch</span>
+          </div>
         )}
         {isMobile && open && (
-          <span className="font-bold text-xl">Menu</span>
+          <div className="flex items-center">
+            <span className="font-bold text-xl">Menu</span>
+          </div>
         )}
-        <SidebarTrigger onClick={toggleSidebar} className={cn("flex items-center justify-center h-7 w-7", isMobile && !open && "mx-auto")}>
-          {open ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        <SidebarTrigger onClick={toggleSidebar} className={cn(
+          "flex items-center justify-center h-8 w-8 rounded-md",
+          isMobile && !open && "mx-auto"
+        )}>
+          {isMobile ? 
+            <Menu className="h-5 w-5" /> : 
+            (open ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />)
+          }
         </SidebarTrigger>
       </SidebarHeader>
 
@@ -191,20 +222,49 @@ const Sidebar = () => {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t py-2">
         <SidebarMenu>
-          {isAuthenticated && (
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => navigate('/settings')}
-                isActive={isActive('/settings')}
-                tooltip={!open ? "Settings" : undefined}
-                className="flex items-center gap-2"
+          {isAuthenticated ? (
+            <>
+              {open && user && (
+                <div className="px-4 py-2 mb-2">
+                  <p className="text-sm font-medium">{user.name || user.username}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+              )}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate('/settings')}
+                  isActive={isActive('/settings')}
+                  tooltip={!open ? "Settings" : undefined}
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-5 w-5" />
+                  {open && <span>Settings</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleLogout}
+                  tooltip={!open ? "Logout" : undefined}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-5 w-5" />
+                  {open && <span>Logout</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
+          ) : (
+            <div className={open ? "px-4" : "flex justify-center"}>
+              <Button 
+                className={cn("w-full", !open && "p-2")} 
+                onClick={() => navigate('/login')}
+                variant="default"
+                size={open ? "default" : "icon"}
               >
-                <Settings className="h-5 w-5" />
-                {open && <span>Settings</span>}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+                {open ? "Login" : <LogOut className="h-4 w-4" />}
+              </Button>
+            </div>
           )}
         </SidebarMenu>
       </SidebarFooter>

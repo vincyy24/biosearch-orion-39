@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
     'apps.api',
     'apps.dashboard',
+    # Admin theme
+    'grappelli',
 ]
 
 MIDDLEWARE = [
@@ -92,6 +94,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ],
 }
+
+# Grappelli admin settings
+GRAPPELLI_ADMIN_TITLE = "BiomediResearch Admin"
 
 ROOT_URLCONF = 'backend.urls'
 

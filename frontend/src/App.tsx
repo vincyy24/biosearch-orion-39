@@ -21,11 +21,20 @@ import Upload from "./pages/Upload";
 import Download from "./pages/Download";
 import ResetPassword from "./pages/ResetPassword";
 import Voltammetry from "./pages/Voltammetry";
+import UserProfile from "./pages/UserProfile";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -49,6 +58,11 @@ const App = () => (
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <UserProfile />
                 </ProtectedRoute>
               } />
               <Route path="/documentation" element={<Documentation />} />

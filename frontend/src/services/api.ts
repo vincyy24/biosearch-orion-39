@@ -42,6 +42,22 @@ export const fetchDataTypes = async () => {
   }
 };
 
+export const fetchDataCategories = async () => {
+  try {
+    // Get data categories from Django API
+    const response = await fetch(`${API_BASE_URL}/data-categories/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch data categories');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching data categories:", error);
+    throw error;
+  }
+};
+
 export const uploadFile = async (formData: FormData, token: string) => {
   try {
     // Upload file to Django backend
@@ -51,6 +67,7 @@ export const uploadFile = async (formData: FormData, token: string) => {
         'Authorization': `Bearer ${token}`,
       },
       body: formData,
+      credentials: 'include', // Include cookies for session authentication
     });
     
     if (!response.ok) {
@@ -79,7 +96,9 @@ export const searchData = async (query: string, filters?: Record<string, string>
     }
     
     // Call the search API
-    const response = await fetch(`${API_BASE_URL}/search/?${queryString}`);
+    const response = await fetch(`${API_BASE_URL}/search/?${queryString}`, {
+      credentials: 'include', // Include cookies for authentication
+    });
     
     if (!response.ok) {
       throw new Error('Search failed');
@@ -139,7 +158,9 @@ export const fetchVoltammetryData = async (experimentId?: string) => {
       ? `${API_BASE_URL}/voltammetry/${experimentId}/` 
       : `${API_BASE_URL}/voltammetry/`;
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      credentials: 'include', // Include cookies for authentication
+    });
     
     if (!response.ok) {
       throw new Error('Failed to fetch voltammetry data');
@@ -163,6 +184,93 @@ export const fetchRecentDatasets = async () => {
     return await response.json();
   } catch (error) {
     console.error("Error fetching recent datasets:", error);
+    throw error;
+  }
+};
+
+// Authentication related functions with improved error handling
+export const loginUser = async (email: string, password: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Important for cookies
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || errorData.message || 'Login failed');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+};
+
+export const signupUser = async (username: string, email: string, password: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/signup/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, email, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || errorData.message || 'Signup failed');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Signup error:", error);
+    throw error;
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
+      method: 'POST',
+      credentials: 'include', // Important for cookies
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || errorData.message || 'Logout failed');
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Logout error:", error);
+    throw error;
+  }
+};
+
+export const getUserProfile = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
+      credentials: 'include', // Important for cookies
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Unauthorized, user is not logged in
+        return null;
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.error || errorData.message || 'Failed to get user profile');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
     throw error;
   }
 };
