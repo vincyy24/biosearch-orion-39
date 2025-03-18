@@ -20,6 +20,7 @@ from django.http import HttpResponse
 from wsgiref.util import FileWrapper
 
 from .models import Publication, DataType, FileUpload, DataCategory
+from apps.api import models
 
 class PublicationList(APIView):
     def get(self, request):
@@ -706,5 +707,4 @@ class RecentDatasetsView(APIView):
                 'electrode': dataset.electrode_type,
                 'instrument': dataset.instrument,
             })
-        
         return Response(datasets)
