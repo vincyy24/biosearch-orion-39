@@ -1,6 +1,6 @@
 
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc'; // Should not be changed
 import path from 'path';
 
 // https://vitejs.dev/config/
