@@ -1,5 +1,5 @@
 import { useState } from "react";
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -143,13 +143,13 @@ const Tools = () => {
 
   // Filter tools based on search and category
   const filteredTools = toolsData.filter(tool => {
-    const matchesSearch = searchQuery === "" || 
+    const matchesSearch = searchQuery === "" ||
       tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     const matchesCategory = activeCategory === "all" || tool.category === activeCategory;
-    
+
     return matchesSearch && matchesCategory;
   });
 
@@ -188,7 +188,7 @@ const Tools = () => {
               </TabsTrigger>
             ))}
           </TabsList>
-          
+
           {categories.map((category) => (
             <TabsContent key={category.id} value={category.id} className="mt-0">
               {filteredTools.length === 0 ? (
@@ -212,9 +212,9 @@ const Tools = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         <p className="text-sm text-muted-foreground mb-4">{tool.description}</p>
-                        
+
                         <div className="flex flex-wrap gap-1 mb-2">
                           {tool.tags.map((tag, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
@@ -223,13 +223,13 @@ const Tools = () => {
                           ))}
                         </div>
                       </CardContent>
-                      
+
                       <CardFooter className="bg-muted/30 px-6 py-3 flex justify-between">
                         <Button variant="outline" size="sm">
                           <ExternalLink className="mr-2 h-3 w-3" /> Documentation
                         </Button>
-                        <Button 
-                          variant="default" 
+                        <Button
+                          variant="default"
                           size="sm"
                           onClick={() => handleLaunchTool(tool.name)}
                         >
@@ -250,7 +250,7 @@ const Tools = () => {
             This section will host interactive tools that can be used directly in the platform.
             These integrations allow researchers to perform analyses without leaving the platform.
           </p>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="border border-dashed border-muted-foreground/50 rounded-lg p-8 text-center">
               <div className="mb-4 flex justify-center">
@@ -262,7 +262,7 @@ const Tools = () => {
               </p>
               <Button variant="outline">Coming Soon</Button>
             </div>
-            
+
             <div className="border border-dashed border-muted-foreground/50 rounded-lg p-8 text-center">
               <div className="mb-4 flex justify-center">
                 <BarChart className="h-12 w-12 text-muted-foreground" />

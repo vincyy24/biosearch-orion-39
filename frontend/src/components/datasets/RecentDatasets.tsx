@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Download, Users, FileText, ArrowRight, Flask, Cpu } from "lucide-react";
+import { Calendar, Download, Users, FileText, ArrowRight, FlaskConical, Cpu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Dataset {
@@ -132,7 +132,7 @@ const RecentDatasets = () => {
               <div className="space-y-2 text-sm">
                 {dataset.method && (
                   <div className="flex items-center text-muted-foreground">
-                    <Flask className="mr-2 h-4 w-4" /> 
+                    <FlaskConical className="mr-2 h-4 w-4" /> 
                     Method: {dataset.method}
                   </div>
                 )}

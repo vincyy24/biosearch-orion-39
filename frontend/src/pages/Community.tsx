@@ -1,5 +1,5 @@
 
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, MessageSquare, Calendar, Globe } from "lucide-react";
@@ -108,7 +108,7 @@ const Community = () => {
                     <div key={index} className="border rounded-md p-4">
                       <h3 className="font-medium">{event.title}</h3>
                       <div className="flex items-center text-sm text-muted-foreground mb-2">
-                        <Calendar className="mr-1 h-4 w-4" /> {event.date} • 
+                        <Calendar className="mr-1 h-4 w-4" /> {event.date} •
                         <Globe className="mx-1 h-4 w-4" /> {event.location}
                       </div>
                       <p className="text-sm">{event.description}</p>
@@ -154,7 +154,7 @@ const Community = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm mb-4">
-                  Our community consists of researchers, scientists, and healthcare professionals 
+                  Our community consists of researchers, scientists, and healthcare professionals
                   from around the world who collaborate and share knowledge.
                 </p>
                 <div className="space-y-2">

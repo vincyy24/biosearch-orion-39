@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,7 @@ const Publications = () => {
       y: publications.map(pub => pub.citations),
       mode: 'markers',
       type: 'scatter',
-      marker: { 
+      marker: {
         size: 12,
         color: publications.map(pub => pub.citations),
         colorscale: 'Viridis',
@@ -97,7 +97,7 @@ const Publications = () => {
               yaxis: { title: 'Citations' }
             }}
           />
-          
+
           <PlotlyVisualization
             title="Research Focus Areas"
             description="Distribution of publications across research domains"

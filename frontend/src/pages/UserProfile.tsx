@@ -27,14 +27,14 @@ const UserProfile = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setIsUpdating(true);
-      
+
       // In a real app, you'd call an API to update the profile
       // For now, we'll simulate a successful update
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
@@ -92,7 +92,7 @@ const UserProfile = () => {
               </div>
             </div>
           </CardHeader>
-          
+
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -104,7 +104,7 @@ const UserProfile = () => {
                   disabled={isUpdating}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -117,7 +117,7 @@ const UserProfile = () => {
                 <p className="text-xs text-muted-foreground">Email cannot be changed. Contact support for assistance.</p>
               </div>
             </CardContent>
-            
+
             <CardFooter>
               <Button
                 type="submit"

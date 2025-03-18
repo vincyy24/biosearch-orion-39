@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, FileText, Download as DownloadIcon, AlertCircle, CheckCircle } from "lucide-react";
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { downloadData, fetchVoltammetryData } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,24 +32,24 @@ const Download = () => {
     const fetchDatasets = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         // Fetch datasets based on the selected type
         if (datasetType === "voltammetry") {
           const voltammetryData = await fetchVoltammetryData();
-          
+
           // Transform the data to match our interface
-          const formattedData = Array.isArray(voltammetryData) 
+          const formattedData = Array.isArray(voltammetryData)
             ? voltammetryData.map((item: any) => ({
-                id: item.experiment_id,
-                title: item.title,
-                description: `${item.experiment_type} voltammetry experiment`,
-                type: 'voltammetry'
-              }))
+              id: item.experiment_id,
+              title: item.title,
+              description: `${item.experiment_type} voltammetry experiment`,
+              type: 'voltammetry'
+            }))
             : [];
-          
+
           setDatasets(formattedData);
-          
+
           // Set the first dataset as selected if available
           if (formattedData.length > 0 && !selectedDataset) {
             setSelectedDataset(formattedData[0].id);
@@ -70,9 +70,9 @@ const Download = () => {
               type: datasetType
             }
           ];
-          
+
           setDatasets(mockData);
-          
+
           // Set the first dataset as selected if available
           if (mockData.length > 0 && !selectedDataset) {
             setSelectedDataset(mockData[0].id);
@@ -85,7 +85,7 @@ const Download = () => {
         setLoading(false);
       }
     };
-    
+
     fetchDatasets();
   }, [datasetType]);
 
@@ -94,15 +94,15 @@ const Download = () => {
       setError("Please select a dataset to download");
       return;
     }
-    
+
     setDownloading(true);
     setDownloadSuccess(false);
     setError(null);
-    
+
     try {
       await downloadData(selectedDataset, fileFormat);
       setDownloadSuccess(true);
-      
+
       toast({
         title: "Download successful",
         description: `The file has been downloaded as ${selectedDataset}.${fileFormat === 'excel' ? 'xlsx' : 'csv'}`,
@@ -110,7 +110,7 @@ const Download = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Download failed. Please try again.";
       setError(errorMessage);
-      
+
       toast({
         title: "Download failed",
         description: errorMessage,
@@ -128,7 +128,7 @@ const Download = () => {
         <p className="text-muted-foreground mb-6">
           Download research data in various formats for your analysis
         </p>
-        
+
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="col-span-2">
             <Card>
@@ -145,7 +145,7 @@ const Download = () => {
                     <TabsTrigger value="genomics">Genomics</TabsTrigger>
                     <TabsTrigger value="clinical">Clinical</TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="voltammetry" className="mt-0">
                     {loading ? (
                       <div className="flex justify-center py-8">
@@ -173,7 +173,7 @@ const Download = () => {
                             </p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-2">
                           <label className="text-sm font-medium">File Format</label>
                           <div className="flex gap-2">
@@ -197,9 +197,9 @@ const Download = () => {
                             </Button>
                           </div>
                         </div>
-                        
-                        <Button 
-                          onClick={handleDownload} 
+
+                        <Button
+                          onClick={handleDownload}
                           disabled={downloading || !selectedDataset}
                           className="w-full"
                         >
@@ -215,7 +215,7 @@ const Download = () => {
                             </>
                           )}
                         </Button>
-                        
+
                         {error && (
                           <Alert variant="destructive">
                             <AlertCircle className="h-4 w-4" />
@@ -223,7 +223,7 @@ const Download = () => {
                             <AlertDescription>{error}</AlertDescription>
                           </Alert>
                         )}
-                        
+
                         {downloadSuccess && (
                           <Alert className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900">
                             <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -244,7 +244,7 @@ const Download = () => {
                       </Alert>
                     )}
                   </TabsContent>
-                  
+
                   <TabsContent value="genomics" className="mt-0">
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
@@ -254,7 +254,7 @@ const Download = () => {
                       </AlertDescription>
                     </Alert>
                   </TabsContent>
-                  
+
                   <TabsContent value="clinical" className="mt-0">
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
@@ -268,7 +268,7 @@ const Download = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           <div>
             <Card>
               <CardHeader>
@@ -285,14 +285,14 @@ const Download = () => {
                     BiomediResearch Database (2023). Dataset ID: {selectedDataset || 'dataset_id'}. Retrieved on {new Date().toISOString().split('T')[0]}.
                   </p>
                 </div>
-                
+
                 <div>
                   <h3 className="font-medium mb-1">Data License</h3>
                   <p className="text-sm text-muted-foreground">
                     All datasets are provided under the Creative Commons Attribution 4.0 International License (CC BY 4.0).
                   </p>
                 </div>
-                
+
                 <div>
                   <h3 className="font-medium mb-1">Data Format Description</h3>
                   <p className="text-sm text-muted-foreground">

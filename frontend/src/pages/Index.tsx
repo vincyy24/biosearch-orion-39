@@ -1,5 +1,5 @@
 
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +66,7 @@ const Index = () => {
               A comprehensive platform for accessing, visualizing, and analyzing potentiostat-generated electrochemical data.
             </p>
           </div>
-          
+
           <div className="w-full max-w-2xl mt-8">
             <form onSubmit={handleSearch} className="flex w-full gap-2">
               <div className="relative flex-grow">
@@ -82,7 +82,7 @@ const Index = () => {
             </form>
           </div>
         </section>
-        
+
         <section className="py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
@@ -105,7 +105,7 @@ const Index = () => {
             ))}
           </div>
         </section>
-        
+
         <section className="py-12">
           <RecentDatasets />
         </section>

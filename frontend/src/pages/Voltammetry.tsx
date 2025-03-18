@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,7 +18,7 @@ const VoltammetryPage = () => {
   const [scanRate, setScanRate] = useState("100");
   const [normalize, setNormalize] = useState("no");
   const [technique, setTechnique] = useState("cyclic");
-  
+
   // This would be fetched from an API in a real application
   const experimentData = {
     id: id || "exp-123",
@@ -64,7 +64,7 @@ const VoltammetryPage = () => {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        
+
         <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
           <div>
             <h1 className="text-3xl font-bold">{experimentData.title}</h1>
@@ -82,7 +82,7 @@ const VoltammetryPage = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <Card>
@@ -109,7 +109,7 @@ const VoltammetryPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="w-full md:w-auto">
                       <label className="block text-sm font-medium mb-1">Plot Type</label>
                       <Select value={plotType} onValueChange={setPlotType}>
@@ -123,7 +123,7 @@ const VoltammetryPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="w-full md:w-auto">
                       <label className="block text-sm font-medium mb-1">Scan Rate (mV/s)</label>
                       <Select value={scanRate} onValueChange={setScanRate}>
@@ -138,7 +138,7 @@ const VoltammetryPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="w-full md:w-auto">
                       <label className="block text-sm font-medium mb-1">Normalize Y-Axis</label>
                       <Select value={normalize} onValueChange={setNormalize}>
@@ -160,12 +160,12 @@ const VoltammetryPage = () => {
                   ) : (
                     <div className="w-full h-96 bg-muted/30 rounded-md flex justify-center items-center">
                       <p className="text-muted-foreground">
-                        Voltammetry plot visualization will be displayed here.<br/>
+                        Voltammetry plot visualization will be displayed here.<br />
                         This will integrate with backend Plotly/Dash visualization.
                       </p>
                     </div>
                   )}
-                  
+
                   <Alert>
                     <AlertTitle>Visualization Guide</AlertTitle>
                     <AlertDescription>
@@ -182,7 +182,7 @@ const VoltammetryPage = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           <div>
             <Card>
               <CardHeader>
@@ -197,37 +197,37 @@ const VoltammetryPage = () => {
                     <h3 className="text-sm font-medium">Technique</h3>
                     <p className="text-sm text-muted-foreground">{experimentData.technique}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium">Scan Rate</h3>
                     <p className="text-sm text-muted-foreground">{experimentData.scanRate}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium">Electrodes</h3>
                     <p className="text-sm text-muted-foreground">{experimentData.electrodes}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium">Electrolyte</h3>
                     <p className="text-sm text-muted-foreground">{experimentData.electrolyte}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium">Temperature</h3>
                     <p className="text-sm text-muted-foreground">{experimentData.temperature}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium">Date</h3>
                     <p className="text-sm text-muted-foreground">{experimentData.date}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium">Author</h3>
                     <p className="text-sm text-muted-foreground">{experimentData.author}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium">Institution</h3>
                     <p className="text-sm text-muted-foreground">{experimentData.institution}</p>
@@ -235,7 +235,7 @@ const VoltammetryPage = () => {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle>Related Publications</CardTitle>

@@ -1,4 +1,4 @@
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -260,7 +260,7 @@ const Dashboard = () => {
             <TabsTrigger value="saved">Saved Items</TabsTrigger>
             <TabsTrigger value="recommended">Recommended</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="saved">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {savedItems.map((item) => (
@@ -279,10 +279,10 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </CardContent>
-                  
+
                   <div className="bg-muted/30 px-6 py-3 flex justify-end space-x-2 border-t">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       className="h-8 text-xs"
                       onClick={() => handleAction("View", item.title)}
@@ -294,7 +294,7 @@ const Dashboard = () => {
               ))}
             </div>
           </TabsContent>
-          
+
           <TabsContent value="recommended">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recommendations.map((item) => (
@@ -313,18 +313,18 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </CardContent>
-                  
+
                   <div className="bg-muted/30 px-6 py-3 flex justify-end space-x-2 border-t">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       className="h-8 text-xs"
                       onClick={() => handleAction("Save", item.title)}
                     >
                       <BookmarkPlus className="mr-1 h-3 w-3" /> Save
                     </Button>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       className="h-8 text-xs"
                       onClick={() => handleAction("View", item.title)}

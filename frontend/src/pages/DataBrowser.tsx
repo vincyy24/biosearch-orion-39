@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -58,13 +58,13 @@ const DataBrowser = () => {
       const item = sampleData.find(d => d.id === itemId);
       if (item) {
         setSelectedItem(item);
-        
+
         // If it's a voltammetry item, switch to visual tab
         if (item.type === "Voltammetry") {
           setCurrentView("visual");
           setSelectedVisualization("voltammetry");
         }
-        
+
         setSearchQuery(item.name);
         setDataType(item.type.toLowerCase());
       }
@@ -101,12 +101,12 @@ const DataBrowser = () => {
       // Simulate file download for CSV
       if (format === 'csv') {
         const header = "ID,Name,Type,Species,Description\n";
-        const csvContent = "data:text/csv;charset=utf-8," + 
-          header + 
-          filteredData.map(item => 
+        const csvContent = "data:text/csv;charset=utf-8," +
+          header +
+          filteredData.map(item =>
             `${item.id},${item.name},${item.type},${item.species},"${item.description}"`
           ).join("\n");
-          
+
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -126,12 +126,12 @@ const DataBrowser = () => {
 
   // Filter data based on search query and selected type
   const filteredData = sampleData.filter(item => {
-    const matchesSearch = searchQuery === "" || 
+    const matchesSearch = searchQuery === "" ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesType = dataType === "all" || item.type.toLowerCase() === dataType.toLowerCase();
-    
+
     return matchesSearch && matchesType;
   });
 
@@ -145,7 +145,7 @@ const DataBrowser = () => {
               Search and explore genomic data, proteins, pathways, and datasets
             </p>
           </div>
-          
+
           <div className="mt-4 md:mt-0 space-x-2">
             <Button variant="outline" onClick={() => handleDownload('csv')}>
               <Download className="mr-2 h-4 w-4" /> Export CSV
@@ -164,9 +164,9 @@ const DataBrowser = () => {
                 <p className="text-sm text-muted-foreground mb-2">ID: {selectedItem.id} | Type: {selectedItem.type} | Species: {selectedItem.species}</p>
                 <p>{selectedItem.description}</p>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="mt-2 md:mt-0"
                 onClick={() => setSelectedItem(null)}
               >
@@ -191,7 +191,7 @@ const DataBrowser = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="w-full md:w-48">
                 <Select value={dataType} onValueChange={setDataType}>
                   <SelectTrigger>
@@ -207,7 +207,7 @@ const DataBrowser = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <Button type="submit" className="md:w-auto">
                 <Filter className="mr-2 h-4 w-4" /> Apply Filters
               </Button>
@@ -220,7 +220,7 @@ const DataBrowser = () => {
             <TabsTrigger value="table">Table View</TabsTrigger>
             <TabsTrigger value="visual">Visual Analysis</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="table" className="border rounded-lg p-4">
             <Table>
               <TableHeader>
@@ -242,8 +242,8 @@ const DataBrowser = () => {
                     <TableCell>{item.species}</TableCell>
                     <TableCell className="max-w-xs truncate">{item.description}</TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => {
                           setSelectedItem(item);
@@ -268,12 +268,12 @@ const DataBrowser = () => {
               </TableBody>
             </Table>
           </TabsContent>
-          
+
           <TabsContent value="visual" className="border rounded-lg p-6">
             <div className="mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
                 <h3 className="text-xl font-semibold">Data Visualization</h3>
-                
+
                 <div className="mt-2 md:mt-0">
                   <Select value={selectedVisualization} onValueChange={setSelectedVisualization}>
                     <SelectTrigger className="w-[200px]">
@@ -287,13 +287,13 @@ const DataBrowser = () => {
                   </Select>
                 </div>
               </div>
-              
+
               {selectedVisualization === "distribution" && (
                 <div className="h-80">
                   <SampleDataChart />
                 </div>
               )}
-              
+
               {selectedVisualization === "voltammetry" && (
                 <div className="mb-8">
                   <p className="text-muted-foreground mb-4">
@@ -302,20 +302,20 @@ const DataBrowser = () => {
                   <VoltammetryPlot height={400} />
                 </div>
               )}
-              
+
               {selectedVisualization === "publications" && (
                 <div className="bg-muted/30 p-6 rounded-lg">
                   <p className="text-muted-foreground mb-4">
                     Publication citation analysis across different years and research topics
                   </p>
-                  
+
                   {dashboardUrl && (
                     <div className="border rounded-lg overflow-hidden" style={{ height: "500px" }}>
-                      <iframe 
+                      <iframe
                         src={dashboardUrl}
-                        title="Publications Dashboard" 
-                        width="100%" 
-                        height="100%" 
+                        title="Publications Dashboard"
+                        width="100%"
+                        height="100%"
                         style={{ border: "none" }}
                       />
                     </div>
@@ -323,7 +323,7 @@ const DataBrowser = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Django-Plotly-Dash integration for voltammetry data */}
             {selectedVisualization === "voltammetry" && dashboardUrl && (
               <div className="bg-muted/30 p-6 rounded-lg mt-6">
@@ -332,11 +332,11 @@ const DataBrowser = () => {
                   Detailed interactive visualization powered by Python Dash
                 </p>
                 <div className="border rounded-lg overflow-hidden" style={{ height: "600px" }}>
-                  <iframe 
+                  <iframe
                     src={dashboardUrl}
-                    title="Voltammetry Dashboard" 
-                    width="100%" 
-                    height="100%" 
+                    title="Voltammetry Dashboard"
+                    width="100%"
+                    height="100%"
                     style={{ border: "none" }}
                   />
                 </div>

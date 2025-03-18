@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, BookOpen, Database, Microscope, Calendar } from "lucide-react";
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 
@@ -33,28 +33,28 @@ const SearchResults = () => {
     category: "all",
     source: "all",
   });
-  
+
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const searchQuery = searchParams.get("query") || "";
     setQuery(searchQuery);
-    
+
     if (searchQuery) {
       performSearch(searchQuery);
     }
   }, [location.search]);
-  
+
   const performSearch = async (searchQuery: string) => {
     setLoading(true);
-    
+
     try {
       // TODO: Replace with actual API call when backend is implemented
       // const response = await fetch(`/api/search?query=${encodeURIComponent(searchQuery)}`);
       // const data = await response.json();
-      
+
       // Simulating API response with mock data for now
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const mockResults: SearchResult[] = [
         {
           id: "pub-1",
@@ -99,7 +99,7 @@ const SearchResults = () => {
           source: "Gene Database"
         }
       ];
-      
+
       setResults(mockResults);
     } catch (error) {
       console.error("Search error:", error);
@@ -112,7 +112,7 @@ const SearchResults = () => {
       setLoading(false);
     }
   };
-  
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -121,39 +121,39 @@ const SearchResults = () => {
       searchParams.set("query", query);
       const newRelativePathQuery = `${location.pathname}?${searchParams.toString()}`;
       window.history.pushState(null, "", newRelativePathQuery);
-      
+
       performSearch(query);
     }
   };
-  
+
   const filteredResults = results.filter(result => {
     // Filter by tab
     if (activeTab !== "all" && result.type !== activeTab) {
       return false;
     }
-    
+
     // Filter by year
     if (filters.year !== "all" && result.year?.toString() !== filters.year) {
       return false;
     }
-    
+
     // Filter by category
     if (filters.category !== "all" && result.type !== filters.category) {
       return false;
     }
-    
+
     // Filter by source
     if (filters.source !== "all" && result.source !== filters.source) {
       return false;
     }
-    
+
     return true;
   });
 
   // Extract unique years and sources for filter options
   const years = [...new Set(results.filter(r => r.year).map(r => r.year))];
   const sources = [...new Set(results.filter(r => r.source).map(r => r.source))];
-  
+
   const resultCounts = {
     all: results.length,
     publication: results.filter(r => r.type === "publication").length,
@@ -166,7 +166,7 @@ const SearchResults = () => {
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Search Results</h1>
-        
+
         {/* Search bar */}
         <form onSubmit={handleSearch} className="mb-8">
           <div className="flex w-full max-w-lg gap-2">
@@ -185,14 +185,14 @@ const SearchResults = () => {
             </Button>
           </div>
         </form>
-        
+
         {/* Filters */}
         <div className="mb-6 flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Select 
-              value={filters.year} 
-              onValueChange={(value) => setFilters({...filters, year: value})}
+            <Select
+              value={filters.year}
+              onValueChange={(value) => setFilters({ ...filters, year: value })}
             >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Year" />
@@ -207,12 +207,12 @@ const SearchResults = () => {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Database className="h-4 w-4 text-muted-foreground" />
-            <Select 
-              value={filters.category} 
-              onValueChange={(value) => setFilters({...filters, category: value})}
+            <Select
+              value={filters.category}
+              onValueChange={(value) => setFilters({ ...filters, category: value })}
             >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Category" />
@@ -226,12 +226,12 @@ const SearchResults = () => {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Microscope className="h-4 w-4 text-muted-foreground" />
-            <Select 
-              value={filters.source} 
-              onValueChange={(value) => setFilters({...filters, source: value})}
+            <Select
+              value={filters.source}
+              onValueChange={(value) => setFilters({ ...filters, source: value })}
             >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Source" />
@@ -247,7 +247,7 @@ const SearchResults = () => {
             </Select>
           </div>
         </div>
-        
+
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -273,7 +273,7 @@ const SearchResults = () => {
                   Genes ({resultCounts.gene})
                 </TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="all" className="mt-0">
                 {filteredResults.length > 0 ? (
                   <div className="space-y-4">
@@ -287,7 +287,7 @@ const SearchResults = () => {
                   </div>
                 )}
               </TabsContent>
-              
+
               <TabsContent value="publication" className="mt-0">
                 {filteredResults.length > 0 ? (
                   <div className="space-y-4">
@@ -301,7 +301,7 @@ const SearchResults = () => {
                   </div>
                 )}
               </TabsContent>
-              
+
               <TabsContent value="dataset" className="mt-0">
                 {filteredResults.length > 0 ? (
                   <div className="space-y-4">
@@ -315,7 +315,7 @@ const SearchResults = () => {
                   </div>
                 )}
               </TabsContent>
-              
+
               <TabsContent value="tool" className="mt-0">
                 {filteredResults.length > 0 ? (
                   <div className="space-y-4">
@@ -329,7 +329,7 @@ const SearchResults = () => {
                   </div>
                 )}
               </TabsContent>
-              
+
               <TabsContent value="gene" className="mt-0">
                 {filteredResults.length > 0 ? (
                   <div className="space-y-4">
