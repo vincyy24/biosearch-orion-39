@@ -112,8 +112,11 @@ const Sidebar = () => {
       collapsible="icon"
     >
       <SidebarHeader className="flex justify-between items-center p-2">
-        {isMobile && (
-          <span className={cn("font-bold text-xl", !open && "hidden")}>Menu</span>
+        {open && !isMobile && (
+          <span className="font-bold text-xl">BiomediResearch</span>
+        )}
+        {isMobile && open && (
+          <span className="font-bold text-xl">Menu</span>
         )}
         <SidebarTrigger onClick={toggleSidebar} className={cn("flex items-center justify-center h-7 w-7", isMobile && !open && "mx-auto")}>
           {open ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}

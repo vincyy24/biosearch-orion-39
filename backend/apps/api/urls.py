@@ -12,7 +12,8 @@ from .views import (
     UserProfileView,
     SearchView,
     DownloadView,
-    VoltammetryDataView
+    VoltammetryDataView,
+    RecentDatasetsView
 )
 
 urlpatterns = [
@@ -37,4 +38,7 @@ urlpatterns = [
     # Voltammetry endpoints
     path('voltammetry/', VoltammetryDataView.as_view(), name='voltammetry-list'),
     path('voltammetry/<str:experiment_id>/', VoltammetryDataView.as_view(), name='voltammetry-detail'),
+    
+    # Recent datasets endpoint
+    path('recent-datasets/', RecentDatasetsView.as_view(), name='recent-datasets'),
 ]

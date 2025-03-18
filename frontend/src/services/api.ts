@@ -95,7 +95,9 @@ export const searchData = async (query: string, filters?: Record<string, string>
 export const downloadData = async (dataset: string, format: 'csv' | 'excel') => {
   try {
     // Use fetch with blob response to download the file
-    const response = await fetch(`${API_BASE_URL}/download/?dataset=${encodeURIComponent(dataset)}&format=${format}`);
+    const response = await fetch(`${API_BASE_URL}/download/?dataset=${encodeURIComponent(dataset)}&format=${format}`, {
+      credentials: 'include', // Include cookies for authentication
+    });
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -146,6 +148,21 @@ export const fetchVoltammetryData = async (experimentId?: string) => {
     return await response.json();
   } catch (error) {
     console.error("Error fetching voltammetry data:", error);
+    throw error;
+  }
+};
+
+export const fetchRecentDatasets = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/recent-datasets/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch recent datasets');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching recent datasets:", error);
     throw error;
   }
 };
