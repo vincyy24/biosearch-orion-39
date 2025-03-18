@@ -180,7 +180,213 @@ class LoginView(APIView):
             status=status.HTTP_401_UNAUTHORIZED
         )
 
-# ... keep existing code (SignupView, LogoutView, PasswordResetRequestView, PasswordResetConfirmView, UserProfileView)
+class SignupView(APIView):
+    """
+    API view to handle user registration.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        username = request.data.get('username')
+        email = request.data.get('email')
+        password = request.data.get('password')
+        name = request.data.get('name', '')
+        
+        if not username or not email or not password:
+            return Response(
+                {'error': 'Username, email, and password are required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if username already exists
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {'error': 'Username already exists'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if email already exists
+        if User.objects.filter(email=email).exists():
+            return Response(
+                {'error': 'Email already exists'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create new user
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            
+            # Set full name if provided
+            if name:
+                name_parts = name.split(' ', 1)
+                user.first_name = name_parts[0]
+                if len(name_parts) > 1:
+                    user.last_name = name_parts[1]
+                user.save()
+            
+            return Response({
+                'message': 'User created successfully',
+                'id': user.id,
+                'username': user.username,
+                'email': user.email
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class LogoutView(APIView):
+    """
+    API view to handle user logout.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        logout(request)
+        return Response({'message': 'Logged out successfully'})
+
+class PasswordResetRequestView(APIView):
+    """
+    API view to handle password reset requests.
+    Sends email with reset token to user's email.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        
+        if not email:
+            return Response(
+                {'error': 'Email is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Generate password reset token
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            
+            # Build password reset URL (frontend URL)
+            reset_url = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
+            
+            # Send email with reset URL
+            send_mail(
+                'Password Reset Request',
+                f'Click the following link to reset your password: {reset_url}',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            
+            return Response({'message': 'Password reset email sent'})
+            
+        except User.DoesNotExist:
+            # For security reasons, don't reveal that the email doesn't exist
+            return Response({'message': 'If the email exists in our system, a password reset link has been sent'})
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class PasswordResetConfirmView(APIView):
+    """
+    API view to handle password reset confirmation.
+    Verifies token and updates user's password.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        password = request.data.get('password')
+        
+        if not uid or not token or not password:
+            return Response(
+                {'error': 'UID, token, and password are required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Decode user ID from base64
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_id)
+            
+            # Verify token
+            if default_token_generator.check_token(user, token):
+                # Set new password
+                user.set_password(password)
+                user.save()
+                return Response({'message': 'Password reset successful'})
+            else:
+                return Response(
+                    {'error': 'Invalid or expired token'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Invalid user'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class UserProfileView(APIView):
+    """
+    API view to retrieve and update user profile information.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        
+        # Determine user role
+        is_admin = user.is_staff or user.is_superuser
+        
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'name': user.get_full_name() or user.username,
+            'role': 'admin' if is_admin else 'user'
+        })
+    
+    def put(self, request):
+        user = request.user
+        
+        # Update user profile fields
+        name = request.data.get('name')
+        
+        if name:
+            # Split name into first and last name
+            name_parts = name.split(' ', 1)
+            user.first_name = name_parts[0]
+            if len(name_parts) > 1:
+                user.last_name = name_parts[1]
+            user.save()
+        
+        # Determine user role
+        is_admin = user.is_staff or user.is_superuser
+        
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'name': user.get_full_name() or user.username,
+            'role': 'admin' if is_admin else 'user'
+        })
 
 class SearchView(APIView):
     """
