@@ -1,4 +1,3 @@
-
 """
 Django settings for backend project.
 
@@ -35,6 +34,8 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 # Application definition
 
 INSTALLED_APPS = [
+    # Admin theme
+    'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,11 +48,10 @@ INSTALLED_APPS = [
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
     'apps.api',
     'apps.dashboard',
-    # Admin theme
-    'grappelli',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware should be at the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,19 +59,33 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
-# Allow frontend to access the API during development
+# Enhanced CORS settings
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://localhost:5173",  # Vite default dev server
+    "http://127.0.0.1:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "Content-Type",
+    "X-CSRFToken",
 ]
 
+# CSRF settings
+CSRF_COOKIE_SAMESITE = 'Lax'  # or 'None' with secure=True in production
+CSRF_COOKIE_HTTPONLY = False  # False so that JavaScript can access it
+SESSION_COOKIE_SAMESITE = 'Lax'  # or 'None' with secure=True in production
+SESSION_COOKIE_HTTPONLY = True
+
+# In production, you should set these to True
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+
+# Frontend URL for password reset links
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
 # Django Plotly Dash settings
 X_FRAME_OPTIONS = 'SAMEORIGIN'

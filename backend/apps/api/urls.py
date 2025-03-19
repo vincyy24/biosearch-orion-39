@@ -14,7 +14,8 @@ from .views import (
     SearchView,
     DownloadView,
     VoltammetryDataView,
-    RecentDatasetsView
+    RecentDatasetsView,
+    CSRFTokenView
 )
 
 urlpatterns = [
@@ -24,6 +25,7 @@ urlpatterns = [
     path('upload/', FileUploadView.as_view(), name='file-upload'),
     
     # Authentication endpoints
+    path('auth/csrf/', CSRFTokenView.as_view(), name='csrf-token'),
     path('auth/login/', LoginView.as_view(), name='login'),
     path('auth/signup/', SignupView.as_view(), name='signup'),
     path('auth/logout/', LogoutView.as_view(), name='logout'),

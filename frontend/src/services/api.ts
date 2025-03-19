@@ -1,19 +1,28 @@
-
 // This file handles API requests to the Django backend
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? '/api' 
   : 'http://localhost:8000/api';
 
+// Helper function to handle response errors consistently
+const handleResponseErrors = async (response) => {
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || errorData.message || response.statusText);
+    } else {
+      throw new Error(response.statusText);
+    }
+  }
+  return response;
+};
+
 export const fetchPublicationsData = async () => {
   try {
     // Call the Django API to get publications data
     const response = await fetch(`${API_BASE_URL}/publications/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch publications');
-    }
-    
+    await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
     console.error("Error fetching publications data:", error);
@@ -30,11 +39,7 @@ export const fetchDataTypes = async () => {
   try {
     // Get data types from Django API
     const response = await fetch(`${API_BASE_URL}/data-types/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch data types');
-    }
-    
+    await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
     console.error("Error fetching data types:", error);
@@ -46,11 +51,7 @@ export const fetchDataCategories = async () => {
   try {
     // Get data categories from Django API
     const response = await fetch(`${API_BASE_URL}/data-categories/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch data categories');
-    }
-    
+    await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
     console.error("Error fetching data categories:", error);
@@ -70,11 +71,7 @@ export const uploadFile = async (formData: FormData, token: string) => {
       credentials: 'include', // Include cookies for session authentication
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Upload failed');
-    }
-    
+    await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
     console.error("Error uploading file:", error);
@@ -188,23 +185,30 @@ export const fetchRecentDatasets = async () => {
   }
 };
 
-// Authentication related functions with improved error handling
+// Updated authentication related functions with improved CSRF handling
 export const loginUser = async (email: string, password: string) => {
   try {
+    // First, get CSRF token
+    const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    
+    await handleResponseErrors(csrfResponse);
+    const { csrf_token } = await csrfResponse.json();
+    
+    // Then perform login with CSRF token
     const response = await fetch(`${API_BASE_URL}/auth/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token,
       },
       credentials: 'include', // Important for cookies
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || errorData.message || 'Login failed');
-    }
-
+    await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
     console.error("Login error:", error);
@@ -214,19 +218,26 @@ export const loginUser = async (email: string, password: string) => {
 
 export const signupUser = async (username: string, email: string, password: string) => {
   try {
+    // First, get CSRF token
+    const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    
+    await handleResponseErrors(csrfResponse);
+    const { csrf_token } = await csrfResponse.json();
+    
     const response = await fetch(`${API_BASE_URL}/auth/signup/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token,
       },
+      credentials: 'include',
       body: JSON.stringify({ username, email, password }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || errorData.message || 'Signup failed');
-    }
-
+    await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
     console.error("Signup error:", error);
@@ -236,19 +247,25 @@ export const signupUser = async (username: string, email: string, password: stri
 
 export const logoutUser = async () => {
   try {
+    // First, get CSRF token
+    const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    
+    await handleResponseErrors(csrfResponse);
+    const { csrf_token } = await csrfResponse.json();
+    
     const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token,
       },
       credentials: 'include', // Important for cookies
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || errorData.message || 'Logout failed');
-    }
-
+    await handleResponseErrors(response);
     return true;
   } catch (error) {
     console.error("Logout error:", error);
@@ -262,18 +279,65 @@ export const getUserProfile = async () => {
       credentials: 'include', // Important for cookies
     });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Unauthorized, user is not logged in
-        return null;
-      }
-      const errorData = await response.json();
-      throw new Error(errorData.error || errorData.message || 'Failed to get user profile');
+    if (response.status === 401) {
+      // Unauthorized, user is not logged in
+      return null;
     }
-
+    
+    await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
     console.error("Error fetching user profile:", error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (email: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/password-reset/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = data.error || data.message || "Failed to send reset email";
+      throw new Error(errorMessage);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Password reset error:', error);
+    throw error;
+  }
+};
+
+export const confirmResetPassword = async (token: string, password: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/password-reset/confirm/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token, password }),
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = data.error || data.message || "Failed to reset password";
+      throw new Error(errorMessage);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Password reset confirmation error:', error);
     throw error;
   }
 };
