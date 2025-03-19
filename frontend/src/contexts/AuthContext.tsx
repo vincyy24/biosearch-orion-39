@@ -161,20 +161,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
+      
+      // Clear user state first to improve UX
+      setUser(null);
+      
+      // Then make the API call
       await logoutUser();
       
       toast({
         title: "Logout successful",
         description: "You have been logged out.",
       });
-      
-      setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
+      
+      // Even if the backend logout fails, we still want to clear the local session
+      // This ensures the user can still "log out" from the frontend perspective
+      
       toast({
         variant: "destructive",
-        title: "Logout error",
-        description: "There was an issue during logout. Please try again.",
+        title: "Logout completed with warnings",
+        description: "You've been logged out locally, but there was an issue with the server. This won't affect your experience.",
       });
     } finally {
       setLoading(false);
