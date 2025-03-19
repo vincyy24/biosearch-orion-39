@@ -132,7 +132,7 @@ const Sidebar = () => {
       variant={isMobile ? "floating" : "sidebar"}
       collapsible="icon"
     >
-      <SidebarHeader className="flex justify-between items-center p-2">
+      <SidebarHeader className="flex justify-between items-center p-2 flex-row overflow-hidden">
         {open && !isMobile && (
           <div className="flex items-center">
             <span className="font-bold text-xl">BiomediResearch</span>
@@ -157,8 +157,8 @@ const Sidebar = () => {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className={cn(
-            "transition-opacity duration-300",
-            open ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
+            "transition-[opacity,height] duration-300 text-nowrap",
+            open ? "opacity-100" : "opacity-0 h-0"
           )}>
             Main Menu
           </SidebarGroupLabel>
@@ -197,8 +197,8 @@ const Sidebar = () => {
 
         <SidebarGroup>
           <SidebarGroupLabel className={cn(
-            "transition-opacity duration-300",
-            open ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
+            "transition-[opacity,height] duration-300 text-nowrap",
+            open ? "opacity-100" : "opacity-0 h-0"
           )}>
             Resources
           </SidebarGroupLabel>
@@ -222,7 +222,7 @@ const Sidebar = () => {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t py-2">
+      <SidebarFooter className="border-t py-2 text-nowrap overflow-hidden">
         <SidebarMenu>
           {isAuthenticated ? (
             <>
