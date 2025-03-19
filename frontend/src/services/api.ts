@@ -238,11 +238,14 @@ export const logoutUser = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include', // Important for cookies
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || errorData.message || 'Logout failed');
     }
 
