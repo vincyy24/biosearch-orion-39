@@ -1,13 +1,14 @@
 // This file handles API requests to the Django backend
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' 
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? '/api'
   : 'http://localhost:8000/api';
 
 // Helper function to handle response errors consistently
 const handleResponseErrors = async (response) => {
   if (!response.ok) {
     const contentType = response.headers.get("content-type");
+
     if (contentType && contentType.indexOf("application/json") !== -1) {
       const errorData = await response.json();
       throw new Error(errorData.error || errorData.message || response.statusText);
@@ -17,6 +18,22 @@ const handleResponseErrors = async (response) => {
   }
   return response;
 };
+
+function getCookie(name: string) {
+  let cookieValue: string = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 
 export const fetchPublicationsData = async () => {
   try {
@@ -70,7 +87,7 @@ export const uploadFile = async (formData: FormData, token: string) => {
       body: formData,
       credentials: 'include', // Include cookies for session authentication
     });
-    
+
     await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
@@ -83,7 +100,7 @@ export const searchData = async (query: string, filters?: Record<string, string>
   try {
     // Build query string with filters
     let queryString = `query=${encodeURIComponent(query)}`;
-    
+
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value) {
@@ -91,16 +108,14 @@ export const searchData = async (query: string, filters?: Record<string, string>
         }
       });
     }
-    
     // Call the search API
     const response = await fetch(`${API_BASE_URL}/search/?${queryString}`, {
       credentials: 'include', // Include cookies for authentication
     });
-    
+
     if (!response.ok) {
       throw new Error('Search failed');
     }
-    
     return await response.json();
   } catch (error) {
     console.error("Error searching data:", error);
@@ -114,23 +129,23 @@ export const downloadData = async (dataset: string, format: 'csv' | 'excel') => 
     const response = await fetch(`${API_BASE_URL}/download/?dataset=${encodeURIComponent(dataset)}&format=${format}`, {
       credentials: 'include', // Include cookies for authentication
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Download failed');
     }
-    
+
     // Get the filename from the Content-Disposition header if available
     const contentDisposition = response.headers.get('Content-Disposition');
     let filename = `${dataset}.${format === 'excel' ? 'xlsx' : 'csv'}`;
-    
+
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename="(.+)"/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1];
       }
     }
-    
+
     // Convert response to blob and download
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -141,7 +156,7 @@ export const downloadData = async (dataset: string, format: 'csv' | 'excel') => 
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    
+
     return { success: true, filename };
   } catch (error) {
     console.error("Error downloading data:", error);
@@ -151,18 +166,18 @@ export const downloadData = async (dataset: string, format: 'csv' | 'excel') => 
 
 export const fetchVoltammetryData = async (experimentId?: string) => {
   try {
-    const url = experimentId 
-      ? `${API_BASE_URL}/voltammetry/${experimentId}/` 
+    const url = experimentId
+      ? `${API_BASE_URL}/voltammetry/${experimentId}/`
       : `${API_BASE_URL}/voltammetry/`;
-    
+
     const response = await fetch(url, {
       credentials: 'include', // Include cookies for authentication
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch voltammetry data');
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error fetching voltammetry data:", error);
@@ -173,11 +188,11 @@ export const fetchVoltammetryData = async (experimentId?: string) => {
 export const fetchRecentDatasets = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/recent-datasets/`);
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch recent datasets');
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error fetching recent datasets:", error);
@@ -188,23 +203,15 @@ export const fetchRecentDatasets = async () => {
 // Updated authentication related functions with improved CSRF handling
 export const loginUser = async (email: string, password: string) => {
   try {
-    // First, get CSRF token
-    const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    
-    await handleResponseErrors(csrfResponse);
-    const { csrf_token } = await csrfResponse.json();
-    
-    // Then perform login with CSRF token
+    const csrf_token = getCookie("csrftoken");
+
     const response = await fetch(`${API_BASE_URL}/auth/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token,
+        'X-CSRFToken': csrf_token || '',
       },
-      credentials: 'include', // Important for cookies
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
 
@@ -216,17 +223,10 @@ export const loginUser = async (email: string, password: string) => {
   }
 };
 
+
 export const signupUser = async (username: string, email: string, password: string) => {
   try {
-    // First, get CSRF token
-    const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    
-    await handleResponseErrors(csrfResponse);
-    const { csrf_token } = await csrfResponse.json();
-    
+    const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/auth/signup/`, {
       method: 'POST',
       headers: {
@@ -247,23 +247,16 @@ export const signupUser = async (username: string, email: string, password: stri
 
 export const logoutUser = async () => {
   try {
-    // First, get CSRF token
-    const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    
-    await handleResponseErrors(csrfResponse);
-    const { csrf_token } = await csrfResponse.json();
-    
+    const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': csrf_token,
       },
-      credentials: 'include', // Important for cookies
+      credentials: 'include',
     });
+
 
     await handleResponseErrors(response);
     return true;
@@ -274,6 +267,7 @@ export const logoutUser = async () => {
 };
 
 export const getUserProfile = async () => {
+
   try {
     const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
       credentials: 'include', // Important for cookies
@@ -283,7 +277,7 @@ export const getUserProfile = async () => {
       // Unauthorized, user is not logged in
       return null;
     }
-    
+
     await handleResponseErrors(response);
     return await response.json();
   } catch (error) {
