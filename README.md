@@ -1,69 +1,67 @@
-# Welcome to your Lovable project
 
-## Project info
+# BiomediResearch Platform
 
-**URL**: https://lovable.dev/projects/bff1ca68-53c7-44ce-be22-222c1a78d7c2
+This is a Django + React application for managing biomedical research data.
 
-## How can I edit this code?
+## Project Structure
 
-There are several ways of editing your application.
+- `frontend/` - React application
+- `backend/` - Django application
 
-**Use Lovable**
+## Setup Instructions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bff1ca68-53c7-44ce-be22-222c1a78d7c2) and start prompting.
+### 1. Install Dependencies
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# Install frontend dependencies
+cd frontend
+npm install
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Install backend dependencies
+cd ../backend
+pip install -r requirements.txt
 ```
 
-**Edit a file directly in GitHub**
+### 2. Build the Frontend
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# From the frontend directory
+npm run build
+```
+This will build the React app and copy the files to `backend/static/frontend/`.
 
-**Use GitHub Codespaces**
+### 3. Run Django Server
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+# From the backend directory
+python manage.py migrate
+python manage.py runserver
+```
 
-## What technologies are used for this project?
+The application will be available at http://localhost:8000
 
-This project is built with .
+## Development
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+For development, you can run both servers separately:
 
-## How can I deploy this project?
+```bash
+# Terminal 1 - Frontend (from frontend directory)
+npm run dev
 
-Simply open [Lovable](https://lovable.dev/projects/bff1ca68-53c7-44ce-be22-222c1a78d7c2) and click on Share -> Publish.
+# Terminal 2 - Backend (from backend directory)
+python manage.py runserver
+```
 
-## I want to use a custom domain - is that possible?
+Frontend will be at http://localhost:5173 and backend at http://localhost:8000.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## Important Files
+
+- `frontend/vite.config.ts` - Vite configuration
+- `backend/backend/settings.py` - Django settings
+- `backend/backend/urls.py` - Django URL routing
+
+## Notes
+
+- Frontend API calls should use `/api/` as the base URL
+- Direct all AJAX requests to the Django server
+- Build files are automatically moved to Django's static directory during build

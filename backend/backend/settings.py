@@ -1,3 +1,4 @@
+
 """
 Django settings for backend project.
 
@@ -122,7 +123,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -192,6 +193,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# Ensure the frontend static directory exists
+os.makedirs(os.path.join(BASE_DIR, 'static', 'frontend'), exist_ok=True)
 
 # Media files (uploads)
 MEDIA_URL = '/media/'
