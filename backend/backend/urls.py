@@ -26,7 +26,7 @@ urlpatterns = [
     path('api/', include('apps.api.urls')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
     
-    # Serve frontend routes
+    # Serve frontend routes - catch all other routes and let React Router handle them
     re_path(r'^(?!admin/)(?!api/)(?!django_plotly_dash/)(?!static/)(?!media/)(?P<path>.*)$', 
             TemplateView.as_view(template_name='index.html')),
 ]

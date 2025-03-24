@@ -1,19 +1,23 @@
 
 #!/bin/bash
-set -e
 
-# Build frontend
-echo "Building frontend..."
+# Navigate to frontend directory
 cd frontend
+
+# Install dependencies if needed
 npm install
+
+# Build the frontend
 npm run build
 
-# Setup backend
-echo "Setting up backend..."
-cd ../backend
-pip install -r requirements.txt
-python manage.py collectstatic --noinput
-python manage.py migrate
+# Navigate back to root
+cd ..
 
-echo "Setup complete! Run the following to start the server:"
-echo "cd backend && python manage.py runserver"
+# Make sure the static/frontend directory exists
+mkdir -p backend/static/frontend
+
+# Django collectstatic
+cd backend
+python3 manage.py collectstatic --noinput
+
+echo "Build complete! Frontend files have been moved to backend/static/frontend."

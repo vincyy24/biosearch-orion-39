@@ -242,11 +242,16 @@ class LogoutView(APIView):
     """
     API view to handle user logout.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Changed from IsAuthenticated to allow anonymous users
     
     def post(self, request):
-        logout(request)
-        return Response({'message': 'Logged out successfully'})
+        # Check if user is authenticated before attempting to log them out
+        if request.user.is_authenticated:
+            logout(request)
+            return Response({'message': 'Logged out successfully'})
+        else:
+            # If user is already logged out, just return success
+            return Response({'message': 'No active session found'})
 
 class PasswordResetRequestView(APIView):
     """

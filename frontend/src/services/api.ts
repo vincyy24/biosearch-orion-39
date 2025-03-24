@@ -1,8 +1,6 @@
 // This file handles API requests to the Django backend
 
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? '/api'
-  : 'http://localhost:8000/api';
+const API_BASE_URL = '/api';
 
 // Helper function to handle response errors consistently
 const handleResponseErrors = async (response) => {
@@ -33,7 +31,6 @@ function getCookie(name: string) {
   }
   return cookieValue;
 }
-
 
 export const fetchPublicationsData = async () => {
   try {
@@ -256,7 +253,6 @@ export const logoutUser = async () => {
       },
       credentials: 'include',
     });
-
 
     await handleResponseErrors(response);
     return true;

@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { getUserProfile, loginUser, logoutUser, signupUser } from "@/services/api";
@@ -40,9 +39,8 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8000/api';
+  const API_BASE_URL = '/api';
 
-  // Check if the user is already logged in on mount
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
@@ -63,7 +61,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     checkAuthStatus();
-  }, [API_BASE_URL]);
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -98,9 +96,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
       setLoading(true);
-      // In a real implementation, this would redirect to Google OAuth
       console.log("Google login would be implemented here");
-      // Mock successful login for development
       const mockUser = {
         id: "google-user-123",
         username: "googleuser",
@@ -162,10 +158,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setLoading(true);
       
-      // Clear user state first to improve UX
       setUser(null);
       
-      // Then make the API call
       await logoutUser();
       
       toast({
@@ -174,9 +168,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
     } catch (error) {
       console.error('Logout error:', error);
-      
-      // Even if the backend logout fails, we still want to clear the local session
-      // This ensures the user can still "log out" from the frontend perspective
       
       toast({
         variant: "destructive",
