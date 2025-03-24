@@ -1,19 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  Sidebar as UISidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import {
   Home,
   Database,
   FileText,

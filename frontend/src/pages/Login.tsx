@@ -10,15 +10,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeClosedIcon, Loader2 } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -37,12 +38,12 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
-    
+
     if (!email || !password) {
       setErrorMessage("Please enter both email and password");
       return;
     }
-    
+
     try {
       setIsSubmitting(true);
       const success = await login(email, password);
@@ -69,8 +70,8 @@ const Login = () => {
   // Don't show the form while checking authentication status
   if (loading) {
     return (
-      <AuthLayout 
-        title="Sign in to your account" 
+      <AuthLayout
+        title="Sign in to your account"
         description="Please wait while we check your authentication status..."
         showBackButton={false}
       >
@@ -82,8 +83,8 @@ const Login = () => {
   }
 
   return (
-    <AuthLayout 
-      title="Sign in to your account" 
+    <AuthLayout
+      title="Sign in to your account"
       description="Enter your credentials to access your account"
       showBackButton={true}
     >
@@ -93,7 +94,7 @@ const Login = () => {
           <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
@@ -113,29 +114,46 @@ const Login = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <Link 
-              to="/reset-password" 
+            <Link
+              to="/reset-password"
               className="text-sm font-medium text-primary hover:underline"
             >
               Forgot password?
             </Link>
           </div>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isSubmitting}
-            required
-            aria-required="true"
-            aria-invalid={errorMessage ? "true" : "false"}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isSubmitting}
+              required
+              aria-required="true"
+              aria-invalid={errorMessage ? "true" : "false"}
+            />
+
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-muted-foreground"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {!showPassword ? (
+                  <Eye className="h-5 w-5" />
+                ) : (
+                  <EyeClosedIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="remember-me" 
+          <Checkbox
+            id="remember-me"
             checked={rememberMe}
             onCheckedChange={(checked) => setRememberMe(checked as boolean)}
             disabled={isSubmitting}
@@ -148,9 +166,9 @@ const Login = () => {
           </label>
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
+        <Button
+          type="submit"
+          className="w-full"
           disabled={isSubmitting}
         >
           {isSubmitting ? (
@@ -175,9 +193,9 @@ const Login = () => {
         </div>
 
         <div className="mt-6">
-          <Button 
-            variant="outline" 
-            className="w-full" 
+          <Button
+            variant="outline"
+            className="w-full"
             onClick={handleGoogleLogin}
             disabled={isSubmitting}
             type="button"
