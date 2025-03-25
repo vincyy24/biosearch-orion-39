@@ -29,26 +29,26 @@ const RecentDatasets = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadRecentDatasets = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchRecentDatasets();
-        setDatasets(data);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to load recent datasets:", err);
-        setError("Failed to load recent datasets. Please try again later.");
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load recent datasets. Please try again later.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadRecentDatasets = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchRecentDatasets();
+      setDatasets(data);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to load recent datasets:", err);
+      setError("Failed to load recent datasets. Please try again later.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load recent datasets. Please try again later.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadRecentDatasets();
   }, [toast]);
 
@@ -85,7 +85,7 @@ const RecentDatasets = () => {
         <Button 
           variant="outline" 
           className="mt-4"
-          onClick={() => window.location.reload()}
+          onClick={() => loadRecentDatasets()}
         >
           Retry
         </Button>
