@@ -1,12 +1,22 @@
 
-# BiomediResearch Platform
+# ORION - Open Repository for Integrated Electrochemical Observation & Networking
 
-This is a Django + React application for managing biomedical research data.
+ORION is a comprehensive platform for managing biomedical research data, providing tools for data visualization, analysis, and collaboration.
+
+## Project Overview
+
+ORION is designed to facilitate the storage, access, and analysis of potentiostat-generated experimental data. It provides:
+
+- A centralized repository for research data
+- Advanced visualization and analysis tools
+- Collaboration features for research teams
+- Publication management with DOI integration
+- User dashboard with analytics
 
 ## Project Structure
 
-- `frontend/` - React application
-- `backend/` - Django application
+- `frontend/` - React application built with Vite, TypeScript, and Tailwind CSS
+- `backend/` - Django application serving as the API and data management system
 
 ## Setup Instructions
 
@@ -54,14 +64,46 @@ python manage.py runserver
 
 Frontend will be at http://localhost:5173 and backend at http://localhost:8000.
 
-## Important Files
+## Key Features
 
-- `frontend/vite.config.ts` - Vite configuration
-- `backend/backend/settings.py` - Django settings
-- `backend/backend/urls.py` - Django URL routing
+- **Data Browsing:** Explore and filter research datasets
+- **Visualization Tools:** Interactive charts and graphs for data analysis
+- **Publication Management:** Link datasets to published papers with DOI verification
+- **User Dashboard:** Track activity and manage personal data
+- **Research Collaboration:** Share datasets with team members
 
-## Notes
+## Implemented Features
 
-- Frontend API calls should use `/api/` as the base URL
-- Direct all AJAX requests to the Django server
-- Build files are automatically moved to Django's static directory during build
+- ✅ Data browsing and basic visualization
+- ✅ Publication management with DOI verification
+- ✅ User authentication system
+- ✅ Basic dashboard analytics
+- ✅ Responsive design for mobile and desktop
+- ✅ Sidebar state persistence
+
+## Pending Implementation
+
+- ⏳ Advanced search functionality
+- ⏳ Two-factor authentication
+- ⏳ User data export and deletion capabilities
+- ⏳ File upload security enhancements (type restrictions, size limits)
+- ⏳ Multi-user collaboration with granular permissions
+- ⏳ Email notifications system
+- ⏳ Integration with citation management tools
+- ⏳ API access for programmatic data retrieval
+- ⏳ Advanced analytics and data visualization options
+
+## Technologies Used
+
+- **Frontend:** React, TypeScript, Tailwind CSS, shadcn/ui, Recharts
+- **Backend:** Django, Django REST Framework
+- **Database:** PostgreSQL (production), SQLite (development)
+- **Authentication:** JWT-based authentication
+
+## Contributing
+
+Please read our contribution guidelines before submitting pull requests.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
