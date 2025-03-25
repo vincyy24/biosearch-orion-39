@@ -13,7 +13,7 @@ import {
   SidebarGroupContent,
   SidebarTrigger,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/sidebar-persistent";
 import {
   Home,
   Database,
@@ -135,7 +135,7 @@ const Sidebar = () => {
       <SidebarHeader className="flex justify-between items-center p-2 flex-row overflow-hidden">
         {open && !isMobile && (
           <div className="flex items-center">
-            <span className="font-bold text-xl">BiomediResearch</span>
+            <span className="font-bold text-xl">ORION</span>
           </div>
         )}
         {isMobile && open && (

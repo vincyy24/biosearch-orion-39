@@ -3,12 +3,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar-persistent";
 import { 
   Sun, 
   Moon, 
   Search, 
-  Bell, 
   User,
   LogIn,
   LogOut,
@@ -25,6 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import NotificationsMenu from "./NotificationsMenu";
 
 const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,7 +71,7 @@ const Navbar = () => {
         
         <div className="mr-4 hidden md:flex">
           <a href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">BiomediResearch</span>
+            <span className="font-bold text-xl">ORION</span>
           </a>
         </div>
         
@@ -80,7 +80,7 @@ const Navbar = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search genes, publications, tools..."
+              placeholder="Search electrochemical data, publications, methods..."
               className="w-full pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -97,14 +97,9 @@ const Navbar = () => {
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
           
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mr-1"
-            aria-label="Notifications"
-          >
-            <Bell className="h-5 w-5" />
-          </Button>
+          <div className="mr-1">
+            <NotificationsMenu />
+          </div>
           
           {isAuthenticated ? (
             <DropdownMenu>
