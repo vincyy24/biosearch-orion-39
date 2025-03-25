@@ -2,7 +2,7 @@
 import { ReactNode } from "react";
 import Navbar from "@/components/navigation/Navbar";
 import Sidebar from "@/components/navigation/Sidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar-persistent";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 interface MainLayoutProps {
   children: ReactNode;

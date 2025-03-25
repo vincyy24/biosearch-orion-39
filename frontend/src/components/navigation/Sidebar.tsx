@@ -12,7 +12,7 @@ import {
   SidebarGroupContent,
   SidebarTrigger,
   useSidebar,
-} from "@/components/ui/sidebar-persistent";
+} from "@/components/ui/sidebar";
 import {
   Home,
   Database,
