@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchRecentDatasets } from "@/services/api";
@@ -50,7 +49,7 @@ const RecentDatasets = () => {
 
   useEffect(() => {
     loadRecentDatasets();
-  }, [toast]);
+  }, []);
 
   if (loading) {
     return (

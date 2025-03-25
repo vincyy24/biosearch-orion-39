@@ -25,7 +25,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.api.urls')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
-    ]
+    # Add catch-all route for React router
+    re_path(r'^.*$', TemplateView.as_view(template_name='index.html')),
+]
 
 # Serve static files during development
 if settings.DEBUG:
