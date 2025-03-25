@@ -44,7 +44,7 @@ const Publications = () => {
   );
 
   // Prepare data for Plotly visualization
-  const plotlyData = [
+  const plotlyData: Plotly.Data[] = [
     {
       x: publications.map(pub => pub.year),
       y: publications.map(pub => pub.citations),
@@ -57,7 +57,7 @@ const Publications = () => {
         showscale: true
       },
       text: publications.map(pub => pub.title),
-      hoverinfo: 'text+x+y'
+      hoverinfo: 'x+y+text'
     }
   ];
 

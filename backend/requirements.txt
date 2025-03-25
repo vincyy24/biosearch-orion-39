@@ -9,3 +9,5 @@ dash-core-components>=2.0.0
 dash-html-components>=2.0.0
 djangorestframework>=3.14.0
 django-cors-headers>=4.0.0
+dj_database_url
+django-simpleui
