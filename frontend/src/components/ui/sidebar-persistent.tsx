@@ -1,5 +1,19 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { 
+  Sidebar as UISidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
+  SidebarTrigger as UISidebarTrigger,
+  SidebarInset,
+} from "@/components/ui/sidebar";
 
 interface SidebarContextType {
   open: boolean;
@@ -52,6 +66,24 @@ export function useSidebar() {
   return context;
 }
 
+// Custom SidebarTrigger that uses our context
+export function SidebarTrigger(props: React.ComponentProps<typeof UISidebarTrigger>) {
+  const { toggleSidebar } = useSidebar();
+  
+  return (
+    <UISidebarTrigger onClick={toggleSidebar} {...props} />
+  );
+}
+
+// Re-export Sidebar with our context
+export function Sidebar(props: React.ComponentProps<typeof UISidebar>) {
+  const { open } = useSidebar();
+  
+  return (
+    <UISidebar data-state={open ? "expanded" : "collapsed"} {...props} />
+  );
+}
+
 // Reexport components from the original sidebar
 export {
   SidebarContent,
@@ -63,7 +95,5 @@ export {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
-  SidebarTrigger,
-  SidebarInset,
-  Sidebar
+  SidebarInset
 } from "@/components/ui/sidebar";
