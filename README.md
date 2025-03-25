@@ -48,7 +48,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-The application will be available at http://localhost:8000
+The application will be available at `http://localhost:8000`
 
 ## Development
 
@@ -62,7 +62,7 @@ npm run dev
 python manage.py runserver
 ```
 
-Frontend will be at http://localhost:5173 and backend at http://localhost:8000.
+Frontend will be at `http://localhost:5173` and backend at `http://localhost:8000`.
 
 ## Key Features
 
