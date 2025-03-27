@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q
 
-from .models_research import ResearchProject, ResearchCollaborator, DatasetComparison
+from .models_research import ResearchProject, ResearchProjectCollaborator, DatasetComparison
 from apps.dashboard.models import VoltammetryData
 
 @login_required
@@ -232,7 +232,7 @@ def add_collaborator(request, project_id):
             return JsonResponse({"error": "Username or email is required"}, status=400)
         
         # Check if role is valid
-        if role not in dict(ResearchCollaborator.ROLE_CHOICES):
+        if role not in dict(ResearchProjectCollaborator.ROLE_CHOICES):
             return JsonResponse({"error": f"Invalid role: {role}"}, status=400)
         
         # Find the user
@@ -248,11 +248,11 @@ def add_collaborator(request, project_id):
             return JsonResponse({"error": "User is already the head researcher"}, status=400)
         
         # Check if user is already a collaborator
-        if ResearchCollaborator.objects.filter(project=project, user=user).exists():
+        if ResearchProjectCollaborator.objects.filter(project=project, user=user).exists():
             return JsonResponse({"error": "User is already a collaborator"}, status=400)
         
         # Add collaborator
-        collaborator = ResearchCollaborator.objects.create(
+        collaborator = ResearchProjectCollaborator.objects.create(
             project=project,
             user=user,
             role=role,
@@ -287,7 +287,7 @@ def manage_collaborator(request, project_id, collaborator_id):
         return JsonResponse({"error": "You don't have permission to manage collaborators"}, status=403)
     
     # Get the collaborator
-    collaborator = get_object_or_404(ResearchCollaborator, id=collaborator_id, project=project)
+    collaborator = get_object_or_404(ResearchProjectCollaborator, id=collaborator_id, project=project)
     
     if request.method == "PUT":
         # Update collaborator role
@@ -299,7 +299,7 @@ def manage_collaborator(request, project_id, collaborator_id):
                 return JsonResponse({"error": "Role is required"}, status=400)
             
             # Check if role is valid
-            if role not in dict(ResearchCollaborator.ROLE_CHOICES):
+            if role not in dict(ResearchProjectCollaborator.ROLE_CHOICES):
                 return JsonResponse({"error": f"Invalid role: {role}"}, status=400)
             
             collaborator.role = role
@@ -559,7 +559,7 @@ def has_project_access(user, project):
         return True
     
     # Check if user is a collaborator
-    return ResearchCollaborator.objects.filter(project=project, user=user).exists()
+    return ResearchProjectCollaborator.objects.filter(project=project, user=user).exists()
 
 def can_manage_project(user, project):
     """Check if a user can manage a project"""
@@ -568,7 +568,7 @@ def can_manage_project(user, project):
         return True
     
     # Check if user is a manager
-    return ResearchCollaborator.objects.filter(
+    return ResearchProjectCollaborator.objects.filter(
         project=project, user=user, role='manager'
     ).exists()
 
@@ -579,7 +579,7 @@ def can_contribute_to_project(user, project):
         return True
     
     # Check if user is a contributor
-    return ResearchCollaborator.objects.filter(
+    return ResearchProjectCollaborator.objects.filter(
         project=project, user=user, role__in=['contributor', 'manager']
     ).exists()
 
@@ -589,7 +589,7 @@ def get_user_role_in_project(user, project):
         return 'head'
     
     try:
-        collaborator = ResearchCollaborator.objects.get(project=project, user=user)
+        collaborator = ResearchProjectCollaborator.objects.get(project=project, user=user)
         return collaborator.role
-    except ResearchCollaborator.DoesNotExist:
+    except ResearchProjectCollaborator.DoesNotExist:
         return None

@@ -4,7 +4,7 @@ from .models import Publication, DataType, DataCategory, FileUpload
 from .models import Instrument, Electrode, Method, VoltammetryTechnique
 from .models import ResearchPublication, Experiment, ExperimentFile, ResearchCollaborator
 from .models import DoiVerificationLog, UserSetting, ResearchLibrary, UserAnalytics, Notification, ContactSupport
-from .models_research import OrcidProfile, ResearchProject, ResearchCollaborator as ResearchProjectCollaborator, DatasetComparison
+from .models_research import OrcidProfile, ResearchProject, ResearchProjectCollaborator, DatasetComparison
 
 # Register your models here
 admin.site.register(Publication)

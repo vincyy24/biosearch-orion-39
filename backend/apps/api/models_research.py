@@ -45,7 +45,7 @@ class ResearchProject(models.Model):
     
     def add_collaborator(self, user, role='viewer'):
         """Add a collaborator to the project"""
-        return ResearchCollaborator.objects.create(
+        return ResearchProjectCollaborator.objects.create(
             project=self,
             user=user,
             role=role
@@ -53,7 +53,7 @@ class ResearchProject(models.Model):
     
     def remove_collaborator(self, user):
         """Remove a collaborator from the project"""
-        ResearchCollaborator.objects.filter(project=self, user=user).delete()
+        ResearchProjectCollaborator.objects.filter(project=self, user=user).delete()
     
     def get_collaborators(self):
         """Get all collaborators for this project"""
@@ -64,7 +64,7 @@ class ResearchProject(models.Model):
         from apps.dashboard.models import VoltammetryData
         return VoltammetryData.objects.filter(research_project=self)
 
-class ResearchCollaborator(models.Model):
+class ResearchProjectCollaborator(models.Model):
     """Model for collaborators on a research project"""
     ROLE_CHOICES = (
         ('viewer', 'Viewer'),
