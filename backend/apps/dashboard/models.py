@@ -35,10 +35,13 @@ class VoltammetryData(models.Model):
     peak_anodic_potential = models.FloatField(blank=True, null=True)
     peak_cathodic_potential = models.FloatField(blank=True, null=True)
     
-    # New: Version control field
+    # Version control field
     version = models.IntegerField(default=1)
     is_latest_version = models.BooleanField(default=True)
     parent_experiment = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='versions')
+    
+    # New: Link to Research Project
+    research_project = models.ForeignKey('api.ResearchProject', null=True, blank=True, on_delete=models.SET_NULL, related_name='experiments')
     
     def __str__(self):
         return f"{self.title} ({self.experiment_id}) v{self.version}"
@@ -93,6 +96,9 @@ class DataAnalysisPipeline(models.Model):
     
     # Whether this pipeline is public and can be used by other users
     is_public = models.BooleanField(default=False)
+    
+    # New: Link to Research Project
+    research_project = models.ForeignKey('api.ResearchProject', null=True, blank=True, on_delete=models.SET_NULL, related_name='analysis_pipelines')
     
     def __str__(self):
         return self.name

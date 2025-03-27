@@ -1,48 +1,62 @@
 
-from django.urls import path
-from .views import (
-    PublicationList, 
-    DataTypesList,
-    DataCategoriesList,
-    FileUploadView,
-    LoginView,
-    SignupView, 
-    LogoutView,
-    PasswordResetRequestView,
-    PasswordResetConfirmView,
-    UserProfileView,
-    SearchView,
-    DownloadView,
-    VoltammetryDataView,
-    RecentDatasetsView,
-    CSRFTokenView
-)
+from django.urls import path, include
+from . import views
+from . import views_caching
+from . import views_orcid
+from . import views_research
 
 urlpatterns = [
-    path('publications/', PublicationList.as_view(), name='publication-list'),
-    path('data-types/', DataTypesList.as_view(), name='data-types-list'),
-    path('data-categories/', DataCategoriesList.as_view(), name='data-categories-list'),
-    path('upload/', FileUploadView.as_view(), name='file-upload'),
+    # API endpoints for Publications
+    path('publications/', views.get_publications, name='get_publications'),
+    path('publications/<int:publication_id>/', views.get_publication, name='get_publication'),
     
-    # Authentication endpoints
-    path('auth/csrf/', CSRFTokenView.as_view(), name='csrf-token'),
-    path('auth/login/', LoginView.as_view(), name='login'),
-    path('auth/signup/', SignupView.as_view(), name='signup'),
-    path('auth/logout/', LogoutView.as_view(), name='logout'),
-    path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
-    path('auth/password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
-    path('auth/profile/', UserProfileView.as_view(), name='user-profile'),
+    # API endpoints for Data Types
+    path('data-types/', views_caching.get_data_types, name='get_data_types'),
     
-    # Search endpoint
-    path('search/', SearchView.as_view(), name='search'),
+    # API endpoints for Data Categories
+    path('data-categories/', views.get_data_categories, name='get_data_categories'),
     
-    # Download endpoint
-    path('download/', DownloadView.as_view(), name='download'),
+    # API endpoints for Uploads
+    path('upload/', views.upload_file, name='upload_file'),
     
-    # Voltammetry endpoints
-    path('voltammetry/', VoltammetryDataView.as_view(), name='voltammetry-list'),
-    path('voltammetry/<str:experiment_id>/', VoltammetryDataView.as_view(), name='voltammetry-detail'),
+    # API endpoints for Search
+    path('search/', views.search_data, name='search_data'),
+    path('search/suggestions/', views.get_search_suggestions, name='get_search_suggestions'),
     
-    # Recent datasets endpoint
-    path('recent-datasets/', RecentDatasetsView.as_view(), name='recent-datasets'),
+    # API endpoints for Downloads
+    path('download/', views.download_file, name='download_file'),
+    
+    # API endpoints for Voltammetry
+    path('voltammetry/', views.get_voltammetry_data, name='get_voltammetry_data'),
+    path('voltammetry/<str:experiment_id>/', views.get_voltammetry_data, name='get_voltammetry_detail'),
+    
+    # API endpoints for Recent Datasets
+    path('recent-datasets/', views.get_recent_datasets, name='get_recent_datasets'),
+    
+    # API endpoints for Authentication
+    path('auth/login/', views.login_view, name='login'),
+    path('auth/signup/', views.signup_view, name='signup'),
+    path('auth/logout/', views.logout_view, name='logout'),
+    path('auth/profile/', views.get_user_profile, name='get_user_profile'),
+    path('auth/password-reset/', views.password_reset, name='password_reset'),
+    path('auth/password-reset/confirm/', views.password_reset_confirm, name='password_reset_confirm'),
+    
+    # API endpoints for Caching
+    path('cached/experiment/<str:experiment_id>/', views_caching.get_cached_experiment, name='get_cached_experiment'),
+    path('paginated/experiments/', views_caching.get_paginated_experiments, name='get_paginated_experiments'),
+    
+    # ORCID Verification API endpoints
+    path('orcid/verify/', views_orcid.initiate_orcid_verification, name='initiate_orcid_verification'),
+    path('orcid/confirm/', views_orcid.confirm_orcid_verification, name='confirm_orcid_verification'),
+    path('orcid/profile/', views_orcid.get_orcid_profile, name='get_orcid_profile'),
+    
+    # Research Project API endpoints
+    path('research/projects/', views_research.research_projects, name='research_projects'),
+    path('research/projects/<str:project_id>/', views_research.research_project_detail, name='research_project_detail'),
+    path('research/projects/<str:project_id>/collaborators/', views_research.add_collaborator, name='add_collaborator'),
+    path('research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', views_research.manage_collaborator, name='manage_collaborator'),
+    path('research/projects/<str:project_id>/experiments/', views_research.assign_experiment, name='assign_experiment'),
+    path('research/projects/<str:project_id>/comparisons/', views_research.dataset_comparisons, name='project_dataset_comparisons'),
+    path('research/comparisons/', views_research.dataset_comparisons, name='dataset_comparisons'),
+    path('research/comparisons/<str:comparison_id>/', views_research.comparison_detail, name='comparison_detail'),
 ]

@@ -11,6 +11,9 @@ export interface User {
   profile_image?: string;
   date_joined: string;
   is_staff: boolean;
+  orcid_id?: string;
+  orcid_verified?: boolean;
+  is_researcher?: boolean;
 }
 
 // Experiment-related types
@@ -32,6 +35,7 @@ export interface Experiment {
   data_points: DataPoint[];
   version: number;
   is_latest_version: boolean;
+  research_project_id?: string;
 }
 
 export interface DataPoint {
@@ -139,4 +143,55 @@ export interface Notification {
   message: string;
   is_read: boolean;
   created_at: string;
+}
+
+// New Research Project types
+export interface ResearchProject {
+  id: string;
+  title: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  head_researcher: User;
+  collaborators: ResearchCollaborator[];
+  status: 'active' | 'completed' | 'archived';
+  is_public: boolean;
+  related_publications?: Publication[];
+}
+
+export interface ResearchCollaborator {
+  id: number;
+  user: User;
+  project: ResearchProject;
+  role: 'viewer' | 'contributor' | 'manager';
+  joined_at: string;
+}
+
+export interface DatasetComparison {
+  id: string;
+  title: string;
+  description?: string;
+  created_at: string;
+  datasets: string[]; // Array of experiment_ids
+  comparison_results: Record<string, any>;
+  created_by: number;
+}
+
+export interface OrcidVerificationRequest {
+  orcid_id: string;
+  verification_code?: string;
+}
+
+export interface OrcidProfile {
+  orcid_id: string;
+  name: string;
+  biography?: string;
+  education?: string[];
+  employment?: string[];
+  works?: {
+    title: string;
+    type: string;
+    year: number;
+    url?: string;
+  }[];
 }

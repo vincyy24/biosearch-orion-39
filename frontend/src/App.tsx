@@ -23,6 +23,8 @@ import Download from "./pages/Download";
 import ResetPassword from "./pages/ResetPassword";
 import Voltammetry from "./pages/Voltammetry";
 import UserProfile from "./pages/UserProfile";
+import ResearchProjects from "./pages/ResearchProjects";
+import ResearchProjectDetail from "./pages/ResearchProjectDetail";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
@@ -67,6 +69,16 @@ const App = () => (
                 <Route path="/profile" element={
                   <ProtectedRoute>
                     <UserProfile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/research/projects" element={
+                  <ProtectedRoute>
+                    <ResearchProjects />
+                  </ProtectedRoute>
+                } />
+                <Route path="/research/projects/:projectId" element={
+                  <ProtectedRoute>
+                    <ResearchProjectDetail />
                   </ProtectedRoute>
                 } />
                 <Route path="/documentation" element={<Documentation />} />
