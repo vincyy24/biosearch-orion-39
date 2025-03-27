@@ -23,6 +23,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
     "@vitejs/plugin-react-swc": "^3.8.1",
     "axios": "^1.8.4"
   }
