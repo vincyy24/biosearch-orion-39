@@ -7,39 +7,39 @@ from . import views_research
 
 urlpatterns = [
     # API endpoints for Publications
-    path('publications/', views.get_publications, name='get_publications'),
-    path('publications/<int:publication_id>/', views.get_publication, name='get_publication'),
+    path('publications/', views.PublicationList.as_view(), name='get_publications'),
+    path('publications/<int:publication_id>/', views.PublicationList.as_view(), name='get_publication'),
     
     # API endpoints for Data Types
     path('data-types/', views_caching.get_data_types, name='get_data_types'),
     
     # API endpoints for Data Categories
-    path('data-categories/', views.get_data_categories, name='get_data_categories'),
+    path('data-categories/', views.DataCategoriesList.as_view(), name='get_data_categories'),
     
     # API endpoints for Uploads
-    path('upload/', views.upload_file, name='upload_file'),
+    path('upload/', views.FileUploadView.as_view(), name='upload_file'),
     
     # API endpoints for Search
-    path('search/', views.search_data, name='search_data'),
-    path('search/suggestions/', views.get_search_suggestions, name='get_search_suggestions'),
+    path('search/', views.SearchView.as_view(), name='search_data'),
+    path('search/suggestions/', views.SearchView.as_view(), name='get_search_suggestions'),
     
     # API endpoints for Downloads
-    path('download/', views.download_file, name='download_file'),
+    path('download/', views.DownloadView.as_view(), name='download_file'),
     
     # API endpoints for Voltammetry
-    path('voltammetry/', views.get_voltammetry_data, name='get_voltammetry_data'),
-    path('voltammetry/<str:experiment_id>/', views.get_voltammetry_data, name='get_voltammetry_detail'),
+    path('voltammetry/', views.VoltammetryDataView.as_view(), name='get_voltammetry_data'),
+    path('voltammetry/<str:experiment_id>/', views.VoltammetryDataView.as_view(), name='get_voltammetry_detail'),
     
     # API endpoints for Recent Datasets
-    path('recent-datasets/', views.get_recent_datasets, name='get_recent_datasets'),
+    path('recent-datasets/', views.RecentDatasetsView.as_view(), name='get_recent_datasets'),
     
     # API endpoints for Authentication
-    path('auth/login/', views.login_view, name='login'),
-    path('auth/signup/', views.signup_view, name='signup'),
-    path('auth/logout/', views.logout_view, name='logout'),
-    path('auth/profile/', views.get_user_profile, name='get_user_profile'),
-    path('auth/password-reset/', views.password_reset, name='password_reset'),
-    path('auth/password-reset/confirm/', views.password_reset_confirm, name='password_reset_confirm'),
+    path('auth/login/', views.LoginView.as_view(), name='login'),
+    path('auth/signup/', views.SignupView.as_view(), name='signup'),
+    path('auth/logout/', views.LogoutView.as_view(), name='logout'),
+    path('auth/profile/', views.UserProfileView.as_view(), name='get_user_profile'),
+    path('auth/password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset'),
+    path('auth/password-reset/confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     
     # API endpoints for Caching
     path('cached/experiment/<str:experiment_id>/', views_caching.get_cached_experiment, name='get_cached_experiment'),

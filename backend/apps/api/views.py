@@ -1,9 +1,7 @@
-# from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-# from django.db import connection
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -12,7 +10,6 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 import os
-# import json
 import pandas as pd
 import io
 from django.http import HttpResponse
@@ -34,6 +31,21 @@ class CSRFTokenView(APIView):
 
 class PublicationList(APIView):
     def get(self, request):
+        publication_id = request.data.geet("publication_id")
+    
+        if publication_id:
+            try:
+
+                publication = Publication.objects.get(id=publication_id)
+                return Response({
+                'id': publication.id,
+                'title': publication.title,
+                'author': publication.author,
+                'year': publication.year,
+                'citations': publication.citations
+            })
+            except Publication.DoesNotExist:
+                return Response({'error': 'Publication not found'}, status=status.HTTP_404_NOT_FOUND)
         publications = Publication.objects.all().values('id', 'title', 'author', 'year', 'citations')
         return Response(list(publications))
 
