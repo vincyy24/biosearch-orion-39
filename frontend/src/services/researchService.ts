@@ -66,7 +66,7 @@ export const fetchResearchProjectDetails = async (projectId: string) => {
 };
 
 export const updateResearchProject = async (
-  projectId: string, 
+  projectId: string,
   data: { title?: string; description?: string; is_public?: boolean; status?: string }
 ) => {
   try {
@@ -108,7 +108,7 @@ export const deleteResearchProject = async (projectId: string) => {
 
 // Collaborator Management APIs
 export const addCollaborator = async (
-  projectId: string, 
+  projectId: string,
   data: { username_or_email: string; role?: string }
 ) => {
   try {
@@ -131,8 +131,8 @@ export const addCollaborator = async (
 };
 
 export const updateCollaborator = async (
-  projectId: string, 
-  collaboratorId: number, 
+  projectId: string,
+  collaboratorId: number,
   data: { role: string }
 ) => {
   try {
@@ -195,9 +195,9 @@ export const assignExperiment = async (projectId: string, experimentId: string) 
 
 // Dataset Comparison APIs
 export const createDatasetComparison = async (
-  data: { 
-    title: string; 
-    description?: string; 
+  data: {
+    title: string;
+    description?: string;
     dataset_ids: string[];
     is_public?: boolean;
     project_id?: string;
@@ -205,10 +205,10 @@ export const createDatasetComparison = async (
 ) => {
   try {
     const csrf_token = getCookie("csrftoken");
-    const url = data.project_id 
-      ? `${API_BASE_URL}/research/projects/${data.project_id}/comparisons/` 
+    const url = data.project_id
+      ? `${API_BASE_URL}/research/projects/${data.project_id}/comparisons/`
       : `${API_BASE_URL}/research/comparisons/`;
-      
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -233,10 +233,10 @@ export const createDatasetComparison = async (
 
 export const fetchDatasetComparisons = async (projectId?: string, page = 1, pageSize = 10) => {
   try {
-    const url = projectId 
-      ? `${API_BASE_URL}/research/projects/${projectId}/comparisons/?page=${page}&page_size=${pageSize}` 
+    const url = projectId
+      ? `${API_BASE_URL}/research/projects/${projectId}/comparisons/?page=${page}&page_size=${pageSize}`
       : `${API_BASE_URL}/research/comparisons/?page=${page}&page_size=${pageSize}`;
-      
+
     const response = await fetch(url, {
       credentials: 'include',
     });
