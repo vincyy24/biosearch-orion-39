@@ -17,7 +17,7 @@ const handleResponseErrors = async (response) => {
   return response;
 };
 
-function getCookie(name: string) {
+export function getCookie(name: string) {
   let cookieValue: string = null;
   if (document.cookie && document.cookie !== '') {
     const cookies = document.cookie.split(';');
@@ -54,7 +54,7 @@ export const fetchDataTypes = async () => {
     // Get data types from Django API
     const response = await fetch(`${API_BASE_URL}/data-types/`);
     await handleResponseErrors(response);
-    return await response.json();
+    return await response.json().then(data => data.data_types);
   } catch (error) {
     console.error("Error fetching data types:", error);
     throw error;
