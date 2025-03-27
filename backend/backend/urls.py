@@ -20,18 +20,22 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 # Customize the admin site
 admin.site.site_header = 'ORION Database Administration'
 admin.site.site_title = 'ORION Admin Portal'
 admin.site.index_title = 'Welcome to ORION Database Administration'
 
+# Wrap the TemplateView with ensure_csrf_cookie for better security
+react_view = ensure_csrf_cookie(TemplateView.as_view(template_name='index.html'))
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.api.urls')),
     path('pdash/', include('django_plotly_dash.urls')),
     # Add catch-all route for React router, excluding admin/, api/, and pdash/ routes
-    re_path(r'^(?!admin/|api/|pdash/).*$', TemplateView.as_view(template_name='index.html')),
+    re_path(r'^(?!admin/|api/|pdash/).*$', react_view),
 ]
 
 # Serve static files during development

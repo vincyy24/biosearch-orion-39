@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import DataBrowser from "./pages/DataBrowser";
 import SearchResults from "./pages/SearchResults";
+import AdvancedSearch from "./pages/AdvancedSearch";
 import Publications from "./pages/Publications";
 import Tools from "./pages/Tools";
 import Dashboard from "./pages/Dashboard";
@@ -51,6 +53,7 @@ const App = () => (
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/search" element={<SearchResults />} />
+                <Route path="/advanced-search" element={<AdvancedSearch />} />
                 <Route path="/data-browser" element={<DataBrowser />} />
                 <Route path="/publications" element={<Publications />} />
                 <Route path="/tools" element={<Tools />} />
