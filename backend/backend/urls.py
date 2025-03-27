@@ -21,11 +21,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 
-# Customize the admin site
-admin.site.site_header = 'ORION Database Administration'
-admin.site.site_title = 'ORION Admin Portal'
-admin.site.index_title = 'Welcome to ORION Database Administration'
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.api.urls')),
