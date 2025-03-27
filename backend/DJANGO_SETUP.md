@@ -88,7 +88,7 @@ This document provides instructions for setting up the Django backend with Plotl
    urlpatterns = [
        path('admin/', admin.site.urls),
        path('api/', include('api.urls')),
-       path('django_plotly_dash/', include('django_plotly_dash.urls')),
+       path('pdash/', include('pdash.urls')),
    ]
    ```
 
@@ -102,7 +102,7 @@ This document provides instructions for setting up the Django backend with Plotl
        path('publications/', PublicationList.as_view(), name='publication-list'),
    ]
    ```
-   
+
    - Create `api/views.py`:
    ```python
    from rest_framework.views import APIView
