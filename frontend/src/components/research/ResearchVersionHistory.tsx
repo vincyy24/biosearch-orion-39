@@ -14,6 +14,7 @@ interface VersionDetails {
 }
 
 interface ResearchVersionHistoryProps {
+  // projectId: string;
   versions: VersionDetails[];
   onViewVersion: (version: number) => void;
   onDownloadVersion: (version: number) => void;

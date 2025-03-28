@@ -135,7 +135,7 @@ const Dashboard = () => {
           </div>
 
           <div className="mt-4 md:mt-0 flex gap-2">
-            <Button variant="outline" onClick={() => handleAction("New", "research project")}>
+            <Button variant="outline" onClick={() => navigate("/research/new")}>
               <Plus className="mr-2 h-4 w-4" /> New Project
             </Button>
             <Button onClick={() => navigate("/data-browser")}>
