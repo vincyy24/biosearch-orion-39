@@ -1,4 +1,3 @@
-
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -14,8 +13,8 @@ from django.core.files.base import ContentFile
 from datetime import datetime
 import mimetypes
 from wsgiref.util import FileWrapper
-
-from .models import Publication, Researcher, Dataset
+import traceback
+from .models import Publication, PublicationResearcher, Researcher, Dataset
 from .models_research import ResearchProject
 
 class PublicationDetail(View):
@@ -91,22 +90,22 @@ class PublicationRegistration(View):
         """Register a new publication"""
         try:
             data = json.loads(request.body)
-            
+
             # Required fields
             required_fields = ['doi', 'title']
             for field in required_fields:
                 if field not in data:
                     return JsonResponse({"error": f"{field} is required"}, status=400)
-            
-            # Check if publication already exists
-            if Publication.objects.filter(doi=data['doi']).exists():
+
+            # Check if publication already exists by DOI (more reliable than title)
+            if Publication.objects.filter(doi=data["doi"]).exists():
                 return JsonResponse({"error": "A publication with this DOI already exists"}, status=400)
-            
-            # Create the publication
+
+            # Create the publication first without researchers
             publication = Publication.objects.create(
                 doi=data['doi'],
                 title=data['title'],
-                abstract=data.get('abstract', ''),
+                description=data.get('abstract', ''),
                 journal=data.get('journal', ''),
                 volume=data.get('volume', ''),
                 issue=data.get('issue', ''),
@@ -117,23 +116,29 @@ class PublicationRegistration(View):
                 is_public=data.get('is_public', False),
                 is_peer_reviewed=data.get('is_peer_reviewed', False),
             )
-            
-            # Add researchers
+
+            # Add researchers through the through model
             researchers = data.get('researchers', [])
             for idx, researcher_data in enumerate(researchers):
-                # Set the first researcher as primary by default
-                is_primary = idx == 0 if 'is_primary' not in researcher_data else researcher_data['is_primary']
-                
-                researcher = Researcher.objects.create(
-                    name=researcher_data.get('name', ''),
-                    institution=researcher_data.get('institution', ''),
-                    email=researcher_data.get('email', ''),
+                # Get or create researcher to avoid duplicates
+                researcher, created = Researcher.objects.get_or_create(
                     orcid_id=researcher_data.get('orcid_id', ''),
-                    is_primary=is_primary,
-                    sequence=researcher_data.get('sequence', idx + 1),
+                    defaults={
+                        'name': researcher_data.get('name', ''),
+                        'institution': researcher_data.get('institution', ''),
+                        'email': researcher_data.get('email', '')
+                    }
                 )
-                publication.researchers.add(researcher)
-            
+                
+                # Create through model relationship with sequence and primary status
+                is_primary = idx == 0  # First researcher is primary by default
+                PublicationResearcher.objects.create(
+                    publication=publication,
+                    researcher=researcher,
+                    is_primary=is_primary,
+                    sequence=idx + 1
+                )
+
             return JsonResponse({
                 "message": "Publication registered successfully",
                 "publication_id": publication.id,
@@ -141,6 +146,7 @@ class PublicationRegistration(View):
             })
             
         except Exception as e:
+            print(traceback.format_exc())
             return JsonResponse({"error": str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')

@@ -1,15 +1,70 @@
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 
-class Publication(models.Model):
-    title = models.CharField(max_length=255)
-    author = models.CharField(max_length=255)
-    year = models.IntegerField()
-    citations = models.IntegerField()
+
+class Researcher(models.Model):
+    name = models.CharField(max_length=255)
+    institution = models.CharField(max_length=255, blank=True, default='')
+    email = models.EmailField(blank=True, default='')
+    orcid_id = models.CharField(max_length=255, blank=True, default='')
+    
+    # Link to user account if available
+    user_account = models.OneToOneField(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='researcher_profile'
+    )
 
     def __str__(self):
+        return self.name
+
+class Publication(models.Model):
+    doi = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name="DOI",
+        null=True,
+        blank=True
+    )
+    title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    journal = models.CharField(max_length=255, blank=True, default='')
+    volume = models.CharField(max_length=50, blank=True, default='')
+    issue = models.CharField(max_length=50, blank=True, default='')
+    pages = models.CharField(max_length=50, blank=True, default='')
+    year = models.IntegerField(null=True, blank=True)
+    publisher = models.CharField(max_length=255, blank=True, default='')
+    url = models.URLField(max_length=500, blank=True, default='')
+    is_public = models.BooleanField(default=False)
+    is_peer_reviewed = models.BooleanField(default=False)
+    citations = models.IntegerField(default=0)
+    researchers = models.ManyToManyField(
+        Researcher,
+        through='PublicationResearcher',
+        related_name='publications'
+    )
+    def __str__(self):
         return f"{self.title} ({self.year}) by {self.author}"
+
+    class Meta:
+        ordering = ['-year', 'title']
+
+class PublicationResearcher(models.Model):
+    researcher = models.ForeignKey(Researcher, on_delete=models.CASCADE)
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
+    is_primary = models.BooleanField(default=False)
+    sequence = models.PositiveIntegerField(default=1)
+    
+    class Meta:
+        ordering = ['sequence']
+
+    def __str__(self):
+        return f"{self.publication.title} - {self.researcher.name}"
 
 class DataType(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
@@ -17,6 +72,34 @@ class DataType(models.Model):
 
     def __str__(self):
         return self.name
+
+class Dataset(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    file_path = models.CharField(max_length=500)
+    file_size = models.BigIntegerField()
+    file_type = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_public = models.BooleanField(default=False)
+    
+    # Relationships
+    publication = models.ForeignKey(
+        'Publication',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='datasets'
+    )
+    research_project = models.ForeignKey(
+        'ResearchProject',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='project_datasets'
+    )
+
+    def __str__(self):
+        return f"{self.title} ({self.file_type})"
 
 class DataCategory(models.Model):
     """Model for categorizing datasets by their publication status"""
