@@ -248,12 +248,6 @@ const PublicationRegistration = ({ onComplete }: PublicationRegistrationProps) =
   };
 
   return (
-    <MainLayout>
-      <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-2">Register Publication</h1>
-        <p className="text-muted-foreground mb-8">
-        Register your publication to associate datasets and track research impact
-        </p>
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl">Register Publication</CardTitle>
@@ -534,8 +528,6 @@ const PublicationRegistration = ({ onComplete }: PublicationRegistrationProps) =
           )}
         </CardContent>
       </Card>
-      </div>
-    </MainLayout>
   );
 };
 

@@ -32,7 +32,7 @@ import Documentation from './pages/Documentation';
 import AdvancedSearch from './pages/AdvancedSearch';
 import Support from './pages/Support';
 import ResearchRegistration from './pages/ResearchRegistration';
-import PublicationRegistration from './components/publications/PublicationRegistration';
+import PublicationRegistration from './pages/PublicationRegistration';
 
 function App() {
   return (
