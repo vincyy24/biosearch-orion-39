@@ -214,10 +214,10 @@ const Sidebar = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   {open ? (
-                    <div className="flex gap-2 px-2">
+                    <div className="flex flex-col gap-2 px-2">
                       <Button 
                         size="sm" 
-                        className="flex-1 h-9" 
+                        className="flex-1 h-9 py-2"
                         onClick={() => navigate('/research/new')}
                       >
                         <Microscope className="h-4 w-4 mr-1" />
@@ -225,7 +225,7 @@ const Sidebar = () => {
                       </Button>
                       <Button 
                         size="sm" 
-                        className="flex-1 h-9" 
+                        className="flex-1 h-9 py-2"
                         onClick={() => navigate('/publications/new')}
                       >
                         <FileText className="h-4 w-4 mr-1" />
@@ -242,7 +242,7 @@ const Sidebar = () => {
                           <Plus className="h-5 w-5" />
                         </SidebarMenuButton>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent align="start" className="w-48">
                         <DropdownMenuItem onClick={() => navigate('/research/new')}>
                           <Microscope className="h-4 w-4 mr-2" />
                           New Research
