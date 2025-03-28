@@ -1,11 +1,14 @@
 
 import axios from 'axios';
+import { ApiResponse } from '@/types/apiResponse';
 
 export interface CrossrefAuthor {
   given: string;
   family: string;
   sequence?: string;
   affiliation?: { name: string }[];
+  ORCID?: string;
+  "authenticated-orcid"?: boolean;
 }
 
 export interface DOIMetadata {
@@ -21,6 +24,12 @@ export interface DOIMetadata {
   subject?: string[];
   reference?: any[];
   'reference-count'?: number;
+  funder?: {
+    DOI: string;
+    name: string;
+    "doi-asserted-by": string;
+    award?: string[];
+  }[];
 }
 
 export const verifyDOI = async (doi: string): Promise<DOIMetadata | null> => {
@@ -29,7 +38,7 @@ export const verifyDOI = async (doi: string): Promise<DOIMetadata | null> => {
     const cleanDoi = doi.replace(/^https?:\/\/doi.org\//, '');
     
     // Call Crossref API
-    const response = await axios.get(`https://api.crossref.org/works/${cleanDoi}`, {
+    const response = await axios.get<ApiResponse>(`https://api.crossref.org/works/${cleanDoi}`, {
       headers: {
         'Accept': 'application/json',
       }
@@ -46,7 +55,31 @@ export const verifyDOI = async (doi: string): Promise<DOIMetadata | null> => {
   }
 };
 
-export const formatDOIMetadata = (metadata: DOIMetadata | null) => {
+export interface FormattedDOIMetadata {
+  title: string;
+  mainAuthor: string;
+  authors: {
+    name: string;
+    isMain: boolean;
+    affiliation?: string;
+    ORCID?: string;
+  }[];
+  publisher: string;
+  journal: string;
+  year: number | string;
+  url: string;
+  type: string;
+  abstract: string;
+  subjects: string[];
+  doi: string;
+  referenceCount: number;
+  funders?: {
+    name: string;
+    award?: string[];
+  }[];
+}
+
+export const formatDOIMetadata = (metadata: DOIMetadata | null): FormattedDOIMetadata | null => {
   if (!metadata) return null;
   
   // Get main author (sequence=first) or the first author in the list
@@ -59,7 +92,8 @@ export const formatDOIMetadata = (metadata: DOIMetadata | null) => {
     authors: metadata.author?.map(author => ({
       name: `${author.given} ${author.family}`,
       isMain: author === mainAuthor,
-      affiliation: author.affiliation?.[0]?.name
+      affiliation: author.affiliation?.[0]?.name,
+      ORCID: author.ORCID
     })) || [],
     publisher: metadata.publisher || 'Unknown Publisher',
     journal: metadata['container-title']?.[0] || 'Unknown Journal',
@@ -69,11 +103,15 @@ export const formatDOIMetadata = (metadata: DOIMetadata | null) => {
     abstract: metadata.abstract || '',
     subjects: metadata.subject || [],
     doi: metadata.DOI || '',
-    referenceCount: metadata['reference-count'] || 0
+    referenceCount: metadata['reference-count'] || 0,
+    funders: metadata.funder?.map(funder => ({
+      name: funder.name,
+      award: funder.award
+    }))
   };
 };
 
-export const searchPublicationsByDOI = async (doiList: string[]): Promise<any[]> => {
+export const searchPublicationsByDOI = async (doiList: string[]): Promise<FormattedDOIMetadata[]> => {
   const results = await Promise.all(
     doiList.map(async (doi) => {
       try {
@@ -86,10 +124,10 @@ export const searchPublicationsByDOI = async (doiList: string[]): Promise<any[]>
     })
   );
   
-  return results.filter(Boolean);
+  return results.filter(Boolean) as FormattedDOIMetadata[];
 };
 
-export const getResearcherPublications = async (orcidId: string): Promise<any[]> => {
+export const getResearcherPublications = async (orcidId: string): Promise<FormattedDOIMetadata[]> => {
   try {
     // In a real implementation, this would query the Crossref API with the ORCID ID
     // For now, we'll simulate it with a dummy response
@@ -97,7 +135,7 @@ export const getResearcherPublications = async (orcidId: string): Promise<any[]>
     const response = await axios.get(`https://api.crossref.org/works?filter=orcid:${orcidId}`);
     
     if (response.status === 200 && response.data.message?.items) {
-      return response.data.message.items.map(item => formatDOIMetadata(item));
+      return response.data.message.items.map((item: any) => formatDOIMetadata(item)).filter(Boolean) as FormattedDOIMetadata[];
     }
     
     return [];

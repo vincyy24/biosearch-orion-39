@@ -1,339 +1,209 @@
-import { useNavigate, useLocation } from "react-router-dom";
+
+import React, { useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
-  Sidebar as UISidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Home,
-  Database,
+  Search,
   FileText,
-  Wrench,
-  LayoutDashboard,
+  Upload,
+  Database,
+  BarChart,
   Users,
   BookOpen,
   Settings,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  Menu,
-  Search,
+  Microscope,
+  Plus,
   LogOut,
   User,
-  Upload,
-  Plus,
-  Microscope,
-  Download,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
 
-const Sidebar = () => {
-  const navigate = useNavigate();
+interface SidebarProps {
+  className?: string;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+  const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { open, toggleSidebar } = useSidebar();
-  const { isAuthenticated, logout, user } = useAuth();
-  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-
-  const mainMenuItems = [
+  const navItems = [
     {
+      name: "Dashboard",
       icon: Home,
-      label: "Home",
-      path: "/",
+      path: "/dashboard",
     },
     {
-      icon: Database,
-      label: "Data Browser",
-      path: "/browse",
+      name: "Search",
+      icon: Search,
+      path: "/search",
     },
     {
-      icon: FileText,
-      label: "Publications",
-      path: "/publications",
-    },
-    {
+      name: "Research",
       icon: Microscope,
-      label: "Research",
       path: "/research",
     },
     {
-      icon: Wrench,
-      label: "Tools",
-      path: "/tools",
-    },
-    {
-      icon: Search,
-      label: "Search",
-      path: "/search",
-    },
-  ];
-
-  const authenticatedMenuItems = [
-    {
-      icon: LayoutDashboard,
-      label: "Dashboard",
-      path: "/dashboard",
-      requiresAuth: true,
-    },
-    {
-      icon: Upload,
-      label: "Upload",
-      path: "/upload",
-      requiresAuth: true,
-    },
-    {
-      icon: User,
-      label: "Profile",
-      path: "/profile",
-      requiresAuth: true,
-    },
-  ];
-
-  const resourcesMenuItems = [
-    {
+      name: "Publications",
       icon: BookOpen,
-      label: "Documentation",
-      path: "/documentation",
+      path: "/publications",
     },
     {
+      name: "Upload Data",
+      icon: Upload,
+      path: "/upload",
+    },
+    {
+      name: "Browse Data",
+      icon: Database,
+      path: "/browse",
+    },
+    {
+      name: "Analytics",
+      icon: BarChart,
+      path: "/analytics",
+    },
+    {
+      name: "Community",
       icon: Users,
-      label: "Community",
       path: "/community",
     },
     {
+      name: "Documentation",
+      icon: FileText,
+      path: "/documentation",
+    },
+    {
+      name: "Support",
       icon: HelpCircle,
-      label: "Help & Support",
       path: "/support",
     },
   ];
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
-    <UISidebar
-      className="transition-all duration-300 min-h-screen border-r z-50"
-      variant={isMobile ? "floating" : "sidebar"}
-      collapsible="icon"
+    <div
+      className={cn(
+        "flex flex-col h-screen bg-card border-r transition-all duration-300",
+        collapsed ? "w-16" : "w-64",
+        className
+      )}
     >
-      <SidebarHeader className="flex justify-between items-center p-2 flex-row overflow-hidden">
-        {open && !isMobile && (
-          <div className="flex items-center">
-            <span className="font-bold text-xl">ORION</span>
-          </div>
+      <div className="flex items-center justify-between p-4 border-b">
+        {!collapsed && (
+          <Link to="/" className="text-xl font-bold">
+            ORION
+          </Link>
         )}
-        {isMobile && open && (
-          <div className="flex items-center">
-            <span className="font-bold text-xl">Menu</span>
-          </div>
-        )}
-        <SidebarTrigger onClick={toggleSidebar} className={cn(
-          "flex items-center justify-center h-8 w-8 rounded-md",
-          isMobile && !open && "mx-auto"
-        )}>
-          {isMobile ? 
-            <Menu className="h-5 w-5" /> : 
-            (open ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />)
-          }
-        </SidebarTrigger>
-      </SidebarHeader>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCollapsed(!collapsed)}
+          className={cn("ml-auto", collapsed ? "mx-auto" : "")}
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </Button>
+      </div>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className={cn(
-            "transition-[opacity,height] duration-300 text-nowrap",
-            open ? "opacity-100" : "opacity-0 h-0"
-          )}>
-            Main Menu
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainMenuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    onClick={() => navigate(item.path)}
-                    isActive={isActive(item.path)}
-                    tooltip={!open ? item.label : undefined}
-                    className="flex items-center gap-2"
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {open && <span>{item.label}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-
-              {isAuthenticated && authenticatedMenuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    onClick={() => navigate(item.path)}
-                    isActive={isActive(item.path)}
-                    tooltip={!open ? item.label : undefined}
-                    className="flex items-center gap-2"
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {open && <span>{item.label}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {isAuthenticated && (
-          <SidebarGroup>
-            <SidebarGroupLabel className={cn(
-              "transition-[opacity,height] duration-300 text-nowrap",
-              open ? "opacity-100" : "opacity-0 h-0"
-            )}>
-              Create New
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  {open ? (
-                    <div className="flex flex-col gap-2 px-2">
-                      <Button 
-                        size="sm" 
-                        className="flex-1 h-9 py-2"
-                        onClick={() => navigate('/research/new')}
-                      >
-                        <Microscope className="h-4 w-4 mr-1" />
-                        Research
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="flex-1 h-9 py-2"
-                        onClick={() => navigate('/publications/new')}
-                      >
-                        <FileText className="h-4 w-4 mr-1" />
-                        Publication
-                      </Button>
-                    </div>
-                  ) : (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                          tooltip="Create New"
-                          className="flex items-center justify-center"
-                        >
-                          <Plus className="h-5 w-5" />
-                        </SidebarMenuButton>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-48">
-                        <DropdownMenuItem onClick={() => navigate('/research/new')}>
-                          <Microscope className="h-4 w-4 mr-2" />
-                          New Research
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate('/publications/new')}>
-                          <FileText className="h-4 w-4 mr-2" />
-                          New Publication
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        <SidebarGroup>
-          <SidebarGroupLabel className={cn(
-            "transition-[opacity,height] duration-300 text-nowrap",
-            open ? "opacity-100" : "opacity-0 h-0"
-          )}>
-            Resources
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {resourcesMenuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    onClick={() => navigate(item.path)}
-                    isActive={isActive(item.path)}
-                    tooltip={!open ? item.label : undefined}
-                    className="flex items-center gap-2"
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {open && <span>{item.label}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="border-t py-2 text-nowrap overflow-hidden">
-        <SidebarMenu>
-          {isAuthenticated ? (
-            <>
-              {open && user && (
-                <div className="px-4 py-2 mb-2">
-                  <p className="text-sm font-medium">{user.name || user.username}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                </div>
+      <div className="flex-1 py-4 overflow-y-auto">
+        <nav className="px-2 space-y-1">
+          {navItems.map((item) => (
+            <Button
+              key={item.path}
+              variant={location.pathname === item.path ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-start mb-1",
+                collapsed ? "px-2" : "px-4"
               )}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => navigate('/settings')}
-                  isActive={isActive('/settings')}
-                  tooltip={!open ? "Settings" : undefined}
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="h-5 w-5" />
-                  {open && <span>Settings</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={handleLogout}
-                  tooltip={!open ? "Logout" : undefined}
-                  className="flex items-center gap-2"
-                >
-                  <LogOut className="h-5 w-5" />
-                  {open && <span>Logout</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </>
-          ) : (
-            <div className={open ? "px-4" : "flex justify-center"}>
-              <Button 
-                className={cn("w-full", !open && "p-2")} 
-                onClick={() => navigate('/login')}
-                variant="default"
-                size={open ? "default" : "icon"}
-              >
-                {open ? "Login" : <LogOut className="h-4 w-4" />}
+              onClick={() => navigate(item.path)}
+            >
+              <item.icon className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
+              {!collapsed && <span>{item.name}</span>}
+            </Button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Create New Button/Dropdown */}
+      <div className="p-2 border-t border-b">
+        {collapsed ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="w-full" size="icon" variant="default">
+                <Plus className="h-5 w-5" />
               </Button>
-            </div>
-          )}
-        </SidebarMenu>
-      </SidebarFooter>
-    </UISidebar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate("/research/new")}>
+                <Microscope className="h-4 w-4 mr-2" />
+                New Research
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/publications/new")}>
+                <BookOpen className="h-4 w-4 mr-2" />
+                New Publication
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex gap-2">
+            <Button 
+              variant="default" 
+              className="flex-1 text-xs" 
+              onClick={() => navigate("/research/new")}
+            >
+              <Microscope className="h-4 w-4 mr-1" /> Research
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex-1 text-xs" 
+              onClick={() => navigate("/publications/new")}
+            >
+              <BookOpen className="h-4 w-4 mr-1" /> Publication
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* User Profile Section */}
+      <div className="p-4 border-t mt-auto">
+        {isAuthenticated ? (
+          <div className={cn("flex items-center", collapsed ? "justify-center" : "")}>
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => navigate("/profile")}
+            >
+              <User className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
+              {!collapsed && <span>{user?.username || user?.email}</span>}
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="default"
+            className="w-full"
+            onClick={() => navigate("/login")}
+          >
+            {collapsed ? <User className="h-5 w-5" /> : "Sign In"}
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };
 

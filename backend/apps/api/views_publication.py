@@ -1,5 +1,6 @@
+
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -11,6 +12,8 @@ import uuid
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from datetime import datetime
+import mimetypes
+from wsgiref.util import FileWrapper
 
 from .models import Publication, Researcher, Dataset
 from .models_research import ResearchProject
@@ -239,6 +242,115 @@ class ResearchFileUploadView(View):
                 "dataset_id": dataset.id,
                 "file_path": path,
             })
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+class PublicationsList(View):
+    def get(self, request):
+        """Get a list of publications"""
+        try:
+            publications = Publication.objects.all()
+            
+            # Handle filters
+            query = request.GET.get('query', '')
+            is_public = request.GET.get('is_public', None)
+            
+            if query:
+                publications = publications.filter(title__icontains=query) | \
+                              publications.filter(doi__icontains=query) | \
+                              publications.filter(abstract__icontains=query) | \
+                              publications.filter(journal__icontains=query)
+            
+            if is_public is not None:
+                is_public = is_public.lower() == 'true'
+                publications = publications.filter(is_public=is_public)
+            
+            # Pagination
+            page = int(request.GET.get('page', 1))
+            per_page = int(request.GET.get('per_page', 10))
+            start = (page - 1) * per_page
+            end = start + per_page
+            
+            total_count = publications.count()
+            publications = publications[start:end]
+            
+            publications_data = []
+            for pub in publications:
+                researchers = pub.researchers.all()
+                researchers_data = []
+                
+                for researcher in researchers:
+                    researchers_data.append({
+                        "id": researcher.id,
+                        "name": researcher.name,
+                        "institution": researcher.institution,
+                        "is_primary": researcher.is_primary,
+                    })
+                
+                publications_data.append({
+                    "id": pub.id,
+                    "doi": pub.doi,
+                    "title": pub.title,
+                    "abstract": pub.abstract,
+                    "journal": pub.journal,
+                    "year": pub.year,
+                    "is_public": pub.is_public,
+                    "created_at": pub.created_at.isoformat(),
+                    "researchers": researchers_data,
+                })
+            
+            return JsonResponse({
+                "count": total_count,
+                "next": f"/api/publications/?page={page+1}&per_page={per_page}" if end < total_count else None,
+                "previous": f"/api/publications/?page={page-1}&per_page={per_page}" if page > 1 else None,
+                "results": publications_data,
+            })
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+class DatasetDownloadView(View):
+    def get(self, request, dataset_id=None):
+        """Download a dataset file"""
+        if not dataset_id:
+            return JsonResponse({"error": "Dataset ID is required"}, status=400)
+            
+        try:
+            dataset = get_object_or_404(Dataset, id=dataset_id)
+            
+            # Check if user has access to this dataset
+            if not dataset.is_public:
+                if not request.user.is_authenticated:
+                    return JsonResponse({"error": "Authentication required to access this dataset"}, status=403)
+                
+                # If dataset is part of a research project
+                if dataset.research_project and request.user != dataset.research_project.head_researcher and not dataset.research_project.collaborators.filter(user=request.user).exists():
+                    return JsonResponse({"error": "You do not have permission to access this dataset"}, status=403)
+                
+                # If dataset is part of a publication (add ownership checks as needed)
+                # This is a simplified check and might need to be enhanced based on your requirements
+            
+            # Get file path
+            file_path = os.path.join(settings.MEDIA_ROOT, dataset.file_path)
+            
+            if not os.path.exists(file_path):
+                return JsonResponse({"error": "File not found on server"}, status=404)
+            
+            # Determine the file's content type
+            content_type, encoding = mimetypes.guess_type(file_path)
+            if not content_type:
+                content_type = 'application/octet-stream'
+            
+            # Open the file
+            file = open(file_path, 'rb')
+            response = FileResponse(file, content_type=content_type)
+            
+            # Set the Content-Disposition header to force a file download
+            file_name = os.path.basename(dataset.file_path)
+            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+            
+            return response
             
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)

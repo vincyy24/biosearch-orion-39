@@ -14,7 +14,7 @@ interface VersionDetails {
 }
 
 interface ResearchVersionHistoryProps {
-  // projectId: string;
+  projectId?: string;
   versions: VersionDetails[];
   onViewVersion: (version: number) => void;
   onDownloadVersion: (version: number) => void;
@@ -29,7 +29,7 @@ const ResearchVersionHistory: React.FC<ResearchVersionHistoryProps> = ({
     <div className="relative">
       <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-muted"></div>
       <div className="space-y-6 relative">
-        {versions ? versions.map((version, idx) => (
+        {versions && versions.length > 0 ? versions.map((version, idx) => (
           <div key={idx} className="relative pl-8">
             <div className="absolute left-0 top-2 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <GitCommit className="h-4 w-4 text-muted-foreground" />
@@ -73,10 +73,11 @@ const ResearchVersionHistory: React.FC<ResearchVersionHistoryProps> = ({
               </CardContent>
             </Card>
           </div>
-        )):
+        )) : (
         <div className="text-center text-muted-foreground">
           <span>No versions available.</span>
-        </div>}
+        </div>
+        )}
       </div>
     </div>
   );

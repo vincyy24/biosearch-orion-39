@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -58,7 +59,7 @@ function App() {
               <Route path="/research/:id" element={<ResearchProjectDetail />} />
               
               <Route path="/publications" element={<Publications />} />
-              <Route path="/publications/new" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+              <Route path="/publications/new" element={<ProtectedRoute><Upload />}</ProtectedRoute>} />
               <Route path="/publications/:doi" element={<PublicationDetail />} />
               
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
