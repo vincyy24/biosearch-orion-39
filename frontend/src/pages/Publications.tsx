@@ -5,9 +5,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Loader2 } from "lucide-react";
 import PlotlyVisualization from "@/components/visualizations/PlotlyVisualization";
 import { fetchPublicationsData } from "@/services/api";
+import PublicationCard from "@/components/publications/PublicationCard";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { searchPublicationsByDOI } from "@/services/doiService";
+
+// Sample DOIs for testing
+const SAMPLE_DOIS = [
+  "10.1021/jacs.0c01924",
+  "10.1038/s41586-020-2649-2",
+  "10.1126/science.abc7520",
+  "10.1002/anie.202003102",
+  "10.1021/acscatal.0c01605"
+];
 
 interface Publication {
   id: number;
@@ -21,16 +34,27 @@ const Publications = () => {
   const [publications, setPublications] = useState<Publication[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [doiPublications, setDoiPublications] = useState<any[]>([]);
+  const [loadingDoi, setLoadingDoi] = useState(false);
 
+  // Fetch data from the API
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Load placeholder data first
         const data = await fetchPublicationsData();
         setPublications(data);
         setLoading(false);
+        
+        // Now load real data from DOIs
+        setLoadingDoi(true);
+        const doiData = await searchPublicationsByDOI(SAMPLE_DOIS);
+        setDoiPublications(doiData);
+        setLoadingDoi(false);
       } catch (error) {
         console.error("Failed to load publications:", error);
         setLoading(false);
+        setLoadingDoi(false);
       }
     };
 
@@ -111,6 +135,39 @@ const Publications = () => {
           />
         </div>
 
+        {/* DOI Publications Grid */}
+        <h2 className="text-2xl font-bold mb-4">Recent Publications with DOI</h2>
+        {loadingDoi ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Loading publications from Crossref...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {doiPublications.map((pub, index) => (
+              <PublicationCard
+                key={index}
+                id={index.toString()}
+                title={pub.title}
+                authors={pub.authors.map(a => a.name).join(", ")}
+                journal={pub.journal}
+                year={pub.year}
+                doi={pub.doi}
+                isVerified={true}
+                abstract={pub.abstract?.substring(0, 150) + (pub.abstract?.length > 150 ? "..." : "")}
+                hasDataset={index % 3 === 0} // Just for demo purposes
+              />
+            ))}
+            {doiPublications.length === 0 && !loadingDoi && (
+              <div className="col-span-full text-center py-12 bg-muted/20 rounded-lg">
+                <p className="text-muted-foreground">
+                  No publications found from Crossref. Please try again later.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        
         <Card>
           <CardHeader>
             <CardTitle>Publication List</CardTitle>

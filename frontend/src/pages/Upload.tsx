@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchDataTypes, fetchDataCategories, uploadFile } from "@/services/api";
+import { fetchResearchProjects } from "@/services/researchService";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload as UploadIcon, FileUp } from "lucide-react";
+import { Loader2, Upload as UploadIcon, FileUp, Lock, Globe } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
+import { ResearchProject } from "@/types/common";
 
 interface DataType {
   id: string;
@@ -31,22 +33,25 @@ const Upload = () => {
   const [fileName, setFileName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [dataType, setDataType] = useState<string>("");
-  const [accessLevel, setAccessLevel] = useState<string>("private");
+  const [isPublic, setIsPublic] = useState<boolean>(false);
   const [dataCategory, setDataCategory] = useState<string>("");
   const [method, setMethod] = useState<string>("");
   const [electrode, setElectrode] = useState<string>("");
   const [instrument, setInstrument] = useState<string>("");
+  const [projectId, setProjectId] = useState<string>("");
   
   const [dataTypes, setDataTypes] = useState<DataType[]>([]);
   const [dataCategories, setDataCategories] = useState<DataCategory[]>([]);
+  const [projects, setProjects] = useState<ResearchProject[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
-  // Fetch data types and categories on component mount
+  // Fetch data types, categories, and research projects on component mount
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -56,6 +61,19 @@ const Upload = () => {
         ]);
         setDataTypes(typesData);
         setDataCategories(categoriesData);
+        
+        // Load research projects if user is authenticated
+        if (isAuthenticated) {
+          setIsLoadingProjects(true);
+          try {
+            const projectsData = await fetchResearchProjects();
+            setProjects(projectsData.results || []);
+          } catch (err) {
+            console.error("Error loading research projects:", err);
+          } finally {
+            setIsLoadingProjects(false);
+          }
+        }
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Failed to load data types or categories. Please try again later.");
@@ -63,7 +81,7 @@ const Upload = () => {
     };
 
     loadData();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -95,7 +113,7 @@ const Upload = () => {
       formData.append("file", file);
       formData.append("dataType", dataType);
       formData.append("description", description);
-      formData.append("accessLevel", accessLevel);
+      formData.append("accessLevel", isPublic ? "public" : "private");
       
       if (dataCategory) {
         formData.append("category", dataCategory);
@@ -111,6 +129,10 @@ const Upload = () => {
       
       if (instrument) {
         formData.append("instrument", instrument);
+      }
+      
+      if (projectId) {
+        formData.append("researchProjectId", projectId);
       }
       
       // Get auth token (use empty string as fallback)
@@ -242,6 +264,36 @@ const Upload = () => {
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="research-project">Research Project</Label>
+                <Select value={projectId} onValueChange={setProjectId}>
+                  <SelectTrigger id="research-project">
+                    <SelectValue placeholder="Select research project (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None (Personal Dataset)</SelectItem>
+                    {isLoadingProjects ? (
+                      <SelectItem value="loading" disabled>
+                        Loading projects...
+                      </SelectItem>
+                    ) : projects.length > 0 ? (
+                      projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.title}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-projects" disabled>
+                        No research projects found
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Assigning to a project will make this dataset available to all project collaborators.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
@@ -253,22 +305,34 @@ const Upload = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="access-level">Access Level *</Label>
-                <RadioGroup
-                  id="access-level"
-                  value={accessLevel}
-                  onValueChange={setAccessLevel}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="private" id="private" />
-                    <Label htmlFor="private">Private (only you can access)</Label>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="access-level">Public Access</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {isPublic ? 
+                        "Everyone can access this dataset" : 
+                        "Only you can access this dataset"}
+                    </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="public" id="public" />
-                    <Label htmlFor="public">Public (everyone can access)</Label>
-                  </div>
-                </RadioGroup>
+                  <Switch
+                    id="access-level"
+                    checked={isPublic}
+                    onCheckedChange={setIsPublic}
+                  />
+                </div>
+                <div className="p-3 rounded-md bg-muted flex items-center mt-2">
+                  {isPublic ? (
+                    <>
+                      <Globe className="h-5 w-5 text-green-500 mr-2" />
+                      <span className="text-sm">This dataset will be visible to all users</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-5 w-5 text-amber-500 mr-2" />
+                      <span className="text-sm">This dataset will only be visible to you and your collaborators</span>
+                    </>
+                  )}
+                </div>
               </div>
               
               <div className="border-t pt-4">

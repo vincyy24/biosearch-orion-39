@@ -1,107 +1,83 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import DataBrowser from "./pages/DataBrowser";
-import SearchResults from "./pages/SearchResults";
-import AdvancedSearch from "./pages/AdvancedSearch";
-import Publications from "./pages/Publications";
-import Tools from "./pages/Tools";
-import Dashboard from "./pages/Dashboard";
-import Documentation from "./pages/Documentation";
-import Community from "./pages/Community";
-import Support from "./pages/Support";
-import Settings from "./pages/Settings";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Upload from "./pages/Upload";
-import Download from "./pages/Download";
-import ResetPassword from "./pages/ResetPassword";
-import Voltammetry from "./pages/Voltammetry";
-import UserProfile from "./pages/UserProfile";
-import ResearchProjects from "./pages/ResearchProjects";
-import ResearchProjectDetail from "./pages/ResearchProjectDetail";
-import { AuthProvider } from "./contexts/AuthContext";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import { AnalyticsProvider } from "./contexts/AnalyticsContext";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { Toaster } from './components/ui/toaster';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { AnalyticsProvider } from './contexts/AnalyticsContext';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
+// Pages
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Index from './pages/Index';
+import Voltammetry from './pages/Voltammetry';
+import NotFound from './pages/NotFound';
+import Upload from './pages/Upload';
+import ResetPassword from './pages/ResetPassword';
+import DataBrowser from './pages/DataBrowser';
+import SearchResults from './pages/SearchResults';
+import ResearchProjects from './pages/ResearchProjects';
+import ResearchProjectDetail from './pages/ResearchProjectDetail';
+import Publications from './pages/Publications';
+import PublicationDetail from './pages/PublicationDetail';
+import UserProfile from './pages/UserProfile';
+import AccountSettings from './pages/AccountSettings';
+import Notifications from './pages/Notifications';
+import Settings from './pages/Settings';
+import Community from './pages/Community';
+import Tools from './pages/Tools';
+import Documentation from './pages/Documentation';
+import AdvancedSearch from './pages/AdvancedSearch';
+import Support from './pages/Support';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+function App() {
+  return (
+    <BrowserRouter>
       <ThemeProvider>
-        <AnalyticsProvider>
-          <TooltipProvider>
+        <AuthProvider>
+          <AnalyticsProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
+              
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/voltammetry" element={<Voltammetry />} />
+              <Route path="/voltammetry/:id" element={<Voltammetry />} />
+              <Route path="/upload" element={<Upload />} />
+              <Route path="/browse" element={<DataBrowser />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/advanced-search" element={<AdvancedSearch />} />
+              
+              <Route path="/research" element={<ProtectedRoute><ResearchProjects /></ProtectedRoute>} />
+              <Route path="/research/:id" element={<ProtectedRoute><ResearchProjectDetail /></ProtectedRoute>} />
+              
+              <Route path="/publications" element={<Publications />} />
+              <Route path="/publications/:doi" element={<PublicationDetail />} />
+              
+              <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+              <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              
+              <Route path="/community" element={<Community />} />
+              <Route path="/tools" element={<Tools />} />
+              <Route path="/documentation" element={<Documentation />} />
+              <Route path="/support" element={<Support />} />
+              
+              <Route path="/404" element={<NotFound />} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Routes>
             <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/search" element={<SearchResults />} />
-                <Route path="/advanced-search" element={<AdvancedSearch />} />
-                <Route path="/data-browser" element={<DataBrowser />} />
-                <Route path="/publications" element={<Publications />} />
-                <Route path="/tools" element={<Tools />} />
-                <Route path="/download" element={<Download />} />
-                <Route path="/voltammetry/:id" element={<Voltammetry />} />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <UserProfile />
-                  </ProtectedRoute>
-                } />
-                <Route path="/research/projects" element={
-                  <ProtectedRoute>
-                    <ResearchProjects />
-                  </ProtectedRoute>
-                } />
-                <Route path="/research/projects/:projectId" element={
-                  <ProtectedRoute>
-                    <ResearchProjectDetail />
-                  </ProtectedRoute>
-                } />
-                <Route path="/documentation" element={<Documentation />} />
-                <Route path="/community" element={<Community />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } />
-                <Route path="/upload" element={
-                  <ProtectedRoute>
-                    <Upload />
-                  </ProtectedRoute>
-                } />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AnalyticsProvider>
+          </AnalyticsProvider>
+        </AuthProvider>
       </ThemeProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+    </BrowserRouter>
+  );
+}
 
 export default App;

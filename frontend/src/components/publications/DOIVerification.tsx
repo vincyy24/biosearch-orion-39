@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { verifyDOI, formatDOIMetadata } from "@/services/doiService";
+import { Badge } from "@/components/ui/badge";
 
 interface DOIVerificationProps {
   onVerified: (metadata: any) => void;
@@ -90,19 +91,34 @@ const DOIVerification = ({ onVerified }: DOIVerificationProps) => {
             <CheckCircle className="h-4 w-4 text-green-500" />
             <AlertTitle className="text-green-700 dark:text-green-300">DOI Verified Successfully</AlertTitle>
             <AlertDescription className="text-green-600 dark:text-green-400">
-              The publication metadata has been retrieved from DOI.org
+              The publication metadata has been retrieved from Crossref
             </AlertDescription>
           </Alert>
           
           <Card>
             <CardContent className="pt-6">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div>
                   <span className="font-semibold">Title:</span> {metadata.title}
                 </div>
                 <div>
-                  <span className="font-semibold">Authors:</span> {metadata.authors}
+                  <span className="font-semibold">Main Author:</span> {metadata.mainAuthor}
                 </div>
+                {metadata.authors.length > 1 && (
+                  <div>
+                    <span className="font-semibold">All Authors:</span>
+                    <div className="ml-4 mt-1 space-y-1">
+                      {metadata.authors.map((author, idx) => (
+                        <div key={idx} className="flex items-center">
+                          {author.name}
+                          {author.isMain && (
+                            <Badge variant="outline" className="ml-2 text-xs">Main</Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <span className="font-semibold">Journal:</span> {metadata.journal}
                 </div>
@@ -112,6 +128,22 @@ const DOIVerification = ({ onVerified }: DOIVerificationProps) => {
                 <div>
                   <span className="font-semibold">Publisher:</span> {metadata.publisher}
                 </div>
+                {metadata.abstract && (
+                  <div>
+                    <span className="font-semibold">Abstract:</span>
+                    <p className="mt-1 text-sm text-muted-foreground">{metadata.abstract}</p>
+                  </div>
+                )}
+                {metadata.subjects && metadata.subjects.length > 0 && (
+                  <div>
+                    <span className="font-semibold">Subjects:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {metadata.subjects.map((subject, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">{subject}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -119,8 +151,8 @@ const DOIVerification = ({ onVerified }: DOIVerificationProps) => {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-xs italic">
-              The data being filled is from an external source, and ORION is not responsible for any faulty data. 
-              Users should contact DOI or their publisher for the respective information.
+              The data being filled is from Crossref, and ORION is not responsible for any faulty data. 
+              Users should contact DOI or their publisher for corrections.
             </AlertDescription>
           </Alert>
         </>

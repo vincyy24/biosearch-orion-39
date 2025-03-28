@@ -197,7 +197,7 @@ export const fetchRecentDatasets = async () => {
   }
 };
 
-// Updated authentication related functions with improved CSRF handling
+// Authentication related functions
 export const loginUser = async (email: string, password: string) => {
   try {
     const csrf_token = getCookie("csrftoken");
@@ -328,6 +328,178 @@ export const confirmResetPassword = async (token: string, password: string) => {
     return true;
   } catch (error) {
     console.error('Password reset confirmation error:', error);
+    throw error;
+  }
+};
+
+// ORCID related functions
+export const verifyOrcidId = async (orcidId: string) => {
+  try {
+    const csrf_token = getCookie("csrftoken");
+    const response = await fetch(`${API_BASE_URL}/orcid/verify/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token || '',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ orcid_id: orcidId }),
+    });
+
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error initiating ORCID verification:", error);
+    throw error;
+  }
+};
+
+export const confirmOrcidVerification = async (verificationCode: string) => {
+  try {
+    const csrf_token = getCookie("csrftoken");
+    const response = await fetch(`${API_BASE_URL}/orcid/confirm/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token || '',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ verification_code: verificationCode }),
+    });
+
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error confirming ORCID verification:", error);
+    throw error;
+  }
+};
+
+export const fetchUserOrcidProfile = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/orcid/profile/`, {
+      credentials: 'include',
+    });
+
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching ORCID profile:", error);
+    throw error;
+  }
+};
+
+// DOI and publication related functions
+export const fetchPublicationByDoi = async (doi: string) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/publications/doi/${doi}/`, {
+      credentials: 'include',
+    });
+    
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching publication by DOI:", error);
+    throw error;
+  }
+};
+
+export const searchPublications = async (query: string, filters?: Record<string, string>) => {
+  try {
+    let url = `${API_BASE_URL}/publications/search/?query=${encodeURIComponent(query)}`;
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          url += `&${key}=${encodeURIComponent(value)}`;
+        }
+      });
+    }
+    
+    const response = await fetch(url, {
+      credentials: 'include',
+    });
+    
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error searching publications:", error);
+    throw error;
+  }
+};
+
+export const savePublicationToLibrary = async (publicationId: string) => {
+  try {
+    const csrf_token = getCookie("csrftoken");
+    const response = await fetch(`${API_BASE_URL}/publications/${publicationId}/save/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token || '',
+      },
+      credentials: 'include',
+    });
+    
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error saving publication to library:", error);
+    throw error;
+  }
+};
+
+export const fetchUserSettings = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/settings/`, {
+      credentials: 'include',
+    });
+    
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user settings:", error);
+    throw error;
+  }
+};
+
+export const updateUserSettings = async (settings: Record<string, any>) => {
+  try {
+    const csrf_token = getCookie("csrftoken");
+    const response = await fetch(`${API_BASE_URL}/user/settings/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token || '',
+      },
+      credentials: 'include',
+      body: JSON.stringify(settings),
+    });
+    
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating user settings:", error);
+    throw error;
+  }
+};
+
+export const updatePassword = async (currentPassword: string, newPassword: string) => {
+  try {
+    const csrf_token = getCookie("csrftoken");
+    const response = await fetch(`${API_BASE_URL}/auth/password/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token || '',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+    
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating password:", error);
     throw error;
   }
 };
