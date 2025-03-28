@@ -60,7 +60,7 @@ function App() {
               <Route path="/research/:id" element={<ResearchProjectDetail />} />
               
               <Route path="/publications" element={<Publications />} />
-              <Route path="/publications/new" element={<ProtectedRoute><PublicationRegistration/></ProtectedRoute>} />
+              <Route path="/publications/new" element={<ProtectedRoute><PublicationRegistration /></ProtectedRoute>} />
               <Route path="/publications/:doi" element={<PublicationDetail />} />
               
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />

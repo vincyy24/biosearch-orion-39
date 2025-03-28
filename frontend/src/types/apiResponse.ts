@@ -1,139 +1,75 @@
-interface DateParts {
-    "date-parts": number[][];
-    "date-time"?: string;
-    timestamp?: number;
-    version?: string;
-}
 
-interface Funder {
-    DOI: string;
+export interface CrossrefAuthor {
+  given: string;
+  family: string;
+  sequence: string;
+  affiliation: Array<{
     name: string;
-    "doi-asserted-by": string;
-    award?: string[];
-    id: Array<{
-        id: string;
-        "id-type": string;
-        "asserted-by": string;
-    }>;
+  }>;
+  ORCID?: string;
 }
 
-interface ContentDomain {
-    domain: string[];
-    "crossmark-restriction": boolean;
+export interface CrossrefLink {
+  URL: string;
+  content-type: string;
+  content-version: string;
+  intended-application: string;
 }
 
-interface Author {
-    given: string;
-    family: string;
-    sequence: string;
-    affiliation: Array<{ name: string }>;
-    ORCID?: string;
-    "authenticated-orcid"?: boolean;
+export interface CrossrefFunder {
+  DOI?: string;
+  name: string;
+  doi-asserted-by?: string;
+  award?: string[];
 }
 
-interface Reference {
-    key: string;
-    "doi-asserted-by"?: string;
-    DOI?: string;
-    "volume-title"?: string;
-    volume?: string;
-    author?: string;
-    year?: string;
-    "journal-title"?: string;
-    "first-page"?: string;
-    unstructured?: string;
+export interface CrossrefReference {
+  key: string;
+  doi?: string;
+  doi-asserted-by?: string;
+  unstructured?: string;
+  volume?: string;
+  journal-title?: string;
+  article-title?: string;
+  year?: string;
+  author?: string;
+  issue?: string;
+  first-page?: string;
 }
 
-interface Link {
-    URL: string;
-    "content-type"?: string;
-    "content-version"?: string;
-    "intended-application"?: string;
+export interface CrossrefPublicationItem {
+  title: string[];
+  abstract?: string;
+  author: CrossrefAuthor[];
+  published: {
+    'date-parts': number[][];
+  };
+  'container-title': string[];
+  DOI: string;
+  URL: string;
+  publisher: string;
+  type: string;
+  page?: string;
+  volume?: string;
+  issue?: string;
+  'is-referenced-by-count'?: number;
+  'references-count'?: number;
+  link?: CrossrefLink[];
+  funder?: CrossrefFunder[];
+  reference?: CrossrefReference[];
 }
 
-interface Resource {
-    primary: {
-        URL: string;
+export interface CrossrefApiResponse {
+  status: string;
+  'message-type': string;
+  'message-version': string;
+  message: {
+    items: CrossrefPublicationItem[];
+    'items-per-page': number;
+    query: {
+      'start-index': number;
+      'search-terms': string;
     };
-}
-
-interface IssnType {
-    type: string;
-    value: string;
-}
-
-interface Assertion {
-    value: string;
-    order: number;
-    name: string;
-    label: string;
-    group: {
-        name: string;
-        label: string;
-    };
-}
-
-interface Message {
-    indexed: DateParts;
-    "reference-count": number;
-    publisher: string;
-    issue?: string;
-    funder?: Funder[];
-    "content-domain": ContentDomain;
-    "short-container-title": string[];
-    "published-print": DateParts;
-    DOI: string;
-    type: string;
-    created: DateParts;
-    page: string;
-    source: string;
-    "is-referenced-by-count": number;
-    title: string[];
-    prefix: string;
-    volume: string;
-    author: Author[];
-    member: string;
-    "published-online": DateParts;
-    reference?: Reference[];
-    "container-title": string[];
-    "original-title": string[];
-    language: string;
-    link: Link[];
-    deposited: DateParts;
-    score: number;
-    resource: Resource;
-    subtitle: string[];
-    "short-title": string[];
-    issued: DateParts;
-    "references-count": number;
-    "journal-issue"?: {
-        issue: string;
-        "published-print"?: DateParts;
-    };
-    "alternative-id": string[];
-    URL: string;
-    relation: Record<string, unknown>;
-    ISSN?: string[];
-    "issn-type"?: IssnType[];
-    subject: string[];
-    published: DateParts;
-    
-    // Optional fields from second version
-    license?: Array<{
-        start: DateParts;
-        "content-version": string;
-        "delay-in-days": number;
-        URL: string;
-    }>;
-    abstract?: string;
-    "update-policy"?: string;
-    archive?: string[];
-    assertion?: Assertion[];
-}
-
-export interface ApiResponse {
-    status: string;
-    "message-type": string;
-    "message-version": string;
-    message: Message;
+    'total-results': number;
+  };
 }

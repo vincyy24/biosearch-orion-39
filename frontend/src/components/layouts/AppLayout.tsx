@@ -1,49 +1,32 @@
 
-import { ReactNode } from "react";
-import Navbar from "@/components/navigation/Navbar";
-import Sidebar from "@/components/navigation/Sidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import React, { ReactNode } from 'react';
+import Navbar from '@/components/navigation/Navbar';
+import Sidebar from '@/components/navigation/Sidebar';
 
-interface MainLayoutProps {
+interface AppLayoutProps {
   children: ReactNode;
 }
 
-const MainLayout = ({ children }: MainLayoutProps) => {
+const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <Sidebar />
-        <SidebarInset className="flex flex-col min-h-screen">
-          <Navbar />
-          <main className="flex-1">
-            {children}
-          </main>
-          <footer className="py-6 px-4 bg-background border-t">
-            <div className="container mx-auto">
-              <div className="flex flex-col md:flex-row justify-between items-center">
-                <div className="mb-4 md:mb-0">
-                  <p className="text-sm text-muted-foreground">
-                    &copy; {new Date().getFullYear()} BiomediResearch Platform. All rights reserved.
-                  </p>
-                </div>
-                <div className="flex gap-8">
-                  <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                    Privacy Policy
-                  </a>
-                  <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                    Terms of Service
-                  </a>
-                  <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                    Contact
-                  </a>
-                </div>
-              </div>
-            </div>
-          </footer>
-        </SidebarInset>
+    <div className="min-h-screen bg-background">
+      <div className="flex h-screen overflow-hidden">
+        <div className="fixed h-full z-20">
+          <Sidebar />
+        </div>
+        <div className="flex-1 flex flex-col pl-16 lg:pl-64">
+          <div className="sticky top-0 z-10">
+            <Navbar />
+          </div>
+          <div className="flex-1 overflow-auto">
+            <main className="flex-1">
+              {children}
+            </main>
+          </div>
+        </div>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
-export default MainLayout;
+export default AppLayout;

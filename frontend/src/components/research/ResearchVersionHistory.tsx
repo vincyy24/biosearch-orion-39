@@ -14,13 +14,14 @@ interface VersionDetails {
 }
 
 interface ResearchVersionHistoryProps {
-  projectId?: string;
+  projectId: string;
   versions: VersionDetails[];
   onViewVersion: (version: number) => void;
   onDownloadVersion: (version: number) => void;
 }
 
 const ResearchVersionHistory: React.FC<ResearchVersionHistoryProps> = ({
+  projectId,
   versions,
   onViewVersion,
   onDownloadVersion

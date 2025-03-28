@@ -1,533 +1,840 @@
-
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, Check, Info, Plus, Trash } from "lucide-react";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import DOIVerification from "./DOIVerification";
-import { verifyDOI } from "@/services/doiService";
-import axios from "axios";
-import { Badge } from "../ui/badge";
-import MainLayout from "../layouts/AppLayout";
+  Alert, 
+  AlertDescription 
+} from "@/components/ui/alert";
+import { FileCheck, HelpCircle, Info, Link2, Loader2, Search, AlertCircle } from "lucide-react";
+import { registerPublication, verifyDOI, searchCrossRefByDOI } from "@/services/publicationService";
+import { CrossrefApiResponse, CrossrefPublicationItem } from "@/types/apiResponse";
 
-const publicationSchema = z.object({
-  doi: z.string().min(1, { message: "DOI is required" }),
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  journal: z.string().min(1, { message: "Journal name is required" }),
-  year: z.string().regex(/^\d{4}$/, { message: "Year must be a 4-digit number" }),
+const formSchema = z.object({
+  doi: z.string().min(1, "DOI is required"),
+  title: z.string().min(1, "Title is required"),
   abstract: z.string().optional(),
-  isPublic: z.boolean().default(false),
+  journal: z.string().optional(),
+  volume: z.string().optional(),
+  issue: z.string().optional(),
+  pages: z.string().optional(),
+  year: z.coerce.number().optional(),
+  publisher: z.string().optional(),
+  url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  is_public: z.boolean().default(false),
+  is_peer_reviewed: z.boolean().default(false),
   researchers: z.array(
     z.object({
-      name: z.string().min(1, { message: "Name is required" }),
+      name: z.string().min(1, "Name is required"),
       institution: z.string().optional(),
-      email: z.string().email({ message: "Invalid email" }).optional(),
+      email: z.string().email("Invalid email").optional().or(z.literal("")),
       orcid_id: z.string().optional(),
-      is_primary: z.boolean().default(false),
     })
-  ).min(1, { message: "At least one researcher is required" }),
+  ).optional(),
 });
 
-type PublicationFormValues = z.infer<typeof publicationSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 interface PublicationRegistrationProps {
   onComplete?: () => void;
 }
 
-const PublicationRegistration = ({ onComplete }: PublicationRegistrationProps) => {
-  const { toast } = useToast();
+const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
+  onComplete,
+}) => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
-  const [doiVerified, setDoiVerified] = useState(false);
-  const [doiAlreadyExists, setDoiAlreadyExists] = useState(false);
+  const { toast } = useToast();
+  const [isVerifyingDOI, setIsVerifyingDOI] = useState(false);
+  const [doiVerificationResult, setDoiVerificationResult] = useState<CrossrefPublicationItem | null>(null);
+  const [showDoiPreviewDialog, setShowDoiPreviewDialog] = useState(false);
+  const [existingPublicationDoi, setExistingPublicationDoi] = useState("");
+  const [showExistingPublicationDialog, setShowExistingPublicationDialog] = useState(false);
 
-  const form = useForm<PublicationFormValues>({
-    resolver: zodResolver(publicationSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       doi: "",
       title: "",
-      journal: "",
-      year: new Date().getFullYear().toString(),
       abstract: "",
-      isPublic: true,
-      researchers: [
-        {
-          name: "",
-          institution: "",
-          email: "",
-          orcid_id: "",
-          is_primary: true,
-        }
-      ],
+      journal: "",
+      volume: "",
+      issue: "",
+      pages: "",
+      publisher: "",
+      url: "",
+      is_public: false,
+      is_peer_reviewed: false,
+      researchers: [{ name: "", institution: "", email: "", orcid_id: "" }],
     },
   });
 
-  const handleVerifyDOI = async () => {
-    const doi = form.getValues("doi");
-    
-    if (!doi) {
-      form.setError("doi", { message: "Please enter a DOI to verify" });
-      return;
-    }
-    
-    setIsVerifying(true);
-    setVerificationSuccess(false);
-    setVerificationError(null);
-    
+  const { formState } = form;
+  const { isSubmitting } = formState;
+
+  const onSubmit = async (data: FormValues) => {
     try {
-      const doiData = await verifyDOI(doi);
-      
-      if (!doiData) {
-        setVerificationError("DOI not found or invalid. Please check and try again.");
-        return;
-      }
-      
-      // Success - populate form with DOI data
-      form.setValue("title", doiData.title[0] || "");
-      form.setValue("journal", doiData.journal || doiData.publisher || "");
-      form.setValue("year", doiData.year || new Date().getFullYear().toString());
-      form.setValue("abstract", doiData.abstract || "");
-      
-      setVerificationSuccess(true);
+      const response = await registerPublication(data);
       
       toast({
-        title: "DOI Verification Successful",
-        description: "Publication details have been populated from the DOI data.",
-      });
-    } catch (error) {
-      console.error("Error verifying DOI:", error);
-      setVerificationError("Error verifying DOI. Please try again or enter details manually.");
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleDoiVerified = (metadata: any) => {
-    // Update the form with the verified metadata
-    form.setValue("doi", metadata.doi);
-    form.setValue("title", metadata.title);
-    form.setValue("journal", metadata.journal);
-    form.setValue("year", metadata.year.toString());
-    form.setValue("abstract", metadata.abstract || "");
-    
-    // Update researchers if available
-    if (metadata.authors && metadata.authors.length > 0) {
-      const researchers = metadata.authors.map((author: any, index: number) => ({
-        name: author.name,
-        institution: author.affiliation || "",
-        email: "",
-        orcid_id: author.ORCID || "",
-        is_primary: author.isMain || index === 0,
-      }));
-      
-      form.setValue("researchers", researchers);
-    }
-    
-    setDoiVerified(true);
-    
-    toast({
-      title: "DOI Verification Successful",
-      description: "Publication details have been populated from Crossref data.",
-    });
-  };
-
-  const handleDoiAlreadyExists = (doi: string, metadata: any) => {
-    setDoiAlreadyExists(true);
-  };
-
-  const handleAddResearcher = () => {
-    const currentResearchers = form.getValues("researchers") || [];
-    form.setValue("researchers", [
-      ...currentResearchers,
-      {
-        name: "",
-        institution: "",
-        email: "",
-        orcid_id: "",
-        is_primary: false,
-      }
-    ]);
-  };
-
-  const handleRemoveResearcher = (index: number) => {
-    const currentResearchers = form.getValues("researchers");
-    if (currentResearchers.length <= 1) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "At least one researcher is required",
-      });
-      return;
-    }
-
-    // Check if removing primary researcher
-    const isRemovingPrimary = currentResearchers[index].is_primary;
-    
-    // Remove the researcher
-    const updatedResearchers = currentResearchers.filter((_, i) => i !== index);
-    
-    // If removing the primary researcher, make the first one primary
-    if (isRemovingPrimary && updatedResearchers.length > 0) {
-      updatedResearchers[0].is_primary = true;
-    }
-    
-    form.setValue("researchers", updatedResearchers);
-  };
-
-  const handleSetPrimary = (index: number) => {
-    const currentResearchers = form.getValues("researchers");
-    
-    // Update all researchers to non-primary first
-    const updatedResearchers = currentResearchers.map((researcher, i) => ({
-      ...researcher,
-      is_primary: i === index,
-    }));
-    
-    form.setValue("researchers", updatedResearchers);
-  };
-
-  const onSubmit = async (data: PublicationFormValues) => {
-    setIsSubmitting(true);
-    try {
-      // API call to register the publication
-      const response = await axios.post("/api/publications/register/", {
-        doi: data.doi,
-        title: data.title,
-        abstract: data.abstract || "",
-        journal: data.journal,
-        volume: "",
-        issue: "",
-        pages: "",
-        year: parseInt(data.year),
-        publisher: "",
-        url: `https://doi.org/${data.doi}`,
-        is_public: data.isPublic,
-        is_peer_reviewed: true,
-        researchers: data.researchers,
-      });
-      
-      toast({
-        title: "Publication Registered",
+        title: "Publication registered",
         description: "Your publication has been successfully registered.",
       });
       
       if (onComplete) {
         onComplete();
       } else {
-        // Navigate to the publication page
-        navigate(`/publications/${data.doi}`);
+        navigate(`/publications/${response.doi}`);
       }
     } catch (error: any) {
-      console.error("Error registering publication:", error);
+      if (error.message.includes("already exists")) {
+        const match = error.message.match(/DOI\s+([a-zA-Z0-9./]+)/i);
+        if (match && match[1]) {
+          setExistingPublicationDoi(match[1]);
+          setShowExistingPublicationDialog(true);
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Registration failed",
+            description: error.message,
+          });
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Registration failed",
+          description: error.message,
+        });
+      }
+    }
+  };
+
+  const handleDOIVerification = async () => {
+    const doi = form.getValues("doi");
+    if (!doi) {
       toast({
         variant: "destructive",
-        title: "Registration Failed",
-        description: error.response?.data?.error || "There was an error registering your publication.",
+        title: "DOI Required",
+        description: "Please enter a DOI to verify",
+      });
+      return;
+    }
+
+    setIsVerifyingDOI(true);
+    try {
+      const response: CrossrefApiResponse = await searchCrossRefByDOI(doi);
+      
+      if (response?.message?.items && response.message.items.length > 0) {
+        const publication = response.message.items[0];
+        setDoiVerificationResult(publication);
+        setShowDoiPreviewDialog(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "DOI Not Found",
+          description: "The provided DOI could not be found in the CrossRef database.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Verification Failed",
+        description: error.message,
       });
     } finally {
-      setIsSubmitting(false);
+      setIsVerifyingDOI(false);
+    }
+  };
+
+  const applyDoiData = () => {
+    if (!doiVerificationResult) return;
+    
+    const publication = doiVerificationResult;
+    
+    const researchers = publication.author?.map(author => ({
+      name: `${author.given} ${author.family}`,
+      institution: author.affiliation && author.affiliation.length > 0 ? author.affiliation[0].name : "",
+      email: "",
+      orcid_id: author.ORCID ? author.ORCID.replace("http://orcid.org/", "") : "",
+    })) || [];
+    
+    form.setValue("title", publication.title[0] || "");
+    form.setValue("abstract", publication.abstract || "");
+    form.setValue("journal", publication["container-title"]?.[0] || "");
+    form.setValue("volume", publication.volume || "");
+    form.setValue("issue", publication.issue || "");
+    form.setValue("pages", publication.page || "");
+    form.setValue("year", publication.published?.["date-parts"]?.[0]?.[0] || undefined);
+    form.setValue("publisher", publication.publisher || "");
+    form.setValue("url", publication.URL || "");
+    form.setValue("researchers", researchers);
+    
+    setShowDoiPreviewDialog(false);
+    
+    toast({
+      title: "Data Applied",
+      description: "Publication data has been filled in from CrossRef.",
+    });
+  };
+
+  const addResearcher = () => {
+    const researchers = form.getValues("researchers") || [];
+    form.setValue("researchers", [
+      ...researchers,
+      { name: "", institution: "", email: "", orcid_id: "" },
+    ]);
+  };
+
+  const removeResearcher = (index: number) => {
+    const researchers = form.getValues("researchers") || [];
+    if (researchers.length > 1) {
+      researchers.splice(index, 1);
+      form.setValue("researchers", [...researchers]);
     }
   };
 
   return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-2xl">Register Publication</CardTitle>
-          <CardDescription>
-            Register your publication to associate datasets and track research impact
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {doiAlreadyExists ? (
-            <Alert className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                A publication with this DOI already exists in our system. Please use the existing publication.
-              </AlertDescription>
-            </Alert>
-          ) : doiVerified ? (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="space-y-4">
+    <div className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-end gap-4">
+                <FormField
+                  control={form.control}
+                  name="doi"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>DOI</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="10.xxxx/xxxxx"
+                          {...field}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Enter the Digital Object Identifier for your publication
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDOIVerification}
+                  disabled={isVerifyingDOI || isSubmitting}
+                  className="mb-[2px]"
+                >
+                  {isVerifyingDOI ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="mr-2 h-4 w-4" />
+                  )}
+                  Verify DOI
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-medium mb-4">Basic Information</h3>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Publication title"
+                          {...field}
+                          disabled={isSubmitting || Boolean(doiVerificationResult)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="abstract"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Abstract</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Publication abstract"
+                          {...field}
+                          disabled={isSubmitting || Boolean(doiVerificationResult)}
+                          rows={4}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="doi"
+                    name="journal"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>DOI (Digital Object Identifier)</FormLabel>
+                        <FormLabel>Journal</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g., 10.1038/s41586-020-2649-2"
+                            placeholder="Journal name"
                             {...field}
-                            readOnly={doiVerified}
-                            className={doiVerified ? "bg-muted" : ""}
+                            disabled={isSubmitting || Boolean(doiVerificationResult)}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
-                    name="title"
+                    name="publisher"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Publication Title</FormLabel>
+                        <FormLabel>Publisher</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter the full title of your publication"
+                            placeholder="Publisher name"
                             {...field}
-                            readOnly={doiVerified}
-                            className={doiVerified ? "bg-muted" : ""}
+                            disabled={isSubmitting || Boolean(doiVerificationResult)}
                           />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="journal"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Journal or Publisher</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Journal or publisher name"
-                              {...field}
-                              readOnly={doiVerified}
-                              className={doiVerified ? "bg-muted" : ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="year"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Publication Year</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="YYYY"
-                              {...field}
-                              readOnly={doiVerified}
-                              className={doiVerified ? "bg-muted" : ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="abstract"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Abstract
-                          {doiVerified && !field.value && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-4 px-0 ml-2">
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="max-w-xs text-xs">
-                                    Abstract data is missing from Crossref. You can add it manually
-                                    or contact support for assistance.
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter the publication abstract"
-                            rows={4}
-                            {...field}
-                            value={field.value || ""}
-                            readOnly={doiVerified && !!field.value}
-                            className={doiVerified && field.value ? "bg-muted" : ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Researchers</FormLabel>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddResearcher}
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Add Researcher
-                      </Button>
-                    </div>
-                    {form.watch("researchers")?.map((_, index) => (
-                      <div key={index} className="border rounded-md p-4 space-y-4">
-                        <div className="flex justify-between items-center">
-                          <h4 className="font-medium">
-                            Researcher {index + 1}
-                            {form.watch(`researchers.${index}.is_primary`) && (
-                              <Badge className="ml-2" variant="secondary">Primary</Badge>
-                            )}
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            {!form.watch(`researchers.${index}.is_primary`) && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSetPrimary(index)}
-                              >
-                                Set as Primary
-                              </Button>
-                            )}
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleRemoveResearcher(index)}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-      
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name={`researchers.${index}.name`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Name</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Full name" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-      
-                          <FormField
-                            control={form.control}
-                            name={`researchers.${index}.institution`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Institution</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Institution/Organization" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-      
-                          <FormField
-                            control={form.control}
-                            name={`researchers.${index}.email`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Email</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Email address" type="email" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-      
-                          <FormField
-                            control={form.control}
-                            name={`researchers.${index}.orcid_id`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>ORCID ID</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="ORCID identifier" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="isPublic"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Public Visibility</FormLabel>
-                          <FormDescription>
-                            Make this publication visible to other researchers on the platform
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
                       </FormItem>
                     )}
                   />
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="volume"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Volume</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Vol."
+                            {...field}
+                            disabled={isSubmitting || Boolean(doiVerificationResult)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="issue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Issue</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Issue"
+                            {...field}
+                            disabled={isSubmitting || Boolean(doiVerificationResult)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="pages"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pages</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. 123-145"
+                            {...field}
+                            disabled={isSubmitting || Boolean(doiVerificationResult)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Year</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Year"
+                            {...field}
+                            disabled={isSubmitting || Boolean(doiVerificationResult)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="url"
+                          placeholder="https://example.com/publication"
+                          {...field}
+                          disabled={isSubmitting || Boolean(doiVerificationResult)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium">Researchers</h3>
                 <Button
-                  type="submit"
-                  className="w-full"
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addResearcher}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Registering...
-                    </>
-                  ) : (
-                    "Register Publication"
-                  )}
+                  Add Researcher
                 </Button>
-              </form>
-            </Form>
-          ) : (
-            <DOIVerification
-              onVerified={handleDoiVerified}
-              onDOIAlreadyExists={handleDoiAlreadyExists}
-            />
+              </div>
+
+              <div className="space-y-6">
+                {form.watch("researchers")?.map((_, index) => (
+                  <div key={index} className="p-4 border rounded-md space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">
+                        Researcher {index + 1}
+                        {index === 0 && " (Primary)"}
+                      </h4>
+                      {index > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeResearcher(index)}
+                          disabled={isSubmitting}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`researchers.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Full name"
+                                {...field}
+                                disabled={isSubmitting || (Boolean(doiVerificationResult) && index < (doiVerificationResult.author?.length || 0))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`researchers.${index}.institution`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Institution</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Institution name"
+                                {...field}
+                                disabled={isSubmitting || (Boolean(doiVerificationResult) && index < (doiVerificationResult.author?.length || 0))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`researchers.${index}.email`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="email"
+                                placeholder="email@example.com"
+                                {...field}
+                                disabled={isSubmitting}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`researchers.${index}.orcid_id`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ORCID ID</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="0000-0000-0000-0000"
+                                {...field}
+                                disabled={isSubmitting || (Boolean(doiVerificationResult) && index < (doiVerificationResult.author?.length || 0))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-medium mb-4">Settings</h3>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="is_public"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Public</FormLabel>
+                        <FormDescription>
+                          Make this publication visible to all users
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="is_peer_reviewed"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Peer Reviewed</FormLabel>
+                        <FormDescription>
+                          Indicate that this publication has undergone peer review
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(-1)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Registering...
+                </>
+              ) : (
+                "Register Publication"
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
+
+      <AlertDialog open={showDoiPreviewDialog} onOpenChange={setShowDoiPreviewDialog}>
+        <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publication Data from CrossRef</AlertDialogTitle>
+            <AlertDialogDescription>
+              The following information was found for DOI: {form.getValues("doi")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          {doiVerificationResult && (
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid grid-cols-3">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="authors">Authors</TabsTrigger>
+                <TabsTrigger value="additional">Additional Info</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="basic" className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Title</h4>
+                  <p>{doiVerificationResult.title[0]}</p>
+                </div>
+                
+                {doiVerificationResult.abstract && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Abstract</h4>
+                    <p className="text-sm">{doiVerificationResult.abstract}</p>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Journal</h4>
+                    <p>{doiVerificationResult["container-title"]?.[0] || "N/A"}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Publisher</h4>
+                    <p>{doiVerificationResult.publisher || "N/A"}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Volume</h4>
+                    <p>{doiVerificationResult.volume || "N/A"}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Issue</h4>
+                    <p>{doiVerificationResult.issue || "N/A"}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Pages</h4>
+                    <p>{doiVerificationResult.page || "N/A"}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Year</h4>
+                    <p>{doiVerificationResult.published?.["date-parts"]?.[0]?.[0] || "N/A"}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">URL</h4>
+                  <p>
+                    <a href={doiVerificationResult.URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      {doiVerificationResult.URL}
+                    </a>
+                  </p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="authors" className="space-y-4 py-4">
+                {doiVerificationResult.author?.map((author, i) => (
+                  <div key={i} className="p-3 border rounded-md">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-sm">Name</h4>
+                        <p>{author.given} {author.family}</p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-sm">Sequence</h4>
+                        <p>{author.sequence === "first" ? "Primary" : author.sequence}</p>
+                      </div>
+                    </div>
+                    
+                    {author.affiliation && author.affiliation.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        <h4 className="font-semibold text-sm">Affiliation</h4>
+                        <p>{author.affiliation.map(aff => aff.name).join(", ")}</p>
+                      </div>
+                    )}
+                    
+                    {author.ORCID && (
+                      <div className="mt-2 space-y-2">
+                        <h4 className="font-semibold text-sm">ORCID</h4>
+                        <p>
+                          <a href={author.ORCID} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            {author.ORCID.replace("http://orcid.org/", "")}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )) || <p>No author information available</p>}
+              </TabsContent>
+              
+              <TabsContent value="additional" className="space-y-4 py-4">
+                {doiVerificationResult.funder && doiVerificationResult.funder.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Funders</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {doiVerificationResult.funder.map((funder, i) => (
+                        <li key={i}>
+                          {funder.name}
+                          {funder.award && funder.award.length > 0 && (
+                            <span className="text-sm text-muted-foreground ml-1">
+                              (Award: {funder.award.join(", ")})
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {doiVerificationResult.link && doiVerificationResult.link.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Additional Links</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {doiVerificationResult.link.map((link, i) => (
+                        <li key={i}>
+                          <a href={link.URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            {link["content-type"]} ({link["intended-application"]})
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">References Count</h4>
+                    <p>{doiVerificationResult["references-count"] || "N/A"}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Cited By Count</h4>
+                    <p>{doiVerificationResult["is-referenced-by-count"] || "N/A"}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Type</h4>
+                  <p>{doiVerificationResult.type}</p>
+                </div>
+              </TabsContent>
+            </Tabs>
           )}
-        </CardContent>
-      </Card>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={applyDoiData}>Use This Data</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showExistingPublicationDialog} onOpenChange={setShowExistingPublicationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publication Already Exists</AlertDialogTitle>
+            <AlertDialogDescription>
+              A publication with DOI <span className="font-medium">{existingPublicationDoi}</span> is already registered in the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="py-4">
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You can view the existing publication or try registering a different one.
+              </AlertDescription>
+            </Alert>
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowExistingPublicationDialog(false);
+              navigate(`/publications/${existingPublicationDoi}`);
+            }}>
+              View Publication
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 };
 

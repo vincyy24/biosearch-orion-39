@@ -1,206 +1,266 @@
 
-import React, { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Home,
-  Search,
-  FileText,
-  Upload,
-  Database,
-  BarChart,
-  Users,
-  BookOpen,
-  Settings,
-  HelpCircle,
-  ChevronLeft,
-  ChevronRight,
-  Microscope,
-  Plus,
-  LogOut,
-  User,
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  Home, Database, Search, BookOpen, Beaker, Users, 
+  Settings, HelpCircle, Menu, LogOut, ChevronDown, 
+  PlusCircle, User
+} from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-interface SidebarProps {
-  className?: string;
+interface NavItemProps {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  collapsed: boolean;
+  isActive: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed, isActive }) => {
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            to={to}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200",
+              isActive
+                ? "bg-primary/10 text-primary dark:bg-primary/25"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            {icon}
+            {!collapsed && <span>{label}</span>}
+          </Link>
+        </TooltipTrigger>
+        {collapsed && <TooltipContent side="right">{label}</TooltipContent>}
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, logout } = useAuth();
 
-  const navItems = [
-    {
-      name: "Dashboard",
-      icon: Home,
-      path: "/dashboard",
-    },
-    {
-      name: "Search",
-      icon: Search,
-      path: "/search",
-    },
-    {
-      name: "Research",
-      icon: Microscope,
-      path: "/research",
-    },
-    {
-      name: "Publications",
-      icon: BookOpen,
-      path: "/publications",
-    },
-    {
-      name: "Upload Data",
-      icon: Upload,
-      path: "/upload",
-    },
-    {
-      name: "Browse Data",
-      icon: Database,
-      path: "/browse",
-    },
-    {
-      name: "Analytics",
-      icon: BarChart,
-      path: "/analytics",
-    },
-    {
-      name: "Community",
-      icon: Users,
-      path: "/community",
-    },
-    {
-      name: "Documentation",
-      icon: FileText,
-      path: "/documentation",
-    },
-    {
-      name: "Support",
-      icon: HelpCircle,
-      path: "/support",
-    },
-  ];
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
   return (
     <div
       className={cn(
-        "flex flex-col h-screen bg-card border-r transition-all duration-300",
-        collapsed ? "w-16" : "w-64",
-        className
+        "h-full flex flex-col bg-card border-r transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between h-16 px-4 border-b">
         {!collapsed && (
-          <Link to="/" className="text-xl font-bold">
-            ORION
+          <Link to="/" className="font-bold text-lg">
+            ORION Database
           </Link>
         )}
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={() => setCollapsed(!collapsed)}
-          className={cn("ml-auto", collapsed ? "mx-auto" : "")}
+          className={cn("p-0 h-8 w-8", collapsed && "mx-auto")}
         >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          <Menu className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="flex-1 py-4 overflow-y-auto">
-        <nav className="px-2 space-y-1">
-          {navItems.map((item) => (
-            <Button
-              key={item.path}
-              variant={location.pathname === item.path ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-start mb-1",
-                collapsed ? "px-2" : "px-4"
-              )}
-              onClick={() => navigate(item.path)}
-            >
-              <item.icon className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
-              {!collapsed && <span>{item.name}</span>}
-            </Button>
-          ))}
-        </nav>
+      <div className="px-3 py-4 flex-1 overflow-auto">
+        <div className="space-y-1">
+          <NavItem
+            to="/"
+            icon={<Home className="h-5 w-5" />}
+            label="Home"
+            collapsed={collapsed}
+            isActive={isActive('/')}
+          />
+          <NavItem
+            to="/dashboard"
+            icon={<Database className="h-5 w-5" />}
+            label="Dashboard"
+            collapsed={collapsed}
+            isActive={isActive('/dashboard')}
+          />
+          <NavItem
+            to="/search"
+            icon={<Search className="h-5 w-5" />}
+            label="Search"
+            collapsed={collapsed}
+            isActive={isActive('/search')}
+          />
+          <NavItem
+            to="/browse"
+            icon={<Database className="h-5 w-5" />}
+            label="Data Browser"
+            collapsed={collapsed}
+            isActive={isActive('/browse')}
+          />
+
+          {/* Research and Publication section */}
+          <div className="my-4 space-y-1">
+            <NavItem
+              to="/research"
+              icon={<Beaker className="h-5 w-5" />}
+              label="Research Projects"
+              collapsed={collapsed}
+              isActive={isActive('/research')}
+            />
+            <NavItem
+              to="/publications"
+              icon={<BookOpen className="h-5 w-5" />}
+              label="Publications"
+              collapsed={collapsed}
+              isActive={isActive('/publications')}
+            />
+            
+            {/* Create New button or dropdown */}
+            {user && (
+              collapsed ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full flex items-center justify-center text-muted-foreground"
+                    >
+                      <PlusCircle className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/research/new">
+                        <Beaker className="h-4 w-4 mr-2" />
+                        New Research
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/publications/new">
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        New Publication
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="flex flex-row gap-2 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    asChild
+                  >
+                    <Link to="/research/new">
+                      <Beaker className="h-4 w-4 mr-1" />
+                      New Research
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    asChild
+                  >
+                    <Link to="/publications/new">
+                      <BookOpen className="h-4 w-4 mr-1" />
+                      New Publication
+                    </Link>
+                  </Button>
+                </div>
+              )
+            )}
+          </div>
+
+          <NavItem
+            to="/community"
+            icon={<Users className="h-5 w-5" />}
+            label="Community"
+            collapsed={collapsed}
+            isActive={isActive('/community')}
+          />
+          <NavItem
+            to="/documentation"
+            icon={<HelpCircle className="h-5 w-5" />}
+            label="Documentation"
+            collapsed={collapsed}
+            isActive={isActive('/documentation')}
+          />
+        </div>
       </div>
 
-      {/* Create New Button/Dropdown */}
-      <div className="p-2 border-t border-b">
-        {collapsed ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="w-full" size="icon" variant="default">
-                <Plus className="h-5 w-5" />
+      {/* User section at bottom */}
+      <div className="p-3 border-t">
+        {user ? (
+          <div>
+            {collapsed ? (
+              <div className="flex justify-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-10 rounded-full p-0 text-muted-foreground"
+                    >
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account-settings">Settings</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={logout}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Link to="/profile" className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent">
+                  <span className="font-medium">{user.username}</span>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={logout}
+                  className="w-full justify-start text-muted-foreground hover:text-current"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Button variant="default" asChild>
+              <Link to="/login">Login</Link>
+            </Button>
+            {!collapsed && (
+              <Button variant="outline" asChild>
+                <Link to="/signup">Sign Up</Link>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate("/research/new")}>
-                <Microscope className="h-4 w-4 mr-2" />
-                New Research
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/publications/new")}>
-                <BookOpen className="h-4 w-4 mr-2" />
-                New Publication
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <div className="flex gap-2">
-            <Button 
-              variant="default" 
-              className="flex-1 text-xs" 
-              onClick={() => navigate("/research/new")}
-            >
-              <Microscope className="h-4 w-4 mr-1" /> Research
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex-1 text-xs" 
-              onClick={() => navigate("/publications/new")}
-            >
-              <BookOpen className="h-4 w-4 mr-1" /> Publication
-            </Button>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* User Profile Section */}
-      <div className="p-4 border-t mt-auto">
-        {isAuthenticated ? (
-          <div className={cn("flex items-center", collapsed ? "justify-center" : "")}>
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => navigate("/profile")}
-            >
-              <User className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
-              {!collapsed && <span>{user?.username || user?.email}</span>}
-            </Button>
-          </div>
-        ) : (
-          <Button
-            variant="default"
-            className="w-full"
-            onClick={() => navigate("/login")}
-          >
-            {collapsed ? <User className="h-5 w-5" /> : "Sign In"}
-          </Button>
         )}
       </div>
     </div>

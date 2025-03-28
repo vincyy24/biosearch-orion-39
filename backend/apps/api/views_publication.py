@@ -1,3 +1,4 @@
+
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -99,7 +100,11 @@ class PublicationRegistration(View):
 
             # Check if publication already exists by DOI (more reliable than title)
             if Publication.objects.filter(doi=data["doi"]).exists():
-                return JsonResponse({"error": "A publication with this DOI already exists"}, status=400)
+                return JsonResponse({
+                    "error": "A publication with this DOI already exists",
+                    "exists": True,
+                    "doi": data["doi"]
+                }, status=400)
 
             # Create the publication first without researchers
             publication = Publication.objects.create(
@@ -358,5 +363,43 @@ class DatasetDownloadView(View):
             
             return response
             
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+class PublicationAnalysisView(View):
+    def get(self, request, doi=None):
+        """Get analysis of a publication's datasets"""
+        if not doi:
+            return JsonResponse({"error": "DOI is required"}, status=400)
+            
+        try:
+            publication = get_object_or_404(Publication, doi=doi)
+            datasets = Dataset.objects.filter(publication=publication)
+            
+            # Mock analysis for demonstration purposes
+            # In a real implementation, this would perform actual data analysis
+            analysis_results = {
+                "publication_info": {
+                    "doi": publication.doi,
+                    "title": publication.title,
+                    "journal": publication.journal,
+                    "year": publication.year
+                },
+                "dataset_count": datasets.count(),
+                "total_file_size": sum(d.file_size for d in datasets),
+                "data_types": list(datasets.values_list('file_type', flat=True).distinct()),
+                "summary_statistics": {
+                    "avg_dataset_size": sum(d.file_size for d in datasets) / max(datasets.count(), 1),
+                    "date_range": {
+                        "oldest": datasets.order_by('created_at').first().created_at.isoformat() if datasets.exists() else None,
+                        "newest": datasets.order_by('-created_at').first().created_at.isoformat() if datasets.exists() else None
+                    }
+                }
+            }
+            
+            return JsonResponse(analysis_results)
+            
+        except Publication.DoesNotExist:
+            return JsonResponse({"error": "Publication not found"}, status=404)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
