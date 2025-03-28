@@ -9,6 +9,8 @@ urlpatterns = [
     # API endpoints for Publications
     path('publications/', views.PublicationList.as_view(), name='get_publications'),
     path('publications/<int:publication_id>/', views.PublicationList.as_view(), name='get_publication'),
+    path('publications/doi/<str:doi>/', views.PublicationDetail.as_view(), name='get_publication_by_doi'),
+    path('publications/register/', views.PublicationRegistration.as_view(), name='register_publication'),
     
     # API endpoints for Data Types
     path('data-types/', views_caching.get_data_types, name='get_data_types'),
@@ -18,13 +20,16 @@ urlpatterns = [
     
     # API endpoints for Uploads
     path('upload/', views.FileUploadView.as_view(), name='upload_file'),
+    path('upload/publication/<str:doi>/', views.PublicationFileUploadView.as_view(), name='upload_file_to_publication'),
+    path('upload/research/<str:project_id>/', views.ResearchFileUploadView.as_view(), name='upload_file_to_research'),
     
     # API endpoints for Search
     path('search/', views.SearchView.as_view(), name='search_data'),
     path('search/suggestions/', views.SearchView.as_view(), name='get_search_suggestions'),
     
     # API endpoints for Downloads
-    path('download/', views.DownloadView.as_view(), name='download_file'),
+    path('download/<str:dataset_id>/', views.DownloadView.as_view(), name='download_file'),
+    path('download/<str:dataset_id>/<str:format>/', views.DownloadView.as_view(), name='download_file_format'),
     
     # API endpoints for Voltammetry
     path('voltammetry/', views.VoltammetryDataView.as_view(), name='get_voltammetry_data'),
@@ -52,6 +57,7 @@ urlpatterns = [
     
     # Research Project API endpoints
     path('research/projects/', views_research.research_projects, name='research_projects'),
+    path('research/projects/new/', views_research.create_research_project, name='create_research_project'),
     path('research/projects/<str:project_id>/', views_research.research_project_detail, name='research_project_detail'),
     path('research/projects/<str:project_id>/collaborators/', views_research.add_collaborator, name='add_collaborator'),
     path(route='research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', view=views_research.manage_collaborator, name='manage_collaborator'),

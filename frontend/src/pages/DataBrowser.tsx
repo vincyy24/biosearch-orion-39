@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search, Filter, Download, ChevronDown } from "lucide-react";
+import { Search, Filter, Eye, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SampleDataChart from "@/components/charts/SampleDataChart";
 import VoltammetryPlot from "@/components/visualizations/VoltammetryPlot";
@@ -28,20 +28,21 @@ import { fetchVisualizationUrl } from "@/services/api";
 
 // Sample data for demonstration
 const sampleData = [
-  { id: "GENE001", name: "BRCA1", type: "Gene", species: "Human", description: "Breast cancer type 1 susceptibility protein" },
-  { id: "GENE002", name: "TP53", type: "Gene", species: "Human", description: "Cellular tumor antigen p53" },
-  { id: "GENE003", name: "EGFR", type: "Gene", species: "Human", description: "Epidermal growth factor receptor" },
-  { id: "PROT001", name: "P53_HUMAN", type: "Protein", species: "Human", description: "Cellular tumor antigen p53" },
-  { id: "PROT002", name: "BRCA1_HUMAN", type: "Protein", species: "Human", description: "Breast cancer type 1 susceptibility protein" },
-  { id: "PATH001", name: "p53 Pathway", type: "Pathway", species: "Human", description: "p53 signaling pathway" },
-  { id: "PATH002", name: "EGFR Signaling", type: "Pathway", species: "Human", description: "EGFR signaling pathway" },
-  { id: "DSET001", name: "Cancer Genome Atlas", type: "Dataset", species: "Human", description: "Comprehensive cancer genomics dataset" },
-  { id: "VOLT001", name: "Cyclic Voltammetry Study", type: "Voltammetry", species: "N/A", description: "Electrochemical analysis using cyclic voltammetry" },
-  { id: "VOLT002", name: "Differential Pulse Analysis", type: "Voltammetry", species: "N/A", description: "Electrochemical analysis using differential pulse voltammetry" },
+  { id: "GENE001", name: "BRCA1", type: "Gene", species: "Human", description: "Breast cancer type 1 susceptibility protein", publicationDoi: "10.1038/s41586-020-2649-2" },
+  { id: "GENE002", name: "TP53", type: "Gene", species: "Human", description: "Cellular tumor antigen p53", publicationDoi: "10.1021/jacs.0c01924" },
+  { id: "GENE003", name: "EGFR", type: "Gene", species: "Human", description: "Epidermal growth factor receptor", publicationDoi: "10.1038/s41586-020-2649-2" },
+  { id: "PROT001", name: "P53_HUMAN", type: "Protein", species: "Human", description: "Cellular tumor antigen p53", publicationDoi: "10.1021/jacs.0c01924" },
+  { id: "PROT002", name: "BRCA1_HUMAN", type: "Protein", species: "Human", description: "Breast cancer type 1 susceptibility protein", publicationDoi: "10.1038/s41586-020-2649-2" },
+  { id: "PATH001", name: "p53 Pathway", type: "Pathway", species: "Human", description: "p53 signaling pathway", publicationDoi: "10.1021/jacs.0c01924" },
+  { id: "PATH002", name: "EGFR Signaling", type: "Pathway", species: "Human", description: "EGFR signaling pathway", publicationDoi: "10.1038/s41586-020-2649-2" },
+  { id: "DSET001", name: "Cancer Genome Atlas", type: "Dataset", species: "Human", description: "Comprehensive cancer genomics dataset", publicationDoi: "10.1021/jacs.0c01924" },
+  { id: "VOLT001", name: "Cyclic Voltammetry Study", type: "Voltammetry", species: "N/A", description: "Electrochemical analysis using cyclic voltammetry", publicationDoi: "10.1038/s41586-020-2649-2" },
+  { id: "VOLT002", name: "Differential Pulse Analysis", type: "Voltammetry", species: "N/A", description: "Electrochemical analysis using differential pulse voltammetry", publicationDoi: "10.1021/jacs.0c01924" },
 ];
 
 const DataBrowser = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [dataType, setDataType] = useState("all");
   const [currentView, setCurrentView] = useState("table");
@@ -90,38 +91,16 @@ const DataBrowser = () => {
     });
   };
 
-  const handleDownload = (format: 'csv' | 'excel') => {
-    toast({
-      title: `Download initiated (${format.toUpperCase()})`,
-      description: "Your data will be downloaded shortly.",
-    });
-
-    // In a real app, this would call an API endpoint to generate the file
-    setTimeout(() => {
-      // Simulate file download for CSV
-      if (format === 'csv') {
-        const header = "ID,Name,Type,Species,Description\n";
-        const csvContent = "data:text/csv;charset=utf-8," +
-          header +
-          filteredData.map(item =>
-            `${item.id},${item.name},${item.type},${item.species},"${item.description}"`
-          ).join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "data_export.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        // For Excel, in a real app we would use a library like xlsx
-        toast({
-          title: "Excel export",
-          description: "In a production environment, this would generate an Excel file using the xlsx library.",
-        });
-      }
-    }, 1000);
+  const handleViewItem = (item: any) => {
+    setSelectedItem(item);
+    
+    if (item.publicationDoi) {
+      // Navigate to the publication page with the dataset tab activated
+      navigate(`/publications/${item.publicationDoi}?dataset=${item.id}`);
+    } else if (item.type === "Voltammetry") {
+      setCurrentView("visual");
+      setSelectedVisualization("voltammetry");
+    }
   };
 
   // Filter data based on search query and selected type
@@ -145,15 +124,6 @@ const DataBrowser = () => {
               Search and explore genomic data, proteins, pathways, and datasets
             </p>
           </div>
-
-          <div className="mt-4 md:mt-0 space-x-2">
-            <Button variant="outline" onClick={() => handleDownload('csv')}>
-              <Download className="mr-2 h-4 w-4" /> Export CSV
-            </Button>
-            <Button variant="outline" onClick={() => handleDownload('excel')}>
-              <Download className="mr-2 h-4 w-4" /> Export Excel
-            </Button>
-          </div>
         </div>
 
         {selectedItem && (
@@ -164,14 +134,24 @@ const DataBrowser = () => {
                 <p className="text-sm text-muted-foreground mb-2">ID: {selectedItem.id} | Type: {selectedItem.type} | Species: {selectedItem.species}</p>
                 <p>{selectedItem.description}</p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-2 md:mt-0"
-                onClick={() => setSelectedItem(null)}
-              >
-                Clear Selection
-              </Button>
+              <div className="mt-2 md:mt-0 flex gap-2">
+                {selectedItem.publicationDoi && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/publications/${selectedItem.publicationDoi}?dataset=${selectedItem.id}`)}
+                  >
+                    View in Publication
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedItem(null)}
+                >
+                  Clear Selection
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -245,15 +225,9 @@ const DataBrowser = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setSelectedItem(item);
-                          if (item.type === "Voltammetry") {
-                            setCurrentView("visual");
-                            setSelectedVisualization("voltammetry");
-                          }
-                        }}
+                        onClick={() => handleViewItem(item)}
                       >
-                        View
+                        <Eye className="h-4 w-4 mr-1" /> View
                       </Button>
                     </TableCell>
                   </TableRow>

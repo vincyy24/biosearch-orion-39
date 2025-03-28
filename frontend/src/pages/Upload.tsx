@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layouts/AppLayout";
@@ -10,10 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Upload as UploadIcon, FileText, BookOpen, Beaker, Plus } from "lucide-react";
+import { AlertCircle, Upload as UploadIcon, FileText, BookOpen, Beaker, Plus, Info } from "lucide-react";
 import PublicationRegistration from "@/components/publications/PublicationRegistration";
 import { fetchResearchProjects } from "@/services/researchService";
 import { searchPublicationsByDOI } from "@/services/doiService";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FileUploadState {
   file: File | null;
@@ -24,6 +26,19 @@ interface FileUploadState {
   projectId: string | null;
   publicationDoi: string | null;
   experimentType: string;
+}
+
+interface Project {
+  id: string;
+  title: string;
+  is_public: boolean;
+}
+
+interface Publication {
+  doi: string;
+  title: string;
+  year: string;
+  is_public: boolean;
 }
 
 const Upload = () => {
@@ -40,17 +55,22 @@ const Upload = () => {
     experimentType: "cyclic",
   });
   const [isUploading, setIsUploading] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [publications, setPublications] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [publications, setPublications] = useState<Publication[]>([]);
   const [activeTab, setActiveTab] = useState("project");
   const [showRegisterPublication, setShowRegisterPublication] = useState(false);
+  const [selectedItemIsPublic, setSelectedItemIsPublic] = useState<boolean | null>(null);
 
   // Fetch research projects
   useEffect(() => {
     const loadProjects = async () => {
       try {
         const response = await fetchResearchProjects();
-        setProjects(response.results || []);
+        const projectsWithVisibility = response.results.map((project: any) => ({
+          ...project,
+          is_public: Boolean(project.is_public)
+        }));
+        setProjects(projectsWithVisibility || []);
       } catch (error) {
         console.error("Error loading research projects:", error);
         toast({
@@ -61,7 +81,6 @@ const Upload = () => {
       }
     };
 
-    // Load sample publications for demo
     const loadPublications = async () => {
       try {
         // This would typically come from an API endpoint with user's publications
@@ -70,7 +89,12 @@ const Upload = () => {
           "10.1038/s41586-020-2649-2"
         ];
         const pubData = await searchPublicationsByDOI(sampleDois);
-        setPublications(pubData || []);
+        // Add is_public property
+        const publicationsWithVisibility = pubData.map((pub: any) => ({
+          ...pub,
+          is_public: Boolean(pub.is_public)
+        }));
+        setPublications(publicationsWithVisibility || []);
       } catch (error) {
         console.error("Error loading publications:", error);
       }
@@ -109,10 +133,47 @@ const Upload = () => {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setUploadState((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    // Handle project or publication selection and update visibility state
+    if (name === "projectId") {
+      const selectedProject = projects.find(p => p.id.toString() === value);
+      setSelectedItemIsPublic(selectedProject?.is_public || false);
+      
+      // If project is private, make dataset private as well
+      if (selectedProject && !selectedProject.is_public) {
+        setUploadState(prev => ({
+          ...prev,
+          [name]: value,
+          isPublic: false
+        }));
+      } else {
+        setUploadState(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
+    } else if (name === "publicationDoi") {
+      const selectedPublication = publications.find(p => p.doi === value);
+      setSelectedItemIsPublic(selectedPublication?.is_public || false);
+      
+      // If publication is private, make dataset private as well
+      if (selectedPublication && !selectedPublication.is_public) {
+        setUploadState(prev => ({
+          ...prev,
+          [name]: value,
+          isPublic: false
+        }));
+      } else {
+        setUploadState(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
+    } else {
+      setUploadState(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -148,6 +209,21 @@ const Upload = () => {
     // Here we would typically submit to an API
     setIsUploading(true);
     try {
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', uploadState.file);
+      formData.append('fileName', uploadState.fileName);
+      formData.append('description', uploadState.description);
+      formData.append('dataType', uploadState.dataType);
+      formData.append('experimentType', uploadState.experimentType);
+      formData.append('isPublic', uploadState.isPublic.toString());
+      
+      if (activeTab === "project" && uploadState.projectId) {
+        formData.append('projectId', uploadState.projectId);
+      } else if (activeTab === "publication" && uploadState.publicationDoi) {
+        formData.append('publicationDoi', uploadState.publicationDoi);
+      }
+      
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
@@ -190,7 +266,13 @@ const Upload = () => {
             >
               Back to Upload
             </Button>
-            <PublicationRegistration />
+            <PublicationRegistration onComplete={() => {
+              setShowRegisterPublication(false);
+              toast({
+                title: "Publication registered",
+                description: "Your publication has been registered successfully.",
+              });
+            }} />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -229,7 +311,7 @@ const Upload = () => {
                             <SelectContent>
                               {projects.map((project) => (
                                 <SelectItem key={project.id} value={project.id.toString()}>
-                                  {project.title}
+                                  {project.title} {!project.is_public && "(Private)"}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -238,7 +320,7 @@ const Upload = () => {
                             <Button 
                               type="button" 
                               variant="outline" 
-                              onClick={() => navigate("/research")}
+                              onClick={() => navigate("/research/new")}
                               className="w-full"
                             >
                               <Plus className="mr-2 h-4 w-4" />
@@ -261,7 +343,7 @@ const Upload = () => {
                             <SelectContent>
                               {publications.map((pub, index) => (
                                 <SelectItem key={index} value={pub.doi}>
-                                  {pub.title} ({pub.year})
+                                  {pub.title} ({pub.year}) {!pub.is_public && "(Private)"}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -376,13 +458,30 @@ const Upload = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="isPublic"
-                        checked={uploadState.isPublic}
-                        onCheckedChange={handleTogglePublic}
-                      />
-                      <Label htmlFor="isPublic">Make this dataset public</Label>
+                    <div className="space-y-2">
+                      {selectedItemIsPublic === false && (
+                        <Alert variant="warning" className="mb-4 border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/50">
+                          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          <AlertDescription className="text-amber-600 dark:text-amber-400">
+                            The selected {activeTab === "project" ? "project" : "publication"} is private. 
+                            Datasets for private {activeTab === "project" ? "projects" : "publications"} must also be private.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      <div className="flex items-center space-x-2 justify-between rounded-lg border p-4">
+                        <div>
+                          <Label htmlFor="isPublic" className="text-base">Make this dataset public</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Public datasets are visible to anyone browsing the platform
+                          </p>
+                        </div>
+                        <Switch
+                          id="isPublic"
+                          checked={uploadState.isPublic}
+                          onCheckedChange={handleTogglePublic}
+                          disabled={selectedItemIsPublic === false}
+                        />
+                      </div>
                     </div>
                   </div>
 

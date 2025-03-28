@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Loader2, FileDown, BarChart2, Book, Users, DownloadCloud, FileText, GitBranch, ExternalLink, Plus } from "lucide-react";
+import { ChevronLeft, Loader2, BarChart2, Book, Users, DownloadCloud, FileText, GitBranch, ExternalLink, Plus } from "lucide-react";
 import PublicationDetailComponent from "@/components/publications/PublicationDetail";
 import { verifyDOI, formatDOIMetadata } from "@/services/doiService";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import PlotlyVisualization from "@/components/visualizations/PlotlyVisualization";
 import VoltammetryPlot from "@/components/visualizations/VoltammetryPlot";
+import { downloadData } from "@/services/api";
 
 // Sample dataset for demonstration
 const sampleDatasets = [
@@ -71,11 +72,14 @@ const analysisResults = {
 
 const PublicationDetailPage = () => {
   const { doi } = useParams();
+  const location = useLocation();
   const { toast } = useToast();
   const [publication, setPublication] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeDataset, setActiveDataset] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("datasets");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const fetchPublicationData = async () => {
@@ -109,11 +113,43 @@ const PublicationDetailPage = () => {
     fetchPublicationData();
   }, [doi]);
 
-  const handleDownload = (datasetId: string) => {
-    toast({
-      title: "Download Started",
-      description: "Your dataset is now downloading."
-    });
+  // Check for dataset parameter in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const datasetId = params.get("dataset");
+    
+    if (datasetId) {
+      // Find the dataset in our sample data
+      const foundInSamples = sampleDatasets.find(d => d.id === datasetId);
+      
+      if (foundInSamples) {
+        setActiveDataset(datasetId);
+        setActiveTab("datasets");
+      }
+    }
+  }, [location.search]);
+
+  const handleDownload = async (datasetId: string, format: 'csv' | 'excel' = 'csv') => {
+    setIsDownloading(true);
+    
+    try {
+      await downloadData(datasetId, format);
+      
+      toast({
+        title: "Download successful",
+        description: `The dataset has been downloaded as ${format === 'excel' ? 'Excel' : 'CSV'} file.`,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Download failed. Please try again.";
+      
+      toast({
+        title: "Download failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleDatasetSelect = (datasetId: string) => {
@@ -170,8 +206,10 @@ const PublicationDetailPage = () => {
                         <ExternalLink className="h-4 w-4 mr-1" /> View Original
                       </a>
                     </Button>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-1" /> Add Dataset
+                    <Button size="sm" asChild>
+                      <Link to={`/upload?publicationDoi=${publication?.doi}`}>
+                        <Plus className="h-4 w-4 mr-1" /> Add Dataset
+                      </Link>
                     </Button>
                   </div>
                 </div>
@@ -221,7 +259,7 @@ const PublicationDetailPage = () => {
               </CardContent>
             </Card>
 
-            <Tabs defaultValue="datasets" className="w-full">
+            <Tabs defaultValue="datasets" value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-4">
                 <TabsTrigger value="datasets">
                   <FileText className="h-4 w-4 mr-2" />
@@ -264,7 +302,7 @@ const PublicationDetailPage = () => {
                         </TableHeader>
                         <TableBody>
                           {sampleDatasets.map((dataset) => (
-                            <TableRow key={dataset.id}>
+                            <TableRow key={dataset.id} className={activeDataset === dataset.id ? "bg-primary/5" : ""}>
                               <TableCell className="font-medium">{dataset.name}</TableCell>
                               <TableCell>
                                 <Badge variant="outline">
@@ -274,22 +312,42 @@ const PublicationDetailPage = () => {
                               <TableCell>v{dataset.version}</TableCell>
                               <TableCell>{dataset.uploadDate}</TableCell>
                               <TableCell>{dataset.size}</TableCell>
-                              <TableCell className="text-right space-x-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleDatasetSelect(dataset.id)}
-                                >
-                                  View
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleDownload(dataset.id)}
-                                >
-                                  <DownloadCloud className="h-4 w-4 mr-1" />
-                                  Download
-                                </Button>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDatasetSelect(dataset.id)}
+                                  >
+                                    View
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleDownload(dataset.id, 'csv')}
+                                    disabled={isDownloading}
+                                  >
+                                    {isDownloading && activeDataset === dataset.id ? (
+                                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                    ) : (
+                                      <DownloadCloud className="h-4 w-4 mr-1" />
+                                    )}
+                                    CSV
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleDownload(dataset.id, 'excel')}
+                                    disabled={isDownloading}
+                                  >
+                                    {isDownloading && activeDataset === dataset.id ? (
+                                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                    ) : (
+                                      <DownloadCloud className="h-4 w-4 mr-1" />
+                                    )}
+                                    Excel
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -297,10 +355,12 @@ const PublicationDetailPage = () => {
                       </Table>
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
-                        <FileDown className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                        <FileText className="h-12 w-12 mx-auto mb-3 opacity-20" />
                         <p>No datasets available for this publication yet</p>
-                        <Button variant="outline" className="mt-4">
-                          Upload dataset for this publication
+                        <Button variant="outline" className="mt-4" asChild>
+                          <Link to={`/upload?publicationDoi=${publication?.doi}`}>
+                            Upload dataset for this publication
+                          </Link>
                         </Button>
                       </div>
                     )}
@@ -470,7 +530,11 @@ const PublicationDetailPage = () => {
                                   <Button variant="ghost" size="sm">
                                     View
                                   </Button>
-                                  <Button variant="outline" size="sm">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleDownload(`v${version.version}`, 'csv')}
+                                  >
                                     <DownloadCloud className="h-4 w-4 mr-1" />
                                     Download
                                   </Button>

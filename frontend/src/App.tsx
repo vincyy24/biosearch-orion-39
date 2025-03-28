@@ -31,6 +31,7 @@ import Tools from './pages/Tools';
 import Documentation from './pages/Documentation';
 import AdvancedSearch from './pages/AdvancedSearch';
 import Support from './pages/Support';
+import ResearchRegistration from './components/research/ResearchRegistration';
 
 function App() {
   return (
@@ -48,15 +49,17 @@ function App() {
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/voltammetry" element={<Voltammetry />} />
               <Route path="/voltammetry/:id" element={<Voltammetry />} />
-              <Route path="/upload" element={<Upload />} />
+              <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
               <Route path="/browse" element={<DataBrowser />} />
               <Route path="/search" element={<SearchResults />} />
               <Route path="/advanced-search" element={<AdvancedSearch />} />
               
               <Route path="/research" element={<ProtectedRoute><ResearchProjects /></ProtectedRoute>} />
+              <Route path="/research/new" element={<ProtectedRoute><ResearchRegistration /></ProtectedRoute>} />
               <Route path="/research/:id" element={<ProtectedRoute><ResearchProjectDetail /></ProtectedRoute>} />
               
               <Route path="/publications" element={<Publications />} />
+              <Route path="/publications/new" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
               <Route path="/publications/:doi" element={<PublicationDetail />} />
               
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
