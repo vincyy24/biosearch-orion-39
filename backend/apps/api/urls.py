@@ -1,16 +1,16 @@
-
 from django.urls import path
 from . import views
 from . import views_caching
 from . import views_orcid
 from . import views_research
+from . import views_publication
 
 urlpatterns = [
     # API endpoints for Publications
     path('publications/', views.PublicationList.as_view(), name='get_publications'),
     path('publications/<int:publication_id>/', views.PublicationList.as_view(), name='get_publication'),
-    path('publications/doi/<str:doi>/', views.PublicationDetail.as_view(), name='get_publication_by_doi'),
-    path('publications/register/', views.PublicationRegistration.as_view(), name='register_publication'),
+    path('publications/doi/<str:doi>/', views_publication.PublicationDetail.as_view(), name='get_publication_by_doi'),
+    path('publications/register/', views_publication.PublicationRegistration.as_view(), name='register_publication'),
     
     # API endpoints for Data Types
     path('data-types/', views_caching.get_data_types, name='get_data_types'),
@@ -20,8 +20,8 @@ urlpatterns = [
     
     # API endpoints for Uploads
     path('upload/', views.FileUploadView.as_view(), name='upload_file'),
-    path('upload/publication/<str:doi>/', views.PublicationFileUploadView.as_view(), name='upload_file_to_publication'),
-    path('upload/research/<str:project_id>/', views.ResearchFileUploadView.as_view(), name='upload_file_to_research'),
+    path('upload/publication/<str:doi>/', views_publication.PublicationFileUploadView.as_view(), name='upload_file_to_publication'),
+    path('upload/research/<str:project_id>/', views_publication.ResearchFileUploadView.as_view(), name='upload_file_to_research'),
     
     # API endpoints for Search
     path('search/', views.SearchView.as_view(), name='search_data'),
