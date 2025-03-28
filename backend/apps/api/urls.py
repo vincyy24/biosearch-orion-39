@@ -57,7 +57,7 @@ urlpatterns = [
     
     # Research Project API endpoints
     path('research/projects/', views_research.research_projects, name='research_projects'),
-    path('research/projects/new/', views_research.create_research_project, name='create_research_project'),
+    path('research/projects/new/', views_research.research_projects, name='create_research_project'),
     path('research/projects/<str:project_id>/', views_research.research_project_detail, name='research_project_detail'),
     path('research/projects/<str:project_id>/collaborators/', views_research.add_collaborator, name='add_collaborator'),
     path(route='research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', view=views_research.manage_collaborator, name='manage_collaborator'),
