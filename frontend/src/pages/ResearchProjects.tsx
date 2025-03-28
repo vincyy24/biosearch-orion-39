@@ -92,7 +92,7 @@ const ResearchProjects = () => {
         ) : projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <Card key={project.project_id} className="overflow-hidden">
+              <Card key={project.id} className="overflow-hidden">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg font-bold">{project.title}</CardTitle>
@@ -135,7 +135,7 @@ const ResearchProjects = () => {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => handleViewProject(project.project_id)}
+                    onClick={() => handleViewProject(project.id)}
                   >
                     View <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
