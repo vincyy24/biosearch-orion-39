@@ -25,17 +25,25 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  Upload,
-  Download,
   Menu,
   Search,
   LogOut,
   User,
+  Upload,
+  Plus,
+  Microscope,
+  Download,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -62,12 +70,17 @@ const Sidebar = () => {
     {
       icon: Database,
       label: "Data Browser",
-      path: "/data-browser",
+      path: "/browse",
     },
     {
       icon: FileText,
       label: "Publications",
       path: "/publications",
+    },
+    {
+      icon: Microscope,
+      label: "Research",
+      path: "/research",
     },
     {
       icon: Wrench,
@@ -78,11 +91,6 @@ const Sidebar = () => {
       icon: Search,
       label: "Search",
       path: "/search",
-    },
-    {
-      icon: Download,
-      label: "Download",
-      path: "/download",
     },
   ];
 
@@ -193,6 +201,64 @@ const Sidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAuthenticated && (
+          <SidebarGroup>
+            <SidebarGroupLabel className={cn(
+              "transition-[opacity,height] duration-300 text-nowrap",
+              open ? "opacity-100" : "opacity-0 h-0"
+            )}>
+              Create New
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  {open ? (
+                    <div className="flex gap-2 px-2">
+                      <Button 
+                        size="sm" 
+                        className="flex-1 h-9" 
+                        onClick={() => navigate('/research/new')}
+                      >
+                        <Microscope className="h-4 w-4 mr-1" />
+                        Research
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="flex-1 h-9" 
+                        onClick={() => navigate('/publications/new')}
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        Publication
+                      </Button>
+                    </div>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                          tooltip="Create New"
+                          className="flex items-center justify-center"
+                        >
+                          <Plus className="h-5 w-5" />
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => navigate('/research/new')}>
+                          <Microscope className="h-4 w-4 mr-2" />
+                          New Research
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate('/publications/new')}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          New Publication
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel className={cn(
