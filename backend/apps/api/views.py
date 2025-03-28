@@ -31,7 +31,7 @@ class CSRFTokenView(APIView):
 
 class PublicationList(APIView):
     def get(self, request):
-        publication_id = request.data.geet("publication_id")
+        publication_id = request.data.get("publication_id")
     
         if publication_id:
             try:
@@ -63,6 +63,7 @@ class DataCategoriesList(APIView):
     """
     def get(self, request):
         categories = DataCategory.objects.all().values('id', 'name', 'description')
+        print("categories", list(categories))
         return Response(list(categories))
 
 class FileUploadView(APIView):

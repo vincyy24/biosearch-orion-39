@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
-    "build:dev": "npm --prefix frontend run build:dev",
-    "lint": "npm --prefix frontend run lint",
-    "preview": "npm --prefix frontend run preview",
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:dev": "cd frontend && npm run build:dev",
+    "lint": "cd frontend && npm run lint",
+    "preview": "cd frontend && npm run preview",
     "backend": "cd backend && python manage.py runserver"
   },
   "keywords": [

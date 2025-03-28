@@ -1,5 +1,5 @@
 
-from django.urls import path, include
+from django.urls import path
 from . import views
 from . import views_caching
 from . import views_orcid
@@ -54,7 +54,7 @@ urlpatterns = [
     path('research/projects/', views_research.research_projects, name='research_projects'),
     path('research/projects/<str:project_id>/', views_research.research_project_detail, name='research_project_detail'),
     path('research/projects/<str:project_id>/collaborators/', views_research.add_collaborator, name='add_collaborator'),
-    path('research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', views_research.manage_collaborator, name='manage_collaborator'),
+    path(route='research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', view=views_research.manage_collaborator, name='manage_collaborator'),
     path('research/projects/<str:project_id>/experiments/', views_research.assign_experiment, name='assign_experiment'),
     path('research/projects/<str:project_id>/comparisons/', views_research.dataset_comparisons, name='project_dataset_comparisons'),
     path('research/comparisons/', views_research.dataset_comparisons, name='dataset_comparisons'),
