@@ -420,7 +420,7 @@ const ResearchProjectDetail = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="bg-primary h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground font-medium">
-                          {project.head_researcher.name.charAt(0).toUpperCase()}
+                          {project.head_researcher.name && project.head_researcher.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <h4 className="font-medium">{project.head_researcher.name}</h4>
