@@ -53,7 +53,7 @@ const AuthLayout = ({
           <div className="flex h-full items-center justify-center">
             <div className="max-w-2xl p-12 text-center">
               <h1 className="text-4xl font-bold text-foreground mb-4">
-                BiomediResearch Platform
+                ORION - Open Repository for Integrated Electrochemical Observation & Networking
               </h1>
               <p className="text-xl text-muted-foreground">
                 Access advanced tools and comprehensive databases to accelerate your biomedical research
