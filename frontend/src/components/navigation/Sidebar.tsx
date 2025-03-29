@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,6 @@ import {
   ChevronRight,
   Microscope,
   Plus,
-  LogOut,
   User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,15 +91,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     },
   ];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   return (
     <div
       className={cn(
-        "flex flex-col h-screen bg-card border-r transition-all duration-300 z-40",
+        "h-full overflow-y-auto bg-card border-r transition-all duration-300 z-40",
         collapsed ? "w-16" : "w-64",
         className
       )}
@@ -120,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         </Button>
       </div>
 
-      <div className="flex-1 py-4 overflow-y-auto">
+      <div className="flex-1 py-4">
         <nav className="px-2 space-y-1">
           {navItems.map((item) => (
             <Button
@@ -182,16 +177,14 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       {/* User Profile Section */}
       <div className="p-4 border-t mt-auto">
         {isAuthenticated ? (
-          <div className={cn("flex items-center", collapsed ? "justify-center" : "")}>
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => navigate("/profile")}
-            >
-              <User className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
-              {!collapsed && <span>{user?.username || user?.email}</span>}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => navigate("/profile")}
+          >
+            <User className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
+            {!collapsed && <span>{user?.username || user?.email}</span>}
+          </Button>
         ) : (
           <Button
             variant="default"

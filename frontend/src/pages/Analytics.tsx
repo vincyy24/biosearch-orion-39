@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
-import { BarChart, PieChart, LineChart, AreaChart } from "recharts";
 import {
   BarChart as BarChartIcon,
   PieChart as PieChartIcon,
@@ -19,11 +18,10 @@ import {
   Database,
   Microscope,
   FileText,
-  Filter,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Sample data for analytics charts
+// Sample data for analytics
 const researchData = [
   { name: "Jan", uploads: 4, downloads: 8, accesses: 15 },
   { name: "Feb", uploads: 6, downloads: 12, accesses: 20 },
@@ -51,23 +49,9 @@ const userActivityData = [
   { name: "Sun", searches: 25, datasets: 8, tools: 4 },
 ];
 
-const datasetTypeData = [
-  { name: "Cyclic Voltammetry", value: 45 },
-  { name: "Impedance", value: 30 },
-  { name: "Chronoamperometry", value: 15 },
-  { name: "Other", value: 10 },
-];
-
-const methodologyBreakdownData = [
-  { name: "Electrochemical", value: 55 },
-  { name: "Spectroscopic", value: 25 },
-  { name: "Chromatographic", value: 12 },
-  { name: "Microscopic", value: 8 },
-];
-
 const Analytics = () => {
   const { toast } = useToast();
-  const { totalSearches, totalResearchHours, incrementSearches } = useAnalytics();
+  const { totalSearches, incrementSearches } = useAnalytics();
   const [activeTab, setActiveTab] = useState("overview");
   const [timeRange, setTimeRange] = useState("month");
   const [loading, setLoading] = useState(true);
@@ -90,7 +74,7 @@ const Analytics = () => {
 
   return (
     <MainLayout>
-      <div className="container py-8 max-w-7xl">
+      <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
@@ -209,18 +193,16 @@ const Analytics = () => {
                   {loading ? (
                     <Skeleton className="h-[300px] w-full" />
                   ) : (
-                    <LineChart
-                      width={600}
-                      height={300}
-                      data={userActivityData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-                    >
-                      {/* Chart implementation would go here */}
-                      <div className="text-center py-16 text-muted-foreground">
-                        <LineChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Activity data visualization</p>
-                      </div>
-                    </LineChart>
+                    <div className="text-center py-16 text-muted-foreground">
+                      <LineChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>Activity data visualization</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Data shown for {timeRange === 'week' ? 'last 7 days' : 
+                                       timeRange === 'month' ? 'last 30 days' : 
+                                       timeRange === 'quarter' ? 'last 90 days' : 
+                                       timeRange === 'year' ? 'last 365 days' : 'all time'}
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -237,13 +219,10 @@ const Analytics = () => {
                   {loading ? (
                     <Skeleton className="h-[300px] w-full" />
                   ) : (
-                    <PieChart width={500} height={300}>
-                      {/* Chart implementation would go here */}
-                      <div className="text-center py-16 text-muted-foreground">
-                        <PieChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Research methodology distribution</p>
-                      </div>
-                    </PieChart>
+                    <div className="text-center py-16 text-muted-foreground">
+                      <PieChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>Research methodology distribution</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -261,228 +240,73 @@ const Analytics = () => {
                 {loading ? (
                   <Skeleton className="h-[350px] w-full" />
                 ) : (
-                  <AreaChart
-                    width={1000}
-                    height={350}
-                    data={researchData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-                  >
-                    {/* Chart implementation would go here */}
-                    <div className="text-center py-16 text-muted-foreground">
-                      <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>Monthly growth metrics visualization</p>
-                    </div>
-                  </AreaChart>
+                  <div className="text-center py-16 text-muted-foreground">
+                    <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p>Monthly growth metrics visualization</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Research Tab */}
           <TabsContent value="research" className="space-y-6">
-            {/* Research analytics content */}
-            <div className="grid grid-cols-1 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Research Activity</CardTitle>
-                  <CardDescription>Research project creation and participation</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <Skeleton className="h-[350px] w-full" />
-                  ) : (
-                    <BarChart
-                      width={1000}
-                      height={350}
-                      data={researchData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-                    >
-                      {/* Chart implementation would go here */}
-                      <div className="text-center py-16 text-muted-foreground">
-                        <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Research activity visualization</p>
-                      </div>
-                    </BarChart>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Research Topics</CardTitle>
-                    <CardDescription>Top research topics by frequency</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loading ? (
-                      <Skeleton className="h-[300px] w-full" />
-                    ) : (
-                      <PieChart width={500} height={300}>
-                        {/* Chart implementation would go here */}
-                        <div className="text-center py-16 text-muted-foreground">
-                          <PieChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                          <p>Research topics distribution</p>
-                        </div>
-                      </PieChart>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Collaboration Network</CardTitle>
-                    <CardDescription>Research collaboration patterns</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loading ? (
-                      <Skeleton className="h-[300px] w-full" />
-                    ) : (
-                      <div className="text-center py-16 text-muted-foreground">
-                        <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Collaboration network visualization</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Research Activity</CardTitle>
+                <CardDescription>Research project creation and participation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <Skeleton className="h-[350px] w-full" />
+                ) : (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p>Research activity visualization</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
+          {/* Publications Tab */}
           <TabsContent value="publications" className="space-y-6">
-            {/* Publications analytics content */}
-            <div className="grid grid-cols-1 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Publication Metrics</CardTitle>
-                  <CardDescription>Publications and citation trends</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <Skeleton className="h-[350px] w-full" />
-                  ) : (
-                    <BarChart
-                      width={1000}
-                      height={350}
-                      data={publicationData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-                    >
-                      {/* Chart implementation would go here */}
-                      <div className="text-center py-16 text-muted-foreground">
-                        <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Publication metrics visualization</p>
-                      </div>
-                    </BarChart>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Journal Distribution</CardTitle>
-                    <CardDescription>Publications by journal</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loading ? (
-                      <Skeleton className="h-[300px] w-full" />
-                    ) : (
-                      <PieChart width={500} height={300}>
-                        {/* Chart implementation would go here */}
-                        <div className="text-center py-16 text-muted-foreground">
-                          <PieChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                          <p>Journal distribution visualization</p>
-                        </div>
-                      </PieChart>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Citation Impact</CardTitle>
-                    <CardDescription>Citation metrics by publication</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loading ? (
-                      <Skeleton className="h-[300px] w-full" />
-                    ) : (
-                      <div className="text-center py-16 text-muted-foreground">
-                        <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Citation impact visualization</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Publication Metrics</CardTitle>
+                <CardDescription>Publications and citation trends</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <Skeleton className="h-[350px] w-full" />
+                ) : (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p>Publication metrics visualization</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
+          {/* Datasets Tab */}
           <TabsContent value="datasets" className="space-y-6">
-            {/* Datasets analytics content */}
-            <div className="grid grid-cols-1 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Dataset Activity</CardTitle>
-                  <CardDescription>Upload and download trends</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <Skeleton className="h-[350px] w-full" />
-                  ) : (
-                    <AreaChart
-                      width={1000}
-                      height={350}
-                      data={researchData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-                    >
-                      {/* Chart implementation would go here */}
-                      <div className="text-center py-16 text-muted-foreground">
-                        <LineChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Dataset activity visualization</p>
-                      </div>
-                    </AreaChart>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dataset Types</CardTitle>
-                    <CardDescription>Distribution of dataset types</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loading ? (
-                      <Skeleton className="h-[300px] w-full" />
-                    ) : (
-                      <PieChart width={500} height={300}>
-                        {/* Chart implementation would go here */}
-                        <div className="text-center py-16 text-muted-foreground">
-                          <PieChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                          <p>Dataset types distribution</p>
-                        </div>
-                      </PieChart>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dataset Usage</CardTitle>
-                    <CardDescription>Dataset access and citation metrics</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loading ? (
-                      <Skeleton className="h-[300px] w-full" />
-                    ) : (
-                      <div className="text-center py-16 text-muted-foreground">
-                        <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Dataset usage visualization</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Dataset Activity</CardTitle>
+                <CardDescription>Upload and download trends</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <Skeleton className="h-[350px] w-full" />
+                ) : (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <LineChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p>Dataset activity visualization</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -503,3 +503,24 @@ export const updatePassword = async (currentPassword: string, newPassword: strin
     throw error;
   }
 };
+
+export const registerPublication = async (publicationData) => {
+  try {
+    const csrf_token = getCookie("csrftoken");
+    const response = await fetch(`${API_BASE_URL}/publications/register/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token || '',
+      },
+      credentials: 'include',
+      body: JSON.stringify(publicationData),
+    });
+
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error registering publication:", error);
+    throw error;
+  }
+};

@@ -15,13 +15,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, className }) => {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar />
-        <SidebarInset className="flex flex-col min-h-screen">
+        <div className="sticky top-0 h-screen">
+          <Sidebar />
+        </div>
+        <SidebarInset className="flex flex-col min-h-screen w-full">
           <Navbar />
-          <main className="flex-1">
+          <main className={cn("flex-1 px-4 sm:px-6 lg:px-8 py-6", className)}>
             {children}
           </main>
-          <Footer></Footer>
+          <Footer />
         </SidebarInset>
       </div>
     </SidebarProvider>

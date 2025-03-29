@@ -20,7 +20,7 @@ interface ResearchVersion {
 }
 
 interface ResearchVersionHistoryProps {
-  projectId: string;
+  projectId?: string;
   isLoading?: boolean;
 }
 

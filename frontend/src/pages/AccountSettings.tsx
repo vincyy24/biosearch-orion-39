@@ -1,591 +1,526 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import MainLayout from "@/components/layouts/AppLayout";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import {
   User,
-  Key,
+  Lock,
   Bell,
-  Save,
-  CheckCircle,
+  Eye,
+  EyeOff,
   Shield,
-  Mail,
+  Key,
   AlertTriangle,
-  Loader2,
-  Database,
-  LogOut,
-  Trash2,
+  Mail,
+  UserCircle,
+  AtSign,
+  Save
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 const AccountSettings = () => {
-  const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
   const { toast } = useToast();
-  
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState("");
   
-  // Profile settings
-  const [name, setName] = useState(user?.name || user?.username || "");
+  // Profile state
+  const [username, setUsername] = useState(user?.username || "");
+  const [fullName, setFullName] = useState(user?.name || "");
   const [bio, setBio] = useState(user?.bio || "");
-  const [institution, setInstitution] = useState(user?.institution || "");
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  
+  // Password state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [researchUpdates, setResearchUpdates] = useState(true);
-  const [publicationAlerts, setPublicationAlerts] = useState(true);
-  const [communityMessages, setCommunityMessages] = useState(true);
-  const [securityAlerts, setSecurityAlerts] = useState(true);
-  
-  // Security settings
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [publicationCitations, setPublicationCitations] = useState(true);
+  const [commentNotifications, setCommentNotifications] = useState(true);
+  const [collaborationInvites, setCollaborationInvites] = useState(true);
+  const [weeklyDigest, setWeeklyDigest] = useState(false);
+  const [isUpdatingNotifications, setIsUpdatingNotifications] = useState(false);
 
-  if (!isAuthenticated) {
-    return (
-      <MainLayout>
-        <div className="container max-w-4xl py-10">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Settings</CardTitle>
-              <CardDescription>
-                You need to be logged in to view this page.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate("/login")}>Log In</Button>
-            </CardContent>
-          </Card>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const handleSaveProfile = async () => {
+  const handleUpdateProfile = async () => {
+    setIsUpdatingProfile(true);
     try {
-      setSaving(true);
-      // Mock API call
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
         title: "Profile updated",
-        description: "Your profile information has been updated successfully.",
+        description: "Your profile information has been updated successfully."
       });
     } catch (error) {
+      console.error("Error updating profile:", error);
       toast({
-        variant: "destructive",
-        title: "Error updating profile",
-        description: "There was a problem updating your profile. Please try again.",
+        title: "Update failed",
+        description: "There was an error updating your profile. Please try again.",
+        variant: "destructive"
       });
     } finally {
-      setSaving(false);
+      setIsUpdatingProfile(false);
     }
   };
 
-  const handleSaveNotifications = async () => {
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "New password and confirmation password must match.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
     try {
-      setSaving(true);
-      // Mock API call
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
-        title: "Notification preferences updated",
-        description: "Your notification settings have been saved.",
+        title: "Password updated",
+        description: "Your password has been updated successfully."
       });
+      
+      // Reset form
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (error) {
+      console.error("Error updating password:", error);
       toast({
-        variant: "destructive",
-        title: "Error updating preferences",
-        description: "There was a problem updating your notification settings.",
+        title: "Update failed",
+        description: "There was an error updating your password. Please try again.",
+        variant: "destructive"
       });
     } finally {
-      setSaving(false);
+      setIsUpdatingPassword(false);
     }
   };
 
-  const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
+  const handleUpdateNotifications = async () => {
+    setIsUpdatingNotifications(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       toast({
-        variant: "destructive",
-        title: "Passwords don't match",
-        description: "New password and confirmation password must match.",
+        title: "Notification settings updated",
+        description: "Your notification preferences have been updated successfully."
+      });
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+      toast({
+        title: "Update failed",
+        description: "There was an error updating your notification settings. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdatingNotifications(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmDelete !== "DELETE") {
+      toast({
+        title: "Invalid confirmation",
+        description: "Please type DELETE to confirm account deletion.",
+        variant: "destructive"
       });
       return;
     }
     
     try {
-      setSaving(true);
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      
-      toast({
-        title: "Password updated",
-        description: "Your password has been changed successfully.",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error changing password",
-        description: "There was a problem updating your password. Please check your current password and try again.",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      setDeleting(true);
-      // Mock API call
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
         title: "Account deleted",
-        description: "Your account has been deleted. You will be logged out.",
+        description: "Your account has been deleted successfully."
       });
       
-      // Logout and redirect after account deletion
-      setTimeout(() => {
-        logout();
-        navigate("/");
-      }, 2000);
+      setIsDeleteDialogOpen(false);
+      // In a real app, you'd log the user out and redirect
     } catch (error) {
+      console.error("Error deleting account:", error);
       toast({
-        variant: "destructive",
-        title: "Error deleting account",
-        description: "There was a problem deleting your account. Please try again later.",
+        title: "Deletion failed",
+        description: "There was an error deleting your account. Please try again.",
+        variant: "destructive"
       });
-      setDeleting(false);
     }
   };
 
   return (
     <MainLayout>
-      <div className="container max-w-4xl py-10">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Account Settings</h1>
-          <p className="text-muted-foreground mt-1">Manage your account preferences and settings</p>
+          <p className="text-muted-foreground mt-1">
+            Manage your account preferences and settings
+          </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 mb-8">
+        <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid grid-cols-3 w-full max-w-md mb-4">
             <TabsTrigger value="profile" className="flex items-center">
               <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center">
+              <Lock className="mr-2 h-4 w-4" />
+              Security
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center">
               <Bell className="mr-2 h-4 w-4" />
-              <span>Notifications</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center">
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Security</span>
+              Notifications
             </TabsTrigger>
           </TabsList>
 
+          {/* Profile Tab */}
           <TabsContent value="profile">
             <Card>
               <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
+                <CardTitle className="flex items-center">
+                  <UserCircle className="mr-2 h-5 w-5" />
+                  Profile Information
+                </CardTitle>
                 <CardDescription>
-                  Update your personal details and public profile
+                  Update your personal information and public profile
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Input
-                      id="email"
-                      type="email"
-                      value={user?.email}
-                      disabled
-                      className="pr-20"
-                    />
-                    <Badge
-                      variant="outline"
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" /> Verified
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Your email address is used for login and notifications
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="institution">Institution</Label>
-                  <Input
-                    id="institution"
-                    placeholder="University or organization"
-                    value={institution}
-                    onChange={(e) => setInstitution(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <textarea
-                    id="bio"
-                    placeholder="Brief description of your research interests"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    className="w-full min-h-[100px] p-2 rounded-md border resize-y focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleSaveProfile} disabled={saving}>
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>ORCID Integration</CardTitle>
-                <CardDescription>
-                  Connect your ORCID ID to automatically import publications
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {user?.orcid_verified ? (
-                  <Alert className="bg-green-50 dark:bg-green-950">
-                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <AlertTitle>ORCID Connected</AlertTitle>
-                    <AlertDescription>
-                      Your ORCID ID ({user.orcid_id}) is connected to your account.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm">Connect your ORCID ID to enhance your profile</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        placeholder="Your full name"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                      />
                     </div>
-                    <Button 
-                      variant="secondary" 
-                      onClick={() => navigate("/profile?tab=researcher")}
-                    >
-                      Connect ORCID
-                    </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        placeholder="Your email"
+                        value={user?.email || ""}
+                        disabled
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Contact support to change your email address
+                      </p>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>
-                  Choose how and when you want to be notified
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="email-notifications">Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive notifications via email
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="flex items-center">
+                      <AtSign className="mr-1 h-4 w-4" /> Username
+                    </Label>
+                    <Input
+                      id="username"
+                      placeholder="Your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This will be your public username on the platform
                     </p>
                   </div>
-                  <Switch
-                    id="email-notifications"
-                    checked={emailNotifications}
-                    onCheckedChange={setEmailNotifications}
-                  />
-                </div>
 
-                <Separator />
-
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium">Notification Types</h3>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 p-1.5 rounded-md bg-blue-100 dark:bg-blue-900">
-                        <Microscope className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                      </div>
-                      <div>
-                        <Label>Research Updates</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Updates on your research projects
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={researchUpdates}
-                      onCheckedChange={setResearchUpdates}
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Input
+                      id="bio"
+                      placeholder="A short bio about yourself"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
                     />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 p-1.5 rounded-md bg-purple-100 dark:bg-purple-900">
-                        <BookOpen className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-                      </div>
-                      <div>
-                        <Label>Publication Alerts</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Updates on your publications and citations
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={publicationAlerts}
-                      onCheckedChange={setPublicationAlerts}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 p-1.5 rounded-md bg-green-100 dark:bg-green-900">
-                        <Users className="h-4 w-4 text-green-600 dark:text-green-300" />
-                      </div>
-                      <div>
-                        <Label>Community Messages</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Messages from other researchers
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={communityMessages}
-                      onCheckedChange={setCommunityMessages}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 p-1.5 rounded-md bg-amber-100 dark:bg-amber-900">
-                        <Shield className="h-4 w-4 text-amber-600 dark:text-amber-300" />
-                      </div>
-                      <div>
-                        <Label>Security Alerts</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Important security notifications
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={securityAlerts}
-                      onCheckedChange={setSecurityAlerts}
-                      disabled={true} // Security alerts should always be enabled
-                    />
+                    <p className="text-xs text-muted-foreground">
+                      Tell others about your research interests and expertise
+                    </p>
                   </div>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={handleSaveNotifications} disabled={saving}>
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Preferences
-                    </>
-                  )}
+                <Button onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isUpdatingProfile ? "Saving..." : "Save Changes"}
                 </Button>
               </CardFooter>
             </Card>
           </TabsContent>
 
+          {/* Security Tab */}
           <TabsContent value="security">
-            <Card>
+            <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Change Password</CardTitle>
+                <CardTitle className="flex items-center">
+                  <Key className="mr-2 h-5 w-5" />
+                  Password
+                </CardTitle>
                 <CardDescription>
-                  Update your password to keep your account secure
+                  Update your password to maintain account security
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="current-password">Current Password</Label>
-                  <Input
-                    id="current-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                  />
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className="sr-only">
+                        {showPassword ? "Hide password" : "Show password"}
+                      </span>
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
+                  <Label htmlFor="newPassword">New Password</Label>
                   <Input
-                    id="new-password"
-                    type="password"
-                    placeholder="••••••••"
+                    id="newPassword"
+                    type={showPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
                   <Input
-                    id="confirm-password"
-                    type="password"
-                    placeholder="••••••••"
+                    id="confirmPassword"
+                    type={showPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  onClick={handleChangePassword} 
-                  disabled={saving || !currentPassword || !newPassword || !confirmPassword}
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Key className="mr-2 h-4 w-4" />
-                      Change Password
-                    </>
-                  )}
+                <Button onClick={handleUpdatePassword} disabled={isUpdatingPassword}>
+                  {isUpdatingPassword ? "Updating..." : "Update Password"}
                 </Button>
               </CardFooter>
             </Card>
 
-            <Card className="mt-6">
+            <Card>
               <CardHeader>
-                <CardTitle>Data & Privacy</CardTitle>
+                <CardTitle className="flex items-center text-destructive">
+                  <AlertTriangle className="mr-2 h-5 w-5" />
+                  Delete Account
+                </CardTitle>
                 <CardDescription>
-                  Manage your data and account deletion
+                  Permanently delete your account and all associated data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This action cannot be undone. Your research data and publications will remain accessible on the platform, but your account will be removed.
+                </p>
+                <Button 
+                  variant="destructive"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  Delete Account
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Bell className="mr-2 h-5 w-5" />
+                  Notification Preferences
+                </CardTitle>
+                <CardDescription>
+                  Manage how and when you receive notifications
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Download Your Data</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Export all your research data, publications, and account information
-                  </p>
-                  <Button variant="outline">
-                    <Database className="mr-2 h-4 w-4" />
-                    Request Data Export
-                  </Button>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-medium mb-2 text-destructive">Danger Zone</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Once you delete your account, there is no going back. Publications associated with your account will remain in the system.
-                  </p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Email Notifications</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Receive notifications via email
+                      </p>
+                    </div>
+                    <Switch
+                      checked={emailNotifications}
+                      onCheckedChange={setEmailNotifications}
+                    />
+                  </div>
                   
-                  <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-                    <DialogTrigger asChild>
-                      <Button variant="destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Account
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Are you absolutely sure?</DialogTitle>
-                        <DialogDescription>
-                          This action cannot be undone. This will permanently delete your
-                          account and remove your access to all research projects. All publications
-                          associated with your account will remain in the system.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="py-4">
-                        <Alert variant="destructive">
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertTitle>Warning</AlertTitle>
-                          <AlertDescription>
-                            All your personal data and research projects will be permanently removed.
-                          </AlertDescription>
-                        </Alert>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-                          Cancel
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          onClick={handleDeleteAccount}
-                          disabled={deleting}
-                        >
-                          {deleting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Permanently Delete Account
-                            </>
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <Separator />
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Research Updates</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Updates to research projects you're part of
+                      </p>
+                    </div>
+                    <Switch
+                      checked={researchUpdates}
+                      onCheckedChange={setResearchUpdates}
+                      disabled={!emailNotifications}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Publication Citations</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Notifications when your publications are cited
+                      </p>
+                    </div>
+                    <Switch
+                      checked={publicationCitations}
+                      onCheckedChange={setPublicationCitations}
+                      disabled={!emailNotifications}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Comments & Mentions</h4>
+                      <p className="text-sm text-muted-foreground">
+                        When someone comments on or mentions you
+                      </p>
+                    </div>
+                    <Switch
+                      checked={commentNotifications}
+                      onCheckedChange={setCommentNotifications}
+                      disabled={!emailNotifications}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Collaboration Invites</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Invitations to collaborate on research
+                      </p>
+                    </div>
+                    <Switch
+                      checked={collaborationInvites}
+                      onCheckedChange={setCollaborationInvites}
+                      disabled={!emailNotifications}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Weekly Digest</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Weekly summary of platform activity
+                      </p>
+                    </div>
+                    <Switch
+                      checked={weeklyDigest}
+                      onCheckedChange={setWeeklyDigest}
+                      disabled={!emailNotifications}
+                    />
+                  </div>
                 </div>
               </CardContent>
+              <CardFooter>
+                <Button
+                  onClick={handleUpdateNotifications}
+                  disabled={isUpdatingNotifications || !emailNotifications}
+                >
+                  {isUpdatingNotifications ? "Saving..." : "Save Preferences"}
+                </Button>
+              </CardFooter>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center">
+              <AlertTriangle className="mr-2 h-5 w-5" />
+              Delete Account
+            </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Your account will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <p className="text-sm">
+              Please type <strong>DELETE</strong> to confirm that you want to permanently delete your account.
+            </p>
+            <Input
+              placeholder="Type DELETE to confirm"
+              value={confirmDelete}
+              onChange={(e) => setConfirmDelete(e.target.value)}
+              className="border-destructive/50 focus-visible:ring-destructive/30"
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={confirmDelete !== "DELETE"}
+            >
+              Delete My Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

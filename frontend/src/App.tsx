@@ -33,6 +33,7 @@ import AdvancedSearch from './pages/AdvancedSearch';
 import Support from './pages/Support';
 import ResearchRegistration from './pages/ResearchRegistration';
 import PublicationRegistration from './pages/PublicationRegistration';
+import Analytics from './pages/Analytics';
 
 function App() {
   return (
@@ -64,6 +65,7 @@ function App() {
               <Route path="/publications/:doi" element={<PublicationDetail />} />
               
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+              <Route path="/profile/:username" element={<UserProfile />} />
               <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -72,6 +74,7 @@ function App() {
               <Route path="/tools" element={<Tools />} />
               <Route path="/documentation" element={<Documentation />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
               
               <Route path="/404" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
