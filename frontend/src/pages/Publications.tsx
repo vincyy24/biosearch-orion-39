@@ -59,7 +59,7 @@ const Publications = () => {
       
       // Extract unique years for filter
       if (response.results?.length) {
-        const uniqueYears = Array.from(new Set(response.results.map(pub => pub.year))).filter(Boolean);
+        const uniqueYears = Array.from(new Set(response.results.map(pub => pub.year))).filter(Boolean) as number[];
         setYears(uniqueYears.sort((a, b) => b - a));
       }
     } catch (error) {

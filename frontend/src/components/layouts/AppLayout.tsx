@@ -3,6 +3,8 @@ import React, { ReactNode } from "react";
 import Navbar from "@/components/navigation/Navbar";
 import Sidebar from "@/components/navigation/Sidebar";
 import { cn } from "@/lib/utils";
+import { SidebarInset, SidebarProvider } from "../ui/sidebar";
+import Footer from "../ui/footer";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -11,15 +13,18 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, className }) => {
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="ml-16 md:ml-64"> {/* Space for sidebar */}
-        <Navbar />
-        <main className={cn("min-h-screen", className)}>
-          {children}
-        </main>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <Sidebar />
+        <SidebarInset className="flex flex-col min-h-screen">
+          <Navbar />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer></Footer>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

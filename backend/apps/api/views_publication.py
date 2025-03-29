@@ -1,4 +1,3 @@
-
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.views.decorators.csrf import csrf_exempt
