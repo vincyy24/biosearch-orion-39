@@ -110,7 +110,7 @@ class PublicationRegistration(View):
             publication = Publication.objects.create(
                 doi=data['doi'],
                 title=data['title'],
-                description=data.get('abstract', ''),
+                abstract=data.get('abstract', ''),
                 journal=data.get('journal', ''),
                 volume=data.get('volume', ''),
                 issue=data.get('issue', ''),
@@ -296,7 +296,7 @@ class PublicationsList(View):
                         "id": researcher.id,
                         "name": researcher.name,
                         "institution": researcher.institution,
-                        "is_primary": researcher.is_primary,
+                        # "is_primary": researcher.is_primary,
                     })
                 
                 publications_data.append({
@@ -307,7 +307,7 @@ class PublicationsList(View):
                     "journal": pub.journal,
                     "year": pub.year,
                     "is_public": pub.is_public,
-                    "created_at": pub.created_at.isoformat(),
+                    "year": pub.year,
                     "researchers": researchers_data,
                 })
             
@@ -319,6 +319,7 @@ class PublicationsList(View):
             })
             
         except Exception as e:
+            print(traceback.format_exc())
             return JsonResponse({"error": str(e)}, status=500)
 
 class DatasetDownloadView(View):
