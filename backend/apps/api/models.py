@@ -32,7 +32,7 @@ class Publication(models.Model):
     )
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255)
-    description = models.TextField(blank=True, default='')
+    abstract = models.TextField(blank=True, default='')
     journal = models.CharField(max_length=255, blank=True, default='')
     volume = models.CharField(max_length=50, blank=True, default='')
     issue = models.CharField(max_length=50, blank=True, default='')
