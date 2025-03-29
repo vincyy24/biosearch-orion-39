@@ -89,6 +89,7 @@ db.sqlite3-journal
 000*.py
 staticfiles/
 static/
+media/
 
 # Flask stuff:
 instance/
