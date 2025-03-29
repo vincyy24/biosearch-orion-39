@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Plus, Search, Filter, Calendar, Users, Download, ExternalLink, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
+import { fetchPublications } from "@/services/publicationService";
 
 interface Publication {
   id: string;
@@ -29,6 +30,12 @@ interface Publication {
   abstract: string;
 }
 
+interface PublicationFilters {
+  is_public?: boolean;
+  year?: number;
+  sort_by?: string;
+}
+
 const Publications = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -36,17 +43,25 @@ const Publications = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [filters, setFilters] = useState<PublicationFilters>({});
+  const [showFilters, setShowFilters] = useState(false);
+  const [years, setYears] = useState<number[]>([]);
 
   useEffect(() => {
-    fetchPublications();
-  }, []);
+    fetchPublicationsData();
+  }, [filters]);
 
-  const fetchPublications = async () => {
+  const fetchPublicationsData = async () => {
     try {
       setLoading(true);
-      // In a real app, this would be an API call
-      const response = await axios.get("/api/publications/");
-      setPublications(response.data.results || []);
+      const response = await fetchPublications(1, 20, searchQuery, filters);
+      setPublications(response.results || []);
+      
+      // Extract unique years for filter
+      if (response.results?.length) {
+        const uniqueYears = Array.from(new Set(response.results.map(pub => pub.year))).filter(Boolean);
+        setYears(uniqueYears.sort((a, b) => b - a));
+      }
     } catch (error) {
       console.error("Error fetching publications:", error);
       toast({
@@ -59,6 +74,18 @@ const Publications = () => {
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchPublicationsData();
+  };
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
   const filteredPublications = publications.filter(pub => {
     // Filter by tab
     if (activeTab === "my" && !pub.researchers.some(r => r.is_primary)) {
@@ -67,18 +94,6 @@ const Publications = () => {
     
     if (activeTab === "public" && !pub.is_public) {
       return false;
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        pub.title.toLowerCase().includes(query) ||
-        pub.journal.toLowerCase().includes(query) ||
-        pub.doi.toLowerCase().includes(query) ||
-        pub.abstract.toLowerCase().includes(query) ||
-        pub.researchers.some(r => r.name.toLowerCase().includes(query))
-      );
     }
     
     return true;
@@ -103,7 +118,7 @@ const Publications = () => {
         </div>
 
         <div className="mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -113,10 +128,75 @@ const Publications = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="w-full md:w-auto">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full md:w-auto"
+              onClick={() => setShowFilters(!showFilters)}
+            >
               <Filter className="w-4 h-4 mr-2" /> Filters
             </Button>
-          </div>
+            <Button type="submit" className="w-full md:w-auto">
+              Search
+            </Button>
+          </form>
+          
+          {showFilters && (
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Publication Type</label>
+                <Select 
+                  value={filters.is_public?.toString() || ''} 
+                  onValueChange={(val) => handleFilterChange('is_public', val === '' ? undefined : val === 'true')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Publications" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Publications</SelectItem>
+                    <SelectItem value="true">Public</SelectItem>
+                    <SelectItem value="false">Private</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-1 block">Year</label>
+                <Select 
+                  value={filters.year?.toString() || ''} 
+                  onValueChange={(val) => handleFilterChange('year', val === '' ? undefined : parseInt(val))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Years" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Years</SelectItem>
+                    {years.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-1 block">Sort By</label>
+                <Select 
+                  value={filters.sort_by || ''} 
+                  onValueChange={(val) => handleFilterChange('sort_by', val === '' ? undefined : val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Most Recent" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Most Recent</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                    <SelectItem value="title_asc">Title (A-Z)</SelectItem>
+                    <SelectItem value="title_desc">Title (Z-A)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>

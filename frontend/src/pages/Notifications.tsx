@@ -5,6 +5,10 @@ import MainLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import {
   getNotifications,
@@ -24,17 +28,30 @@ import {
   MessageSquare,
   Users,
   FileText,
-  Lock
+  Lock,
+  Filter,
+  SortAsc,
+  Search as SearchIcon
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 
+type NotificationType = 'all' | 'success' | 'warning' | 'error' | 'message' | 'user' | 'document' | 'security';
+type SortOption = 'newest' | 'oldest' | 'unread' | 'type';
+
 const NotificationsPage = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'unread' | 'all'>('unread');
+  const [filterType, setFilterType] = useState<NotificationType>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -58,6 +75,47 @@ const NotificationsPage = () => {
   useEffect(() => {
     fetchNotifications();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    // Filter notifications based on active tab, filter type, and search query
+    let filtered = [...notifications];
+    
+    // Filter by tab
+    if (activeTab === 'unread') {
+      filtered = filtered.filter(n => !n.is_read);
+    }
+    
+    // Filter by type
+    if (filterType !== 'all') {
+      filtered = filtered.filter(n => n.type === filterType);
+    }
+    
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(n => 
+        n.message.toLowerCase().includes(query)
+      );
+    }
+    
+    // Sort notifications
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'unread':
+          return Number(b.is_read) - Number(a.is_read);
+        case 'type':
+          return (a.type || '').localeCompare(b.type || '');
+        default:
+          return 0;
+      }
+    });
+    
+    setFilteredNotifications(filtered);
+  }, [notifications, activeTab, filterType, sortBy, searchQuery]);
 
   const handleMarkAsRead = async (id: number) => {
     try {
@@ -128,7 +186,6 @@ const NotificationsPage = () => {
   };
 
   const unreadNotifications = notifications.filter(n => !n.is_read);
-  const readNotifications = notifications.filter(n => n.is_read);
 
   if (!isAuthenticated) {
     return (
@@ -163,16 +220,25 @@ const NotificationsPage = () => {
                 Stay updated on research activities and system updates
               </CardDescription>
             </div>
-            {unreadNotifications.length > 0 && (
+            <div className="flex gap-2">
+              {unreadNotifications.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMarkAllAsRead}
+                  className="hidden sm:flex"
+                >
+                  <CheckCheck className="mr-2 h-4 w-4" /> Mark All as Read
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleMarkAllAsRead}
-                className="hidden sm:flex"
+                onClick={() => setShowFilters(!showFilters)}
               >
-                <CheckCheck className="mr-2 h-4 w-4" /> Mark All as Read
+                <Filter className="mr-2 h-4 w-4" /> {showFilters ? "Hide Filters" : "Show Filters"}
               </Button>
-            )}
+            </div>
           </CardHeader>
 
           <CardContent>
@@ -182,13 +248,68 @@ const NotificationsPage = () => {
               </div>
             )}
 
+            {showFilters && (
+              <div className="mb-6 border rounded-md p-4 bg-muted/20">
+                <h3 className="text-sm font-medium mb-3">Filter & Sort</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="search" className="text-xs mb-1 block">Search</Label>
+                    <div className="relative">
+                      <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="search"
+                        placeholder="Search notifications..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="type-filter" className="text-xs mb-1 block">Type</Label>
+                    <Select value={filterType} onValueChange={(value: NotificationType) => setFilterType(value)}>
+                      <SelectTrigger id="type-filter">
+                        <SelectValue placeholder="All types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All types</SelectItem>
+                        <SelectItem value="success">Success</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                        <SelectItem value="error">Error</SelectItem>
+                        <SelectItem value="message">Message</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="document">Document</SelectItem>
+                        <SelectItem value="security">Security</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="sort-by" className="text-xs mb-1 block">Sort by</Label>
+                    <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                      <SelectTrigger id="sort-by">
+                        <SelectValue placeholder="Newest first" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">Newest first</SelectItem>
+                        <SelectItem value="oldest">Oldest first</SelectItem>
+                        <SelectItem value="unread">Unread first</SelectItem>
+                        <SelectItem value="type">Type</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="ml-2">Loading notifications...</span>
               </div>
             ) : (
-              <Tabs defaultValue="unread">
+              <Tabs defaultValue="unread" value={activeTab} onValueChange={(value: 'unread' | 'all') => setActiveTab(value)}>
                 <TabsList className="grid w-full grid-cols-2 mb-4">
                   <TabsTrigger value="unread">
                     Unread
@@ -200,10 +321,10 @@ const NotificationsPage = () => {
                 </TabsList>
 
                 <TabsContent value="unread">
-                  {unreadNotifications.length > 0 ? (
+                  {filteredNotifications.length > 0 ? (
                     <ScrollArea className="h-[500px]">
                       <div className="space-y-2">
-                        {unreadNotifications.map((notification) => (
+                        {filteredNotifications.map((notification) => (
                           <div
                             key={notification.id}
                             className="flex items-start gap-3 p-3 border rounded-md bg-background hover:bg-accent/5 transition-colors"
@@ -248,10 +369,10 @@ const NotificationsPage = () => {
                 </TabsContent>
 
                 <TabsContent value="all">
-                  {notifications.length > 0 ? (
+                  {filteredNotifications.length > 0 ? (
                     <ScrollArea className="h-[500px]">
                       <div className="space-y-2">
-                        {notifications.map((notification) => (
+                        {filteredNotifications.map((notification) => (
                           <div
                             key={notification.id}
                             className={`flex items-start gap-3 p-3 border rounded-md hover:bg-accent/5 transition-colors ${notification.is_read ? 'opacity-70' : 'bg-background'

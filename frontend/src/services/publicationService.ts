@@ -20,12 +20,19 @@ const handleResponseErrors = async (response) => {
 };
 
 // Publication APIs
-export const fetchPublications = async (page = 1, perPage = 10, query = '') => {
+export const fetchPublications = async (page = 1, perPage = 10, query = '', filters = {}) => {
   try {
     let url = `${API_BASE_URL}/publications/?page=${page}&per_page=${perPage}`;
     if (query) {
       url += `&query=${encodeURIComponent(query)}`;
     }
+    
+    // Add filters as query parameters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        url += `&${key}=${encodeURIComponent(String(value))}`;
+      }
+    });
     
     const response = await fetch(url, {
       credentials: 'include',

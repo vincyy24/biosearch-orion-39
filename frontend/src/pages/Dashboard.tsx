@@ -123,6 +123,10 @@ const Dashboard = () => {
     });
   };
 
+  const handleBrowseData = () => {
+    navigate("/search?tab=datasets");
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
@@ -138,7 +142,7 @@ const Dashboard = () => {
             <Button variant="outline" onClick={() => navigate("/research/new")}>
               <Plus className="mr-2 h-4 w-4" /> New Project
             </Button>
-            <Button onClick={() => navigate("/data-browser")}>
+            <Button onClick={handleBrowseData}>
               <Database className="mr-2 h-4 w-4" /> Browse Data
             </Button>
           </div>

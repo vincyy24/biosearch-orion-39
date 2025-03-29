@@ -100,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   return (
     <div
       className={cn(
-        "flex flex-col h-screen bg-card border-r transition-all duration-300",
+        "flex flex-col h-screen bg-card border-r transition-all duration-300 fixed top-0 left-0 z-40",
         collapsed ? "w-16" : "w-64",
         className
       )}
