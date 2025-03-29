@@ -70,3 +70,9 @@ def get_cached_experiment(request, experiment_id):
             return JsonResponse({'error': 'Experiment not found'}, status=404)
     
     return JsonResponse(experiment)
+
+
+def clear_cache(request):
+    """Clear the cache"""
+    cache.clear()
+    return JsonResponse({'message': 'Cache cleared'})

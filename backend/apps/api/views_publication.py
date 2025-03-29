@@ -403,3 +403,10 @@ class PublicationAnalysisView(View):
             return JsonResponse({"error": "Publication not found"}, status=404)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
+
+class PublicationSearchView(View):
+    ...
+
+class DoiVerificationView(View):
+    ...

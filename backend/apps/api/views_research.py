@@ -2,6 +2,7 @@
 import json
 import uuid
 from django.http import JsonResponse
+from django.views import View
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
@@ -547,6 +548,15 @@ def comparison_detail(request, comparison_id):
         'results': comparison.comparison_results
     })
 
+
+class InviteCollaboratorView(View):
+    ...    
+
+
+class ResearchVersionsView(View):
+    ...
+
+    
 # Helper functions
 def has_project_access(user, project):
     """Check if a user has access to a project"""

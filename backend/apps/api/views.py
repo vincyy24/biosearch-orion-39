@@ -392,6 +392,24 @@ class UserProfileView(APIView):
             'role': 'admin' if is_admin else 'user'
         })
 
+class UpdateUsernameView(APIView):
+    ...
+
+
+class UpdatePasswordView(APIView):
+    ...
+
+
+class DashboardSummaryView(APIView):
+    ...
+
+
+class UserActivityView(APIView):
+    ...
+
+class RecentExperimentsView(APIView):
+    ...
+
 class SearchView(APIView):
     """
     API view to handle search queries.
@@ -665,3 +683,54 @@ class RecentDatasetsView(APIView):
                 'instrument': dataset.instrument,
             })
         return Response(datasets)
+
+class VoltammetryRawDataView(APIView):
+    ...
+
+class VoltammetryPlotView(APIView):
+    ...
+
+class ExportDataView(APIView):
+    ...
+
+class AdvancedSearchView(APIView):
+    ...
+
+class UserSearchView(APIView):
+    ...
+
+class UserPublicProfileView(APIView):
+    ...
+
+
+class UserSettingsView(APIView):
+    ...
+
+
+class UserNotificationsView(APIView):
+    ...
+
+
+class NotificationSettingsView(APIView):
+    ...
+
+
+class DeleteAccountView(APIView):
+    ...
+
+
+class AnalyticsOverviewView(APIView):
+    ...
+
+
+class ResearchAnalyticsView(APIView):
+    ...
+
+
+class PublicationAnalyticsView(APIView):
+    ...
+
+
+class DatasetAnalyticsView(APIView):
+    ...
+
