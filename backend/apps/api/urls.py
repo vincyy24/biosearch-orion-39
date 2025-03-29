@@ -1,35 +1,38 @@
 
 from django.urls import path
 from . import views
-from . import views_publication
-from . import views_research
-from . import views_orcid
 from . import views_caching
+from . import views_orcid
+from . import views_research
+from . import views_publication
 
 urlpatterns = [
     # Authentication endpoints
-    path('auth/login/', views.login_view, name='api-login'),
-    path('auth/logout/', views.logout_view, name='api-logout'),
-    path('auth/signup/', views.signup_view, name='api-signup'),
-    path('auth/user/', views.user_view, name='api-user'),
-    path('auth/reset-password/', views.password_reset_request, name='api-password-reset-request'),
-    path('auth/reset-password/<str:token>/', views.password_reset_confirm, name='api-password-reset-confirm'),
+    path('auth/login/', views.LoginView.as_view(), name='api-login'),
+    path('auth/logout/', views.LogoutView.as_view(), name='api-logout'),
+    path('auth/signup/', views.SignupView.as_view(), name='api-signup'),
+    path('auth/user/', views.UserProfileView.as_view(), name='api-user'),
+    path('auth/reset-password/', views.PasswordResetRequestView.as_view(), name='api-password-reset-request'),
+    path('auth/reset-password/<str:token>/', views.PasswordResetConfirmView.as_view(), name='api-password-reset-confirm'),
     
     # Data visualization endpoints
-    path('dashboard/summary/', views.dashboard_summary, name='api-dashboard-summary'),
-    path('dashboard/activity/', views.user_activity, name='api-user-activity'),
-    path('dashboard/experiments/', views.recent_experiments, name='api-recent-experiments'),
+    # path('dashboard/summary/', views.dashboard_summary, name='api-dashboard-summary'),
+    # path('dashboard/activity/', views.user_activity, name='api-user-activity'),
+    # path('dashboard/experiments/', views.recent_experiments, name='api-recent-experiments'),
     
     # Voltammetry data endpoints
-    path('voltammetry/', views.voltammetry_list, name='api-voltammetry-list'),
-    path('voltammetry/<str:experiment_id>/', views.voltammetry_detail, name='api-voltammetry-detail'),
-    path('voltammetry/<str:experiment_id>/raw/', views.voltammetry_raw_data, name='api-voltammetry-raw-data'),
-    path('voltammetry/<str:experiment_id>/plot/', views.voltammetry_plot, name='api-voltammetry-plot'),
-    path('voltammetry/<str:experiment_id>/export/', views.export_data, name='api-export-data'),
+    path('voltammetry/', views.VoltammetryDataView.as_view(), name='api-voltammetry-list'),
+    path('voltammetry/<str:experiment_id>/', views.VoltammetryDataView.as_view(), name='api-voltammetry-detail'),
+    # path('voltammetry/<str:experiment_id>/raw/', views.voltammetry_raw_data, name='api-voltammetry-raw-data'),
+    # path('voltammetry/<str:experiment_id>/plot/', views.voltammetry_plot, name='api-voltammetry-plot'),
+    # API endpoints for Recent Datasets
+    path('recent-datasets/', views.RecentDatasetsView.as_view(), name='get_recent_datasets'),
+    
+    # path('voltammetry/<str:experiment_id>/export/', views.export_data, name='api-export-data'),
     
     # Search endpoints
-    path('search/', views.search, name='api-search'),
-    path('advanced-search/', views.advanced_search, name='api-advanced-search'),
+    path('search/', views.SearchView.as_view(), name='api-search'),
+    path('advanced-search/', views.SearchView.as_view(), name='api-advanced-search'),
     
     # Research project endpoints
     path('research/projects/', views_research.research_projects, name='api-research-projects'),
@@ -51,10 +54,10 @@ urlpatterns = [
     path('datasets/<int:dataset_id>/download/', views_publication.DatasetDownloadView.as_view(), name='api-dataset-download'),
     
     # ORCID integration endpoints
-    path('orcid/verify/', views_orcid.initiate_verification, name='api-orcid-verify'),
-    path('orcid/confirm/', views_orcid.confirm_verification, name='api-orcid-confirm'),
-    path('orcid/profile/', views_orcid.get_profile, name='api-orcid-profile'),
+    path('orcid/verify/', views_orcid.initiate_orcid_verification, name='api-orcid-verify'),
+    path('orcid/confirm/', views_orcid.confirm_orcid_verification, name='api-orcid-confirm'),
+    path('orcid/profile/', views_orcid.get_orcid_profile, name='api-orcid-profile'),
     
     # Caching endpoints
-    path('cache/clear/', views_caching.clear_cache, name='api-clear-cache'),
+    # path('cache/clear/', views_caching.clear_cache, name='api-clear-cache'),
 ]
