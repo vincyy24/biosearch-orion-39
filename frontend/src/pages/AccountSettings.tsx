@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import AppLayout from "@/components/layouts/AppLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,16 +30,16 @@ const AccountSettings = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("account");
   const [loading, setLoading] = useState(false);
-  
+
   // Account form state
   const [name, setName] = useState(user?.name || "");
   const [username, setUsername] = useState(user?.username || "");
-  
+
   // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   // Notification settings state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [researchUpdates, setResearchUpdates] = useState(true);
@@ -49,11 +49,11 @@ const AccountSettings = () => {
 
   const handleAccountSubmit = async (e) => {
     e.preventDefault();
-    
+
     setLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     toast({
       title: "Account updated",
       description: "Your account settings have been updated successfully.",
@@ -63,7 +63,7 @@ const AccountSettings = () => {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         variant: "destructive",
@@ -72,16 +72,16 @@ const AccountSettings = () => {
       });
       return;
     }
-    
+
     setLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     toast({
       title: "Password updated",
       description: "Your password has been changed successfully.",
     });
-    
+
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -90,11 +90,11 @@ const AccountSettings = () => {
 
   const handleNotificationSubmit = async (e) => {
     e.preventDefault();
-    
+
     setLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     toast({
       title: "Notification preferences updated",
       description: "Your notification settings have been saved.",
@@ -104,7 +104,7 @@ const AccountSettings = () => {
 
   if (!isAuthenticated) {
     return (
-      <AppLayout>
+      <MainLayout>
         <div className="container max-w-3xl py-10">
           <Card>
             <CardHeader>
@@ -118,12 +118,12 @@ const AccountSettings = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </MainLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <MainLayout>
       <div className="container max-w-3xl py-10">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Settings</h1>
@@ -164,7 +164,7 @@ const AccountSettings = () => {
                       placeholder="Your full name"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
@@ -174,7 +174,7 @@ const AccountSettings = () => {
                       placeholder="Your username"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -206,7 +206,7 @@ const AccountSettings = () => {
                 </CardFooter>
               </form>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Danger Zone</CardTitle>
@@ -243,7 +243,7 @@ const AccountSettings = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="new-password">New Password</Label>
                     <Input
@@ -254,7 +254,7 @@ const AccountSettings = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm New Password</Label>
                     <Input
@@ -267,8 +267,8 @@ const AccountSettings = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={loading || !currentPassword || !newPassword || !confirmPassword}
                   >
                     {loading ? (
@@ -283,7 +283,7 @@ const AccountSettings = () => {
                 </CardFooter>
               </form>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Two-Factor Authentication</CardTitle>
@@ -328,12 +328,12 @@ const AccountSettings = () => {
                       onCheckedChange={setEmailNotifications}
                     />
                   </div>
-                  
+
                   <Separator />
-                  
+
                   <div>
                     <h3 className="text-sm font-medium mb-3">Notification Types</h3>
-                    
+
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-3">
@@ -351,7 +351,7 @@ const AccountSettings = () => {
                           onCheckedChange={setResearchUpdates}
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-3">
                           <Users className="h-5 w-5 mt-0.5 text-muted-foreground" />
@@ -368,7 +368,7 @@ const AccountSettings = () => {
                           onCheckedChange={setCollaborationRequests}
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-3">
                           <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground" />
@@ -385,7 +385,7 @@ const AccountSettings = () => {
                           onCheckedChange={setDatasetActivity}
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-3">
                           <Settings className="h-5 w-5 mt-0.5 text-muted-foreground" />
@@ -422,7 +422,7 @@ const AccountSettings = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </MainLayout>
   );
 };
 

@@ -55,7 +55,7 @@ const AdvancedSearch: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [experimentTypes, setExperimentTypes] = useState<string[]>([]);
-  
+
   // Filter states
   const [experimentType, setExperimentType] = useState<string>('');
   const [electrodeMaterial, setElectrodeMaterial] = useState<string>('');
@@ -63,10 +63,10 @@ const AdvancedSearch: React.FC = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [scanRateMin, setScanRateMin] = useState<string>('');
   const [scanRateMax, setScanRateMax] = useState<string>('');
-  
+
   // For mobile filter sheet
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  
+
   // Get experiment types on mount
   useEffect(() => {
     const fetchExperimentTypes = async () => {
@@ -80,10 +80,10 @@ const AdvancedSearch: React.FC = () => {
         console.error('Error fetching experiment types:', error);
       }
     };
-    
+
     fetchExperimentTypes();
   }, []);
-  
+
   // Parse search params on mount and when they change
   useEffect(() => {
     const query = searchParams.get('q') || '';
@@ -93,29 +93,29 @@ const AdvancedSearch: React.FC = () => {
     const to = searchParams.get('to');
     const minRate = searchParams.get('min_rate') || '';
     const maxRate = searchParams.get('max_rate') || '';
-    
+
     // Set filter states from URL params
     setExperimentType(expType);
     setElectrodeMaterial(electrode);
     setScanRateMin(minRate);
     setScanRateMax(maxRate);
-    
+
     if (from) {
       setDateFrom(new Date(from));
     }
     if (to) {
       setDateTo(new Date(to));
     }
-    
+
     // Perform search if we have a query or any filters
     if (query || expType || electrode || from || to || minRate || maxRate) {
       performSearch();
     }
   }, [searchParams]);
-  
+
   const performSearch = async () => {
     setIsLoading(true);
-    
+
     try {
       // Build query string from search params
       const query = searchParams.get('q') || '';
@@ -125,9 +125,9 @@ const AdvancedSearch: React.FC = () => {
       const to = searchParams.get('to');
       const minRate = searchParams.get('min_rate');
       const maxRate = searchParams.get('max_rate');
-      
+
       let queryString = `query=${encodeURIComponent(query)}`;
-      
+
       if (expType) {
         queryString += `&experiment_type=${encodeURIComponent(expType)}`;
       }
@@ -146,13 +146,13 @@ const AdvancedSearch: React.FC = () => {
       if (maxRate) {
         queryString += `&scan_rate_max=${encodeURIComponent(maxRate)}`;
       }
-      
+
       const response = await fetch(`/api/search-voltammetry/?${queryString}`);
-      
+
       if (!response.ok) {
         throw new Error('Search failed');
       }
-      
+
       const data = await response.json();
       setResults(data.results);
       setTotalResults(data.count);
@@ -168,69 +168,69 @@ const AdvancedSearch: React.FC = () => {
       setIsFilterOpen(false);
     }
   };
-  
+
   const handleSearch = (query: string) => {
     // Update the search params, keeping existing filters
     const newParams = new URLSearchParams(searchParams);
     newParams.set('q', query);
     setSearchParams(newParams);
   };
-  
+
   const applyFilters = () => {
     const newParams = new URLSearchParams(searchParams);
-    
+
     // Set or remove experiment type
     if (experimentType) {
       newParams.set('type', experimentType);
     } else {
       newParams.delete('type');
     }
-    
+
     // Set or remove electrode material
     if (electrodeMaterial) {
       newParams.set('electrode', electrodeMaterial);
     } else {
       newParams.delete('electrode');
     }
-    
+
     // Set or remove date range
     if (dateFrom) {
       newParams.set('from', dateFrom.toISOString().split('T')[0]);
     } else {
       newParams.delete('from');
     }
-    
+
     if (dateTo) {
       newParams.set('to', dateTo.toISOString().split('T')[0]);
     } else {
       newParams.delete('to');
     }
-    
+
     // Set or remove scan rate range
     if (scanRateMin) {
       newParams.set('min_rate', scanRateMin);
     } else {
       newParams.delete('min_rate');
     }
-    
+
     if (scanRateMax) {
       newParams.set('max_rate', scanRateMax);
     } else {
       newParams.delete('max_rate');
     }
-    
+
     setSearchParams(newParams);
   };
-  
+
   const resetFilters = () => {
     // Keep only the query parameter
     const query = searchParams.get('q') || '';
     const newParams = new URLSearchParams();
-    
+
     if (query) {
       newParams.set('q', query);
     }
-    
+
     // Reset filter states
     setExperimentType('');
     setElectrodeMaterial('');
@@ -238,10 +238,10 @@ const AdvancedSearch: React.FC = () => {
     setDateTo(undefined);
     setScanRateMin('');
     setScanRateMax('');
-    
+
     setSearchParams(newParams);
   };
-  
+
   const renderFilters = () => (
     <div className="space-y-6">
       <div>
@@ -258,7 +258,7 @@ const AdvancedSearch: React.FC = () => {
           </SelectContent>
         </Select>
       </div>
-      
+
       <div>
         <h3 className="mb-2 font-medium">Electrode Material</h3>
         <Input
@@ -267,7 +267,7 @@ const AdvancedSearch: React.FC = () => {
           onChange={(e) => setElectrodeMaterial(e.target.value)}
         />
       </div>
-      
+
       <div>
         <h3 className="mb-2 font-medium">Date Range</h3>
         <div className="flex space-x-2">
@@ -309,7 +309,7 @@ const AdvancedSearch: React.FC = () => {
           </Popover>
         </div>
       </div>
-      
+
       <div>
         <h3 className="mb-2 font-medium">Scan Rate (mV/s)</h3>
         <div className="flex space-x-2">
@@ -327,22 +327,22 @@ const AdvancedSearch: React.FC = () => {
           />
         </div>
       </div>
-      
+
       <div className="flex space-x-2 pt-4">
         <Button onClick={applyFilters} className="flex-1">Apply Filters</Button>
         <Button onClick={resetFilters} variant="outline">Reset</Button>
       </div>
     </div>
   );
-  
+
   return (
-    <AppLayout>
+    <MainLayout>
       <div className="container mx-auto py-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Advanced Search</h1>
           <p className="text-muted-foreground">Search and filter experimental data</p>
         </div>
-        
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
           {/* Filters sidebar - Desktop */}
           <Card className="hidden md:block">
@@ -354,7 +354,7 @@ const AdvancedSearch: React.FC = () => {
               {renderFilters()}
             </CardContent>
           </Card>
-          
+
           {/* Main content */}
           <div className="md:col-span-3 space-y-6">
             <div className="flex flex-wrap items-center gap-4">
@@ -365,7 +365,7 @@ const AdvancedSearch: React.FC = () => {
                   placeholder="Search for experiments, materials, techniques..."
                 />
               </div>
-              
+
               {/* Mobile filter button */}
               <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <SheetTrigger asChild>
@@ -385,7 +385,7 @@ const AdvancedSearch: React.FC = () => {
                 </SheetContent>
               </Sheet>
             </div>
-            
+
             {/* Applied filters */}
             <div className="flex flex-wrap items-center gap-2">
               {searchParams.get('type') && (
@@ -429,24 +429,24 @@ const AdvancedSearch: React.FC = () => {
                   Scan Rate: {searchParams.get('min_rate') || '0'} - {searchParams.get('max_rate') || '∞'} ✕
                 </Button>
               )}
-              
+
               {/* Reset all filters button */}
-              {(searchParams.get('type') || searchParams.get('electrode') || 
+              {(searchParams.get('type') || searchParams.get('electrode') ||
                 searchParams.get('from') || searchParams.get('to') ||
                 searchParams.get('min_rate') || searchParams.get('max_rate')) && (
-                <Button variant="ghost" size="sm" onClick={resetFilters}>
-                  Reset all
-                </Button>
-              )}
+                  <Button variant="ghost" size="sm" onClick={resetFilters}>
+                    Reset all
+                  </Button>
+                )}
             </div>
-            
+
             {/* Results */}
             <div>
               <h2 className="text-xl font-semibold mb-4">
-                {isLoading ? 'Searching...' : 
+                {isLoading ? 'Searching...' :
                   results.length > 0 ? `${totalResults} results found` : 'No results found'}
               </h2>
-              
+
               {isLoading ? (
                 <div className="grid grid-cols-1 gap-4">
                   {[1, 2, 3].map(i => (
@@ -527,7 +527,7 @@ const AdvancedSearch: React.FC = () => {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </MainLayout>
   );
 };
 

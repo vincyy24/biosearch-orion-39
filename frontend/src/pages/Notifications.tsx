@@ -1,30 +1,30 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import AppLayout from "@/components/layouts/AppLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  getNotifications, 
-  markNotificationAsRead, 
+import {
+  getNotifications,
+  markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
   Notification
 } from "@/services/notificationService";
-import { 
-  Bell, 
-  Check, 
-  Trash2, 
-  AlertCircle, 
-  Clock, 
+import {
+  Bell,
+  Check,
+  Trash2,
+  AlertCircle,
+  Clock,
   CheckCheck,
   Loader2,
   MessageSquare,
   Users,
   FileText,
-  Lock 
+  Lock
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +41,7 @@ const NotificationsPage = () => {
 
   const fetchNotifications = async () => {
     if (!isAuthenticated) return;
-    
+
     try {
       setLoading(true);
       const data = await getNotifications();
@@ -62,7 +62,7 @@ const NotificationsPage = () => {
   const handleMarkAsRead = async (id: number) => {
     try {
       await markNotificationAsRead(id);
-      setNotifications(notifications.map(n => 
+      setNotifications(notifications.map(n =>
         n.id === id ? { ...n, is_read: true } : n
       ));
       toast({
@@ -132,7 +132,7 @@ const NotificationsPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <AppLayout>
+      <MainLayout>
         <div className="container max-w-4xl py-10">
           <Card>
             <CardHeader>
@@ -146,12 +146,12 @@ const NotificationsPage = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </MainLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <MainLayout>
       <div className="container max-w-4xl py-10">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -164,8 +164,8 @@ const NotificationsPage = () => {
               </CardDescription>
             </div>
             {unreadNotifications.length > 0 && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={handleMarkAllAsRead}
                 className="hidden sm:flex"
@@ -174,7 +174,7 @@ const NotificationsPage = () => {
               </Button>
             )}
           </CardHeader>
-          
+
           <CardContent>
             {error && (
               <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-4">
@@ -191,20 +191,20 @@ const NotificationsPage = () => {
               <Tabs defaultValue="unread">
                 <TabsList className="grid w-full grid-cols-2 mb-4">
                   <TabsTrigger value="unread">
-                    Unread 
+                    Unread
                     {unreadNotifications.length > 0 && (
                       <Badge className="ml-2" variant="secondary">{unreadNotifications.length}</Badge>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="all">All Notifications</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="unread">
                   {unreadNotifications.length > 0 ? (
                     <ScrollArea className="h-[500px]">
                       <div className="space-y-2">
                         {unreadNotifications.map((notification) => (
-                          <div 
+                          <div
                             key={notification.id}
                             className="flex items-start gap-3 p-3 border rounded-md bg-background hover:bg-accent/5 transition-colors"
                           >
@@ -219,16 +219,16 @@ const NotificationsPage = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => handleMarkAsRead(notification.id)}
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => handleDelete(notification.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -246,17 +246,16 @@ const NotificationsPage = () => {
                     </div>
                   )}
                 </TabsContent>
-                
+
                 <TabsContent value="all">
                   {notifications.length > 0 ? (
                     <ScrollArea className="h-[500px]">
                       <div className="space-y-2">
                         {notifications.map((notification) => (
-                          <div 
+                          <div
                             key={notification.id}
-                            className={`flex items-start gap-3 p-3 border rounded-md hover:bg-accent/5 transition-colors ${
-                              notification.is_read ? 'opacity-70' : 'bg-background'
-                            }`}
+                            className={`flex items-start gap-3 p-3 border rounded-md hover:bg-accent/5 transition-colors ${notification.is_read ? 'opacity-70' : 'bg-background'
+                              }`}
                           >
                             <div className="mt-1">
                               {getNotificationIcon(notification.type)}
@@ -275,9 +274,9 @@ const NotificationsPage = () => {
                                 )}
                               </div>
                             </div>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleDelete(notification.id)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -296,10 +295,10 @@ const NotificationsPage = () => {
                 </TabsContent>
               </Tabs>
             )}
-            
+
             {unreadNotifications.length > 0 && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full mt-4 sm:hidden"
                 onClick={handleMarkAllAsRead}
               >
@@ -309,7 +308,7 @@ const NotificationsPage = () => {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    </MainLayout>
   );
 };
 

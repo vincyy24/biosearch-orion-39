@@ -87,7 +87,7 @@ const Index = () => {
         <section className="py-12 md:py-24 lg:py-32 flex flex-col items-center text-center">
           <div className="space-y-4 max-w-3xl">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tighter">
-              ORION - Open Repository for Integrated Electrochemical Observation & Networking
+              ORION
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground">
               A comprehensive platform for accessing, visualizing, and analyzing potentiostat-generated electrochemical data with DOI verification.

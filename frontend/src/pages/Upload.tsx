@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import AppLayout from "@/components/layouts/AppLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -51,7 +50,7 @@ const Upload = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [uploadState, setUploadState] = useState<UploadState>({
     isPublic: false,
     projectId: null,
@@ -65,7 +64,7 @@ const Upload = () => {
       experimentType: "cyclic",
     }],
   });
-  
+
   const [isUploading, setIsUploading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
@@ -119,7 +118,7 @@ const Upload = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileId: string) => {
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
-    
+
     // If multiple files are selected, add them all
     if (selectedFiles.length > 1) {
       const newFiles: FileInfo[] = Array.from(selectedFiles).map(file => ({
@@ -130,7 +129,7 @@ const Upload = () => {
         dataType: "voltammetry",
         experimentType: "cyclic",
       }));
-      
+
       // Replace the current empty file with the new files
       const otherFiles = uploadState.files.filter(f => f.id !== fileId || f.file !== null);
       setUploadState(prev => ({
@@ -142,9 +141,9 @@ const Upload = () => {
       const file = selectedFiles[0];
       setUploadState(prev => ({
         ...prev,
-        files: prev.files.map(f => 
-          f.id === fileId 
-            ? { ...f, file, fileName: file.name } 
+        files: prev.files.map(f =>
+          f.id === fileId
+            ? { ...f, file, fileName: file.name }
             : f
         ),
       }));
@@ -184,7 +183,7 @@ const Upload = () => {
       }));
       return;
     }
-    
+
     setUploadState(prev => ({
       ...prev,
       files: prev.files.filter(f => f.id !== id),
@@ -206,9 +205,9 @@ const Upload = () => {
     const { value } = e.target;
     setUploadState(prev => ({
       ...prev,
-      files: prev.files.map(f => 
-        f.id === fileId 
-          ? { ...f, [field]: value } 
+      files: prev.files.map(f =>
+        f.id === fileId
+          ? { ...f, [field]: value }
           : f
       ),
     }));
@@ -221,9 +220,9 @@ const Upload = () => {
   ) => {
     setUploadState(prev => ({
       ...prev,
-      files: prev.files.map(f => 
-        f.id === fileId 
-          ? { ...f, [field]: value } 
+      files: prev.files.map(f =>
+        f.id === fileId
+          ? { ...f, [field]: value }
           : f
       ),
     }));
@@ -234,7 +233,7 @@ const Upload = () => {
     if (name === "projectId") {
       const selectedProject = projects.find(p => p.id.toString() === value);
       setSelectedItemIsPublic(selectedProject?.is_public || false);
-      
+
       // If project is private, make dataset private as well
       if (selectedProject && !selectedProject.is_public) {
         setUploadState(prev => ({
@@ -251,7 +250,7 @@ const Upload = () => {
     } else if (name === "publicationDoi") {
       const selectedPublication = publications.find(p => p.doi === value);
       setSelectedItemIsPublic(selectedPublication?.is_public || false);
-      
+
       // If publication is private, make dataset private as well
       if (selectedPublication && !selectedPublication.is_public) {
         setUploadState(prev => ({
@@ -275,7 +274,7 @@ const Upload = () => {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Check if no project or publication is selected
     if (activeTab === "project" && !uploadState.projectId) {
       toast({
@@ -294,7 +293,7 @@ const Upload = () => {
       });
       return;
     }
-    
+
     // Check if any files are missing
     const missingFiles = uploadState.files.filter(f => !f.file);
     if (missingFiles.length > 0) {
@@ -307,7 +306,7 @@ const Upload = () => {
     }
 
     setIsUploading(true);
-    
+
     try {
       const uploadPromises = uploadState.files.map(async (fileInfo) => {
         const formData = new FormData();
@@ -317,24 +316,24 @@ const Upload = () => {
         formData.append('file_type', fileInfo.dataType);
         formData.append('experiment_type', fileInfo.experimentType);
         formData.append('is_public', uploadState.isPublic.toString());
-        
+
         let url = '';
         if (activeTab === "project" && uploadState.projectId) {
           url = `/api/research/${uploadState.projectId}/upload/`;
         } else if (activeTab === "publication" && uploadState.publicationDoi) {
           url = `/api/publications/${uploadState.publicationDoi}/upload/`;
         }
-        
+
         return axios.post(url, formData);
       });
-      
+
       await Promise.all(uploadPromises);
-      
+
       toast({
         title: "Upload successful",
         description: `${uploadState.files.length} ${uploadState.files.length > 1 ? 'datasets have' : 'dataset has'} been uploaded successfully.`,
       });
-      
+
       // Redirect to the relevant page based on upload type
       if (activeTab === "project") {
         navigate(`/research/${uploadState.projectId}`);
@@ -353,11 +352,11 @@ const Upload = () => {
     }
   };
 
-  const isInputDisabled = (activeTab === "project" && !uploadState.projectId) || 
-                          (activeTab === "publication" && !uploadState.publicationDoi);
+  const isInputDisabled = (activeTab === "project" && !uploadState.projectId) ||
+    (activeTab === "publication" && !uploadState.publicationDoi);
 
   return (
-    <AppLayout>
+    <MainLayout>
       <div className="container py-8 mx-auto">
         <h1 className="text-3xl font-bold mb-2">Upload Research Data</h1>
         <p className="text-muted-foreground mb-8">
@@ -366,8 +365,8 @@ const Upload = () => {
 
         {showRegisterPublication ? (
           <div className="mb-6">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowRegisterPublication(false)}
               className="mb-4"
             >
@@ -404,11 +403,11 @@ const Upload = () => {
                           Publication
                         </TabsTrigger>
                       </TabsList>
-                      
+
                       <TabsContent value="project" className="space-y-4 pt-4">
                         <div className="space-y-2">
                           <Label htmlFor="projectId">Research Project</Label>
-                          <Select 
+                          <Select
                             onValueChange={(value) => handleSelectChange("projectId", value)}
                             value={uploadState.projectId || ""}
                           >
@@ -424,9 +423,9 @@ const Upload = () => {
                             </SelectContent>
                           </Select>
                           <div className="pt-2">
-                            <Button 
-                              type="button" 
-                              variant="outline" 
+                            <Button
+                              type="button"
+                              variant="outline"
                               onClick={() => navigate("/research/new")}
                               className="w-full"
                             >
@@ -436,11 +435,11 @@ const Upload = () => {
                           </div>
                         </div>
                       </TabsContent>
-                      
+
                       <TabsContent value="publication" className="space-y-4 pt-4">
                         <div className="space-y-2">
                           <Label htmlFor="publicationDoi">Publication</Label>
-                          <Select 
+                          <Select
                             onValueChange={(value) => handleSelectChange("publicationDoi", value)}
                             value={uploadState.publicationDoi || ""}
                           >
@@ -456,9 +455,9 @@ const Upload = () => {
                             </SelectContent>
                           </Select>
                           <div className="pt-2">
-                            <Button 
-                              type="button" 
-                              variant="outline" 
+                            <Button
+                              type="button"
+                              variant="outline"
                               onClick={() => setShowRegisterPublication(true)}
                               className="w-full"
                             >
@@ -484,7 +483,7 @@ const Upload = () => {
                       <Alert variant="warning" className="mb-4 border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/50">
                         <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         <AlertDescription className="text-amber-600 dark:text-amber-400">
-                          The selected {activeTab === "project" ? "project" : "publication"} is private. 
+                          The selected {activeTab === "project" ? "project" : "publication"} is private.
                           Datasets for private {activeTab === "project" ? "projects" : "publications"} must also be private.
                         </AlertDescription>
                       </Alert>
@@ -584,7 +583,7 @@ const Upload = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor={`dataType-${fileInfo.id}`}>Data Type</Label>
-                              <Select 
+                              <Select
                                 value={fileInfo.dataType}
                                 onValueChange={(value) => handleFileSelectChange(fileInfo.id, 'dataType', value)}
                                 disabled={isInputDisabled}
@@ -604,7 +603,7 @@ const Upload = () => {
 
                             <div className="space-y-2">
                               <Label htmlFor={`experimentType-${fileInfo.id}`}>Experiment Type</Label>
-                              <Select 
+                              <Select
                                 value={fileInfo.experimentType}
                                 onValueChange={(value) => handleFileSelectChange(fileInfo.id, 'experimentType', value)}
                                 disabled={isInputDisabled}
@@ -646,12 +645,12 @@ const Upload = () => {
                   </div>
 
                   <div className="mt-6">
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
+                    <Button
+                      type="submit"
+                      className="w-full"
                       disabled={
-                        isUploading || 
-                        isInputDisabled || 
+                        isUploading ||
+                        isInputDisabled ||
                         uploadState.files.some(f => !f.file)
                       }
                     >
@@ -720,7 +719,7 @@ const Upload = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </MainLayout>
   );
 };
 

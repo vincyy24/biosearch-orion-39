@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import AppLayout from "@/components/layouts/AppLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,16 +43,16 @@ const AccountSettingsPage = () => {
   const [activeTab, setActiveTab] = useState("account");
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  
+
   // Account form state
   const [name, setName] = useState(user?.name || "");
   const [username, setUsername] = useState(user?.username || "");
-  
+
   // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   // Notification settings state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [researchUpdates, setResearchUpdates] = useState(true);
@@ -62,11 +62,11 @@ const AccountSettingsPage = () => {
 
   const handleAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     setLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     toast({
       title: "Account updated",
       description: "Your account settings have been updated successfully.",
@@ -76,7 +76,7 @@ const AccountSettingsPage = () => {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         variant: "destructive",
@@ -85,16 +85,16 @@ const AccountSettingsPage = () => {
       });
       return;
     }
-    
+
     setLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     toast({
       title: "Password updated",
       description: "Your password has been changed successfully.",
     });
-    
+
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -103,11 +103,11 @@ const AccountSettingsPage = () => {
 
   const handleNotificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     setLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     toast({
       title: "Notification preferences updated",
       description: "Your notification settings have been saved.",
@@ -117,15 +117,15 @@ const AccountSettingsPage = () => {
 
   const handleDeleteAccount = async () => {
     setDeleteLoading(true);
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     toast({
       title: "Account deleted",
       description: "Your account has been deleted successfully. Your publications will remain on the platform.",
     });
-    
+
     // Logout and redirect
     logout();
     navigate("/");
@@ -133,7 +133,7 @@ const AccountSettingsPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <AppLayout>
+      <MainLayout>
         <div className="container max-w-3xl py-10">
           <Card>
             <CardHeader>
@@ -147,12 +147,12 @@ const AccountSettingsPage = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </MainLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <MainLayout>
       <div className="container max-w-3xl py-10">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Settings</h1>
@@ -193,7 +193,7 @@ const AccountSettingsPage = () => {
                       placeholder="Your full name"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
@@ -203,7 +203,7 @@ const AccountSettingsPage = () => {
                       placeholder="Your username"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -235,7 +235,7 @@ const AccountSettingsPage = () => {
                 </CardFooter>
               </form>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Danger Zone</CardTitle>
@@ -266,7 +266,7 @@ const AccountSettingsPage = () => {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
+                      <AlertDialogAction
                         onClick={handleDeleteAccount}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         disabled={deleteLoading}
@@ -310,7 +310,7 @@ const AccountSettingsPage = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="new-password">New Password</Label>
                     <Input
@@ -321,7 +321,7 @@ const AccountSettingsPage = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm New Password</Label>
                     <Input
@@ -334,8 +334,8 @@ const AccountSettingsPage = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={loading || !currentPassword || !newPassword || !confirmPassword}
                   >
                     {loading ? (
@@ -350,7 +350,7 @@ const AccountSettingsPage = () => {
                 </CardFooter>
               </form>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Two-Factor Authentication</CardTitle>
@@ -395,12 +395,12 @@ const AccountSettingsPage = () => {
                       onCheckedChange={setEmailNotifications}
                     />
                   </div>
-                  
+
                   <Separator />
-                  
+
                   <div>
                     <h3 className="text-sm font-medium mb-3">Notification Types</h3>
-                    
+
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-3">
@@ -418,7 +418,7 @@ const AccountSettingsPage = () => {
                           onCheckedChange={setResearchUpdates}
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-3">
                           <Users className="h-5 w-5 mt-0.5 text-muted-foreground" />
@@ -435,7 +435,7 @@ const AccountSettingsPage = () => {
                           onCheckedChange={setCollaborationRequests}
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-3">
                           <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground" />
@@ -452,7 +452,7 @@ const AccountSettingsPage = () => {
                           onCheckedChange={setDatasetActivity}
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-3">
                           <Settings className="h-5 w-5 mt-0.5 text-muted-foreground" />
@@ -489,7 +489,7 @@ const AccountSettingsPage = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </MainLayout>
   );
 };
 

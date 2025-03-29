@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import AppLayout from "@/components/layouts/AppLayout";
+import MainLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ const UserProfile = () => {
 
   const fetchOrcidProfile = async () => {
     if (!user?.orcid_verified) return;
-    
+
     try {
       setIsLoadingOrcid(true);
       const response = await getOrcidProfile();
@@ -85,7 +85,7 @@ const UserProfile = () => {
 
   if (!isAuthenticated || !user) {
     return (
-      <AppLayout>
+      <MainLayout>
         <div className="container max-w-3xl py-10">
           <Card>
             <CardHeader>
@@ -94,7 +94,7 @@ const UserProfile = () => {
             </CardHeader>
           </Card>
         </div>
-      </AppLayout>
+      </MainLayout>
     );
   }
 
@@ -107,7 +107,7 @@ const UserProfile = () => {
   };
 
   return (
-    <AppLayout>
+    <MainLayout>
       <div className="container max-w-4xl py-10 space-y-6">
         <Card>
           <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -139,7 +139,7 @@ const UserProfile = () => {
             <TabsTrigger value="researcher">Researcher Profile</TabsTrigger>
             <TabsTrigger value="publications">Publications</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="account" className="space-y-4">
             <Card>
               <form onSubmit={handleSubmit}>
@@ -194,7 +194,7 @@ const UserProfile = () => {
               </form>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="researcher" className="space-y-4">
             <OrcidVerification
               orcidId={user.orcid_id}
@@ -203,7 +203,7 @@ const UserProfile = () => {
               onVerificationComplete={handleOrcidVerificationComplete}
             />
           </TabsContent>
-          
+
           <TabsContent value="publications" className="space-y-4">
             <Card>
               <CardHeader>
@@ -265,7 +265,7 @@ const UserProfile = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </MainLayout>
   );
 };
 
