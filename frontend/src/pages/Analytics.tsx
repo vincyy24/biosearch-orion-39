@@ -1,316 +1,356 @@
 
 import React, { useState, useEffect } from "react";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer
+} from "recharts";
 import { useToast } from "@/hooks/use-toast";
-import { useAnalytics } from "@/contexts/AnalyticsContext";
-import {
-  BarChart as BarChartIcon,
-  PieChart as PieChartIcon,
-  LineChart as LineChartIcon,
-  Download,
-  Calendar,
-  Activity,
-  Users,
-  Database,
-  Microscope,
-  FileText,
-} from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
-// Sample data for analytics
-const researchData = [
-  { name: "Jan", uploads: 4, downloads: 8, accesses: 15 },
-  { name: "Feb", uploads: 6, downloads: 12, accesses: 20 },
-  { name: "Mar", uploads: 8, downloads: 16, accesses: 25 },
-  { name: "Apr", uploads: 10, downloads: 20, accesses: 30 },
-  { name: "May", uploads: 12, downloads: 24, accesses: 35 },
-  { name: "Jun", uploads: 14, downloads: 28, accesses: 40 },
-];
-
-const publicationData = [
-  { name: "2019", count: 5, citations: 12 },
-  { name: "2020", count: 8, citations: 24 },
-  { name: "2021", count: 12, citations: 48 },
-  { name: "2022", count: 15, citations: 60 },
-  { name: "2023", count: 18, citations: 72 },
-];
-
-const userActivityData = [
-  { name: "Mon", searches: 45, datasets: 15, tools: 8 },
-  { name: "Tue", searches: 55, datasets: 20, tools: 10 },
-  { name: "Wed", searches: 60, datasets: 25, tools: 12 },
-  { name: "Thu", searches: 50, datasets: 18, tools: 9 },
-  { name: "Fri", searches: 48, datasets: 16, tools: 8 },
-  { name: "Sat", searches: 30, datasets: 10, tools: 5 },
-  { name: "Sun", searches: 25, datasets: 8, tools: 4 },
-];
+interface AnalyticsData {
+  dataset_count: number;
+  dataset_downloads: number;
+  publication_count: number;
+  publication_citations: number;
+  collaboration_count: number;
+  monthly_activity: {
+    month: string;
+    datasets: number;
+    publications: number;
+  }[];
+}
 
 const Analytics = () => {
-  const { toast } = useToast();
-  const { totalSearches, incrementSearches } = useAnalytics();
   const [activeTab, setActiveTab] = useState("overview");
-  const [timeRange, setTimeRange] = useState("month");
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+
+  // Colors for charts
+  const COLORS = ["#8B5CF6", "#22C55E", "#3B82F6", "#F97316", "#EF4444"];
 
   useEffect(() => {
-    // Simulate loading analytics data
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
+    const fetchAnalytics = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch analytics data from API
+        // For now, we'll use mock data
+        const mockData: AnalyticsData = {
+          dataset_count: 45,
+          dataset_downloads: 312,
+          publication_count: 18,
+          publication_citations: 87,
+          collaboration_count: 9,
+          monthly_activity: [
+            { month: "Jan", datasets: 3, publications: 1 },
+            { month: "Feb", datasets: 5, publications: 2 },
+            { month: "Mar", datasets: 4, publications: 1 },
+            { month: "Apr", datasets: 6, publications: 3 },
+            { month: "May", datasets: 8, publications: 2 },
+            { month: "Jun", datasets: 7, publications: 4 },
+            { month: "Jul", datasets: 9, publications: 3 },
+            { month: "Aug", datasets: 10, publications: 5 },
+            { month: "Sep", datasets: 12, publications: 6 },
+            { month: "Oct", datasets: 15, publications: 7 },
+            { month: "Nov", datasets: 18, publications: 8 },
+            { month: "Dec", datasets: 20, publications: 9 }
+          ]
+        };
+        
+        setAnalyticsData(mockData);
+      } catch (error) {
+        console.error("Error fetching analytics data:", error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load analytics",
+          description: "There was an error fetching analytics data. Please try again later."
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, []);
+    if (isAuthenticated) {
+      fetchAnalytics();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, toast]);
 
-  const handleExportData = () => {
-    toast({
-      title: "Export initiated",
-      description: "Your analytics data is being prepared for download.",
-    });
-  };
+  if (!isAuthenticated) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto py-6 max-w-7xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Analytics</CardTitle>
+              <CardDescription>
+                You need to be logged in to view analytics.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto py-6 max-w-7xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Analytics</CardTitle>
+              <CardDescription>
+                Loading analytics data...
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const pieData = [
+    { name: "Datasets", value: analyticsData?.dataset_count || 0 },
+    { name: "Publications", value: analyticsData?.publication_count || 0 },
+    { name: "Collaborations", value: analyticsData?.collaboration_count || 0 }
+  ];
 
   return (
-    <MainLayout>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Track research metrics, publication impact, and platform usage
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Select defaultValue={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Time Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="week">Last Week</SelectItem>
-                <SelectItem value="month">Last Month</SelectItem>
-                <SelectItem value="quarter">Last Quarter</SelectItem>
-                <SelectItem value="year">Last Year</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={handleExportData}>
-              <Download className="mr-2 h-4 w-4" /> Export
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Research Projects</p>
-                  <h4 className="text-2xl font-bold">42</h4>
-                </div>
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <Microscope className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                <span className="text-green-500">↑12%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Publications</p>
-                  <h4 className="text-2xl font-bold">18</h4>
-                </div>
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                <span className="text-green-500">↑8%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Datasets</p>
-                  <h4 className="text-2xl font-bold">124</h4>
-                </div>
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <Database className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                <span className="text-green-500">↑15%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Active Users</p>
-                  <h4 className="text-2xl font-bold">86</h4>
-                </div>
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                <span className="text-red-500">↓5%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="mb-6">
+    <AppLayout>
+      <div className="container mx-auto py-6 space-y-6 max-w-7xl">
+        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+        
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="research">Research</TabsTrigger>
-            <TabsTrigger value="publications">Publications</TabsTrigger>
             <TabsTrigger value="datasets">Datasets</TabsTrigger>
+            <TabsTrigger value="publications">Publications</TabsTrigger>
           </TabsList>
-
+          
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Activity className="mr-2 h-5 w-5" />
-                    Platform Activity
-                  </CardTitle>
-                  <CardDescription>User engagement across the platform</CardDescription>
-                </CardHeader>
-                <CardContent className="pl-0">
-                  {loading ? (
-                    <Skeleton className="h-[300px] w-full" />
-                  ) : (
-                    <div className="text-center py-16 text-muted-foreground">
-                      <LineChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>Activity data visualization</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Data shown for {timeRange === 'week' ? 'last 7 days' : 
-                                       timeRange === 'month' ? 'last 30 days' : 
-                                       timeRange === 'quarter' ? 'last 90 days' : 
-                                       timeRange === 'year' ? 'last 365 days' : 'all time'}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <PieChartIcon className="mr-2 h-5 w-5" />
-                    Research Methodologies
-                  </CardTitle>
-                  <CardDescription>Distribution of research approaches</CardDescription>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium">Total Datasets</CardTitle>
+                  <CardDescription>All your uploaded datasets</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {loading ? (
-                    <Skeleton className="h-[300px] w-full" />
-                  ) : (
-                    <div className="text-center py-16 text-muted-foreground">
-                      <PieChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>Research methodology distribution</p>
-                    </div>
-                  )}
+                  <div className="text-3xl font-bold">{analyticsData?.dataset_count}</div>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    {analyticsData?.dataset_downloads} total downloads
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium">Publications</CardTitle>
+                  <CardDescription>Your registered publications</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{analyticsData?.publication_count}</div>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    {analyticsData?.publication_citations} total citations
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium">Collaborations</CardTitle>
+                  <CardDescription>Active collaborations</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{analyticsData?.collaboration_count}</div>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Across {analyticsData?.collaboration_count || 0} projects
+                  </p>
                 </CardContent>
               </Card>
             </div>
-
+            
+            {/* Activity Chart */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="mr-2 h-5 w-5" />
-                  Monthly Growth Metrics
-                </CardTitle>
-                <CardDescription>Track growth across key platform metrics</CardDescription>
+                <CardTitle>Monthly Activity</CardTitle>
+                <CardDescription>
+                  Dataset uploads and publication registrations over time
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {loading ? (
-                  <Skeleton className="h-[350px] w-full" />
-                ) : (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p>Monthly growth metrics visualization</p>
-                  </div>
-                )}
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={analyticsData?.monthly_activity || []}
+                      margin={{
+                        top: 10,
+                        right: 30,
+                        left: 0,
+                        bottom: 0,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Area 
+                        type="monotone" 
+                        dataKey="datasets" 
+                        stackId="1"
+                        stroke="#8B5CF6" 
+                        fill="#8B5CF6" 
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="publications" 
+                        stackId="2" 
+                        stroke="#3B82F6" 
+                        fill="#3B82F6" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Distribution Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Content Distribution</CardTitle>
+                <CardDescription>
+                  Distribution of your research content
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value) => [`${value}`, 'Count']}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
-
-          {/* Research Tab */}
-          <TabsContent value="research" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Research Activity</CardTitle>
-                <CardDescription>Research project creation and participation</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <Skeleton className="h-[350px] w-full" />
-                ) : (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p>Research activity visualization</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Publications Tab */}
-          <TabsContent value="publications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Publication Metrics</CardTitle>
-                <CardDescription>Publications and citation trends</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <Skeleton className="h-[350px] w-full" />
-                ) : (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <BarChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p>Publication metrics visualization</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Datasets Tab */}
+          
           <TabsContent value="datasets" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Dataset Activity</CardTitle>
-                <CardDescription>Upload and download trends</CardDescription>
+                <CardTitle>Dataset Analytics</CardTitle>
+                <CardDescription>Performance of your datasets</CardDescription>
               </CardHeader>
               <CardContent>
-                {loading ? (
-                  <Skeleton className="h-[350px] w-full" />
-                ) : (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <LineChartIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p>Dataset activity visualization</p>
-                  </div>
-                )}
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { name: 'Dataset A', downloads: 45, shares: 12 },
+                        { name: 'Dataset B', downloads: 32, shares: 8 },
+                        { name: 'Dataset C', downloads: 78, shares: 21 },
+                        { name: 'Dataset D', downloads: 23, shares: 5 },
+                        { name: 'Dataset E', downloads: 56, shares: 15 },
+                      ]}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="downloads" fill="#8B5CF6" />
+                      <Bar dataKey="shares" fill="#3B82F6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="publications" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Publication Analytics</CardTitle>
+                <CardDescription>Citations and impact of your publications</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { name: 'Publication A', citations: 23, views: 456 },
+                        { name: 'Publication B', citations: 17, views: 321 },
+                        { name: 'Publication C', citations: 45, views: 876 },
+                        { name: 'Publication D', citations: 12, views: 234 },
+                        { name: 'Publication E', citations: 29, views: 543 },
+                      ]}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="citations" fill="#F97316" />
+                      <Bar dataKey="views" fill="#22C55E" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

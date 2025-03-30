@@ -1,329 +1,294 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MainLayout from "@/components/layouts/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import AppLayout from "@/components/layouts/AppLayout";
+import PublicationCard from "@/components/publications/PublicationCard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Plus, Search, Filter, Calendar, Users, Download, ExternalLink, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { fetchPublications, PublicationFilters } from "@/services/publicationService";
-import { Publication } from "@/types/common";
+import { FileText, Filter, Plus, Search, SlidersHorizontal } from "lucide-react";
 
+interface Publication {
+  id: string;
+  title: string;
+  journal: string;
+  year: string;
+  doi: string;
+  abstract?: string;
+  authors?: { name: string; isMain: boolean }[];
+}
 
 const Publications = () => {
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [publications, setPublications] = useState<Publication[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
-  const [filters, setFilters] = useState<PublicationFilters>({});
+  const [filteredPublications, setFilteredPublications] = useState<Publication[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [yearFilter, setYearFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [years, setYears] = useState<number[]>([]);
+  const [activeTab, setActiveTab] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchPublicationsData();
-  }, [filters]);
+    const fetchPublications = async () => {
+      setIsLoading(true);
+      try {
+        // Mock data for now
+        const mockPublications: Publication[] = [
+          {
+            id: "1",
+            title: "Novel Electrochemical Sensing Mechanisms for Glucose Detection",
+            journal: "Journal of Electroanalytical Chemistry",
+            year: "2023",
+            doi: "10.1016/j.jelechem.2023.01.001",
+            authors: [
+              { name: "Jane Smith", isMain: true },
+              { name: "John Doe", isMain: false }
+            ],
+            abstract: "This paper presents a novel electrochemical sensing mechanism for glucose detection..."
+          },
+          {
+            id: "2",
+            title: "Recent Advances in Voltammetric Analysis of Pharmaceuticals",
+            journal: "Electrochimica Acta",
+            year: "2022",
+            doi: "10.1016/j.electacta.2022.02.002",
+            authors: [
+              { name: "Michael Chen", isMain: true },
+              { name: "Sarah Johnson", isMain: false }
+            ],
+            abstract: "A comprehensive review of recent advances in voltammetric techniques applied to pharmaceutical analysis..."
+          },
+          {
+            id: "3",
+            title: "Machine Learning Approaches for Electrochemical Data Analysis",
+            journal: "Analytical Chemistry",
+            year: "2021",
+            doi: "10.1021/acs.analchem.1c00123",
+            authors: [
+              { name: "David Williams", isMain: true },
+              { name: "Emma Brown", isMain: false }
+            ],
+            abstract: "This study explores various machine learning approaches for the analysis and interpretation of electrochemical data..."
+          },
+        ];
 
-  const fetchPublicationsData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchPublications(1, 20, searchQuery, filters);
-      setPublications(response);
-      // Extract unique years for filter
-      if (response.length) {
-        const uniqueYears = Array.from(new Set(response.map(pub => pub.year))).filter(Boolean) as number[];
-        setYears(uniqueYears.sort((a, b) => b - a));
+        setPublications(mockPublications);
+        setFilteredPublications(mockPublications);
+      } catch (error) {
+        console.error("Error fetching publications:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching publications:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load publications. Please try again.",
-      });
-    } finally {
-      setLoading(false);
+    };
+
+    fetchPublications();
+  }, []);
+
+  // Apply filters when search term, year filter, or type filter changes
+  useEffect(() => {
+    if (publications) {
+      let filtered = [...publications];
+      
+      // Apply search filter
+      if (searchTerm) {
+        filtered = filtered.filter(pub => 
+          pub.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+          pub.doi.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (pub.authors && pub.authors.some(author => 
+            author.name.toLowerCase().includes(searchTerm.toLowerCase())
+          ))
+        );
+      }
+      
+      // Apply year filter
+      if (yearFilter) {
+        filtered = filtered.filter(pub => pub.year === yearFilter);
+      }
+      
+      // Apply type filter (would need to add type to the publication interface)
+      if (typeFilter) {
+        filtered = filtered.filter(pub => (pub as any).type === typeFilter);
+      }
+      
+      // Apply tab filtering
+      if (activeTab === "my") {
+        // Mock filtering for "my publications" - in a real app, this would filter by user ID
+        filtered = filtered.filter((_, index) => index % 2 === 0);
+      }
+      
+      setFilteredPublications(filtered);
     }
+  }, [searchTerm, yearFilter, typeFilter, activeTab, publications]);
+
+  const handleRegisterPublication = () => {
+    navigate("/publications/new");
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchPublicationsData();
+  const handleViewPublication = (id: string) => {
+    navigate(`/publications/details?id=${id}`);
   };
-
-  const handleFilterChange = (key: string, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const filteredPublications = publications.filter(pub => {
-    // Filter by tab
-    
-    if (activeTab === "my" && !pub.researchers.some(r => r.is_primary)) {
-      return false;
-    }
-    
-    if (activeTab === "public" && !pub.is_public) {
-      return false;
-    }
-    
-    return true;
-  });
 
   return (
-    <MainLayout>
-      <div className="container py-8 max-w-7xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <AppLayout>
+      <div className="container mx-auto py-6 max-w-7xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Publications</h1>
-            <p className="text-muted-foreground mt-1">Browse and manage publications and their associated datasets</p>
+            <h1 className="text-3xl font-bold tracking-tight">Publications</h1>
+            <p className="text-muted-foreground mt-1">
+              Browse and search scientific publications in the field of electrochemistry.
+            </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/publications/new")}>
-              <Plus className="w-4 h-4 mr-2" /> Register Publication
-            </Button>
-            <Button onClick={() => navigate("/upload")}>
-              <Upload className="w-4 h-4 mr-2" /> Upload Data
-            </Button>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search publications..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+          {isAuthenticated && (
             <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full md:w-auto"
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={handleRegisterPublication} 
+              className="mt-4 md:mt-0"
             >
-              <Filter className="w-4 h-4 mr-2" /> Filters
+              <Plus className="mr-2 h-4 w-4" /> Register Publication
             </Button>
-            <Button type="submit" className="w-full md:w-auto">
-              Search
-            </Button>
-          </form>
-          
-          {showFilters && (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Publication Type</label>
-                <Select 
-                  value={filters.is_public?.toString() || ''} 
-                  onValueChange={(val) => handleFilterChange('is_public', val === '' ? undefined : val === 'true')}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Publications" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Publications</SelectItem>
-                    <SelectItem value="true">Public</SelectItem>
-                    <SelectItem value="false">Private</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block">Year</label>
-                <Select 
-                  value={filters.year?.toString() || ''} 
-                  onValueChange={(val) => handleFilterChange('year', val === '' ? undefined : parseInt(val))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Years" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Years</SelectItem>
-                    {years.map(year => (
-                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block">Sort By</label>
-                <Select 
-                  value={filters.sort_by || ''} 
-                  onValueChange={(val) => handleFilterChange('sort_by', val === '' ? undefined : val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Most Recent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recent">Most Recent</SelectItem>
-                    <SelectItem value="oldest">Oldest First</SelectItem>
-                    <SelectItem value="title_asc">Title (A-Z)</SelectItem>
-                    <SelectItem value="title_desc">Title (Z-A)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
           )}
         </div>
 
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
             <TabsTrigger value="all">All Publications</TabsTrigger>
-            <TabsTrigger value="my">My Publications</TabsTrigger>
-            <TabsTrigger value="public">Public Publications</TabsTrigger>
+            {isAuthenticated && <TabsTrigger value="my">My Publications</TabsTrigger>}
           </TabsList>
-
-          <TabsContent value="all" className="mt-0">
-            {renderPublicationsList(loading, filteredPublications, navigate)}
-          </TabsContent>
-          
-          <TabsContent value="my" className="mt-0">
-            {renderPublicationsList(loading, filteredPublications, navigate)}
-          </TabsContent>
-          
-          <TabsContent value="public" className="mt-0">
-            {renderPublicationsList(loading, filteredPublications, navigate)}
-          </TabsContent>
         </Tabs>
-      </div>
-    </MainLayout>
-  );
-};
 
-const renderPublicationsList = (loading: boolean, publications: Publication[], navigate: any) => {
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 gap-6">
-        {Array(3).fill(0).map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-6 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-5/6 mb-4" />
-              <div className="flex gap-2">
-                <Skeleton className="h-8 w-24" />
-                <Skeleton className="h-8 w-24" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by title, author, or DOI"
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            Filters
+          </Button>
+        </div>
 
-  if (publications.length === 0) {
-    return (
-      <div className="text-center py-16">
-        <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-        <h3 className="text-xl font-medium mb-2">No publications found</h3>
-        <p className="text-muted-foreground mb-6">
-          Register your first publication to manage datasets and track research impact
-        </p>
-        <Button onClick={() => navigate("/publications/new")}>
-          <Plus className="w-4 h-4 mr-2" /> Register Publication
-        </Button>
-      </div>
-    );
-  }  
-
-  return (
-    <div className="grid grid-cols-1 gap-6">
-      {publications.map((publication) => (
-        <Card key={publication.id} className="overflow-hidden">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-lg hover:text-primary cursor-pointer" onClick={() => navigate(`/publications/details/?doi=${encodeURIComponent(publication.doi)}`)}>
-                  {publication.title}
-                </CardTitle>
-                <CardDescription className="mt-1.5">
-                  {publication.journal}, {publication.year}
-                </CardDescription>
-              </div>
-              {publication.is_public ? (
-                <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-100">
-                  Public
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-100">
-                  Private
-                </Badge>
-              )}
+        {showFilters && (
+          <div className="bg-background border rounded-md p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium">Filter Publications</h3>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setYearFilter("");
+                  setTypeFilter("");
+                }}
+              >
+                Reset
+              </Button>
             </div>
-          </CardHeader>
-          
-          <CardContent>
-            {publication.abstract && (
-              <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                {publication.abstract}
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium">Publication Year</label>
+                <Select value={yearFilter} onValueChange={setYearFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Years</SelectItem>
+                    <SelectItem value="2023">2023</SelectItem>
+                    <SelectItem value="2022">2022</SelectItem>
+                    <SelectItem value="2021">2021</SelectItem>
+                    <SelectItem value="2020">2020</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Publication Type</label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="article">Article</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                    <SelectItem value="conference">Conference Paper</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {(yearFilter || typeFilter) && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                <span className="text-sm text-muted-foreground mr-2">Active filters:</span>
+                {yearFilter && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    Year: {yearFilter}
+                  </Badge>
+                )}
+                {typeFilter && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    Type: {typeFilter}
+                  </Badge>
+                )}
+              </div>
             )}
-            
-            <div className="flex flex-wrap gap-y-2 gap-x-4 text-sm mb-4">
-              <div className="flex items-center">
-                <Calendar className="w-4 h-4 mr-1.5 text-muted-foreground" />
-                <span>Published: {publication.year}</span>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="border rounded-lg p-6 space-y-4">
+                <div className="h-6 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-5/6"></div>
               </div>
-              
-              <div className="flex items-center">
-                <Users className="w-4 h-4 mr-1.5 text-muted-foreground" />
-                <span>
-                  {publication.researchers?.length} Researcher{publication.researchers?.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-              
-              <div className="flex items-center">
-                <BookOpen className="w-4 h-4 mr-1.5 text-muted-foreground" />
-                <span>DOI: {publication.doi}</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate(`/publications/details/?doi=${encodeURIComponent(publication.doi)}`)}
-              >
-                View Details
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.open(`https://doi.org/${publication.doi}`, '_blank')}
-              >
-                <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                Original Publication
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate(`/publications/${publication.doi}?tab=datasets`)}
-              >
-                <Download className="w-3.5 h-3.5 mr-1.5" />
-                Datasets
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+            ))}
+          </div>
+        ) : filteredPublications.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPublications.map((publication) => (
+              <PublicationCard
+                key={publication.id}
+                publication={publication}
+                onView={() => handleViewPublication(publication.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">No publications found</h3>
+            <p className="mt-2 text-muted-foreground">
+              Try adjusting your search or filters to find what you're looking for.
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => {
+                setSearchTerm("");
+                setYearFilter("");
+                setTypeFilter("");
+                setActiveTab("all");
+              }}
+            >
+              Reset All Filters
+            </Button>
+          </div>
+        )}
+      </div>
+    </AppLayout>
   );
 };
 

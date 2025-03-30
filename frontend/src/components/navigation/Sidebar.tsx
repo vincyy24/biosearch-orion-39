@@ -1,205 +1,207 @@
 
-import React, { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Home,
-  Search,
-  FileText,
-  Upload,
-  Database,
-  BarChart,
-  Users,
-  BookOpen,
-  Settings,
-  HelpCircle,
-  ChevronLeft,
-  ChevronRight,
-  Microscope,
-  Plus,
-  User,
-} from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  BarChart3,
+  BookOpen,
+  Compass,
+  Database,
+  FileText,
+  FlaskConical,
+  Home,
+  LayoutGrid,
+  Network,
+  Search,
+  Settings,
+  Users,
+  Upload,
+  AlertCircle,
+  Bell,
+} from "lucide-react";
 
-interface SidebarProps {
-  className?: string;
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ReactNode;
+  requireAuth?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ className }) => {
-  const [collapsed, setCollapsed] = useState(false);
+const Sidebar = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const [isMobile, setIsMobile] = useState(false);
 
-  const navItems = [
+  // Check if the current window width is mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkIfMobile);
+    };
+  }, []);
+
+  // If on mobile, don't render the sidebar
+  if (isMobile) return null;
+
+  // Define navigation items
+  const navItems: NavItem[] = [
     {
-      name: "Dashboard",
-      icon: Home,
-      path: "/dashboard",
+      title: "Home",
+      href: "/",
+      icon: <Home className="h-5 w-5" />,
     },
     {
-      name: "Search",
-      icon: Search,
-      path: "/search",
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: <LayoutGrid className="h-5 w-5" />,
+      requireAuth: true,
     },
     {
-      name: "Research",
-      icon: Microscope,
-      path: "/research",
+      title: "Browse Data",
+      href: "/browse",
+      icon: <Database className="h-5 w-5" />,
     },
     {
-      name: "Publications",
-      icon: BookOpen,
-      path: "/publications",
+      title: "Search",
+      href: "/search",
+      icon: <Search className="h-5 w-5" />,
     },
     {
-      name: "Upload Data",
-      icon: Upload,
-      path: "/upload",
+      title: "Research",
+      href: "/research",
+      icon: <FlaskConical className="h-5 w-5" />,
     },
     {
-      name: "Browse Data",
-      icon: Database,
-      path: "/browse",
+      title: "Publications",
+      href: "/publications",
+      icon: <BookOpen className="h-5 w-5" />,
     },
     {
-      name: "Analytics",
-      icon: BarChart,
-      path: "/analytics",
+      title: "Upload",
+      href: "/upload",
+      icon: <Upload className="h-5 w-5" />,
+      requireAuth: true,
     },
     {
-      name: "Community",
-      icon: Users,
-      path: "/community",
+      title: "Community",
+      href: "/community",
+      icon: <Users className="h-5 w-5" />,
     },
     {
-      name: "Documentation",
-      icon: FileText,
-      path: "/documentation",
+      title: "Tools",
+      href: "/tools",
+      icon: <Network className="h-5 w-5" />,
     },
     {
-      name: "Support",
-      icon: HelpCircle,
-      path: "/support",
+      title: "Analytics",
+      href: "/analytics",
+      icon: <BarChart3 className="h-5 w-5" />,
+      requireAuth: true,
+    },
+    {
+      title: "Documentation",
+      href: "/documentation",
+      icon: <FileText className="h-5 w-5" />,
+    },
+  ];
+
+  const bottomNavItems: NavItem[] = [
+    {
+      title: "Notifications",
+      href: "/notifications",
+      icon: <Bell className="h-5 w-5" />,
+      requireAuth: true,
+    },
+    {
+      title: "Settings",
+      href: "/settings",
+      icon: <Settings className="h-5 w-5" />,
+      requireAuth: true,
+    },
+    {
+      title: "Support",
+      href: "/support",
+      icon: <AlertCircle className="h-5 w-5" />,
     },
   ];
 
   return (
-    <div
-      className={cn(
-        "h-screen sticky top-0 flex flex-col justify-between overflow-y-auto bg-card border-r transition-all duration-300 z-40",
-        collapsed ? "w-16" : "w-64",
-        className
-      )}
-    >
-      <div>
-        <div className="flex items-center justify-between p-4 border-b">
-          {!collapsed && (
-            <Link to="/" className="text-xl font-bold">
-              ORION
-            </Link>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCollapsed(!collapsed)}
-            className={cn("ml-auto", collapsed ? "mx-auto" : "")}
-          >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </Button>
+    <aside className="bg-background border-r w-[240px] h-screen sticky top-0 left-0 z-30">
+      <div className="flex flex-col h-full">
+        <div className="p-6">
+          <Link to="/" className="flex items-center gap-2">
+            <Compass className="h-6 w-6 text-primary" />
+            <span className="font-bold text-xl">ORION DB</span>
+          </Link>
         </div>
-        <div className="flex-1 py-4">
-          <nav className="px-2 space-y-1">
-            {navItems.map((item) => (
-              <Button
-                key={item.path}
-                variant={location.pathname === item.path ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start mb-1",
-                  collapsed ? "px-2" : "px-4"
-                )}
-                onClick={() => {
-                    navigate(item.path);
-                }}
-              >
-                <item.icon className={cn("h-5 w-5", collapsed ? "mr-0 flex-1" : "")} />
-                {!collapsed && <span>{item.name}</span>}
-              </Button>
-            ))}
+
+        <ScrollArea className="flex-1 px-4">
+          <nav className="space-y-1 py-2">
+            {navItems.map((item) => {
+              // Skip auth-required items if not authenticated
+              if (item.requireAuth && !isAuthenticated) return null;
+
+              const isActive = location.pathname === item.href;
+              return (
+                <Link to={item.href} key={item.href}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={`w-full justify-start mb-1 ${
+                      isActive
+                        ? "bg-primary/10 hover:bg-primary/20"
+                        : "hover:bg-primary/5"
+                    }`}
+                  >
+                    <span className={`mr-3 ${isActive ? "text-primary" : ""}`}>
+                      {item.icon}
+                    </span>
+                    {item.title}
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
+        </ScrollArea>
+
+        <div className="p-4 mt-auto">
+          <Separator className="my-2" />
+          <nav className="space-y-1 py-2">
+            {bottomNavItems.map((item) => {
+              // Skip auth-required items if not authenticated
+              if (item.requireAuth && !isAuthenticated) return null;
+
+              const isActive = location.pathname === item.href;
+              return (
+                <Link to={item.href} key={item.href}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={`w-full justify-start mb-1 ${
+                      isActive
+                        ? "bg-primary/10 hover:bg-primary/20"
+                        : "hover:bg-primary/5"
+                    }`}
+                  >
+                    <span className={`mr-3 ${isActive ? "text-primary" : ""}`}>
+                      {item.icon}
+                    </span>
+                    {item.title}
+                  </Button>
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>
-
-      <div>
-        {/* Create New Button/Dropdown */}
-        <div className="p-2 border-t border-b">
-          {collapsed ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="w-full" size="icon" variant="default">
-                  <Plus className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate("/research/new")}>
-                  <Microscope className="h-4 w-4 mr-2" />
-                  New Research
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/publications/new")}>
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  New Publication
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                variant="default"
-                className="flex-1 text-xs"
-                onClick={() => navigate("/research/new")}
-              >
-                <Microscope className="h-4 w-4 mr-1" /> Research
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 text-xs"
-                onClick={() => navigate("/publications/new")}
-              >
-                <BookOpen className="h-4 w-4 mr-1" /> Publication
-              </Button>
-            </div>
-          )}
-        </div>
-        {/* User Profile Section */}
-        <div className="p-4 border-t mt-auto">
-          {isAuthenticated ? (
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => navigate("/profile")}
-            >
-              <User className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
-              {!collapsed && <span>{user?.username || user?.email}</span>}
-            </Button>
-          ) : (
-            <Button
-              variant="default"
-              className="w-full"
-              onClick={() => navigate("/login")}
-            >
-              {collapsed ? <User className="h-5 w-5" /> : "Sign In"}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+    </aside>
   );
 };
 

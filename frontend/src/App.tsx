@@ -16,6 +16,7 @@ import Voltammetry from './pages/Voltammetry';
 import NotFound from './pages/NotFound';
 import Upload from './pages/Upload';
 import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 import DataBrowser from './pages/DataBrowser';
 import SearchResults from './pages/SearchResults';
 import ResearchProjects from './pages/ResearchProjects';
@@ -39,6 +40,7 @@ const routes = [
   { path: "/", element: <Index /> },
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
+  { path: "/verify-email", element: <VerifyEmail /> },
   { path: "/reset-password", element: <ResetPassword /> },
   { path: "/reset-password/:token", element: <ResetPassword /> },
   { path: "/dashboard", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },

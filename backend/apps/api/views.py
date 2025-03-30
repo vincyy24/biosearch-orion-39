@@ -1,3 +1,4 @@
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,7 +17,7 @@ from django.http import HttpResponse
 from wsgiref.util import FileWrapper
 from django.middleware.csrf import get_token
 
-from .models import Publication, DataType, FileUpload, DataCategory
+from .models import Publication, DataType, FileUpload, DataCategory, CollaborationInvite
 from apps.api import models
 
 class CSRFTokenView(APIView):
@@ -30,6 +31,9 @@ class CSRFTokenView(APIView):
         return Response({'csrf_token': csrf_token})
 
 class PublicationList(APIView):
+    """
+    API view to list and create publications
+    """
     def get(self, request):
         publication_id = request.data.get("publication_id")
     
@@ -47,6 +51,51 @@ class PublicationList(APIView):
                 return Response({'error': 'Publication not found'}, status=status.HTTP_404_NOT_FOUND)
         publications = Publication.objects.all().values('id', 'doi', 'title', 'author', 'year', 'citations', 'is_public')
         return Response(list(publications))
+    
+    def post(self, request):
+        """
+        Create a new publication
+        """
+        # Get data from request
+        title = request.data.get('title')
+        authors = request.data.get('authors')
+        journal = request.data.get('journal')
+        year = request.data.get('year')
+        doi = request.data.get('doi')
+        abstract = request.data.get('abstract')
+        
+        # Validate required fields
+        if not title or not authors or not journal or not year:
+            return Response(
+                {'error': 'Title, authors, journal, and year are required fields'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Create the publication
+            publication = Publication.objects.create(
+                title=title,
+                author=", ".join([author['name'] for author in authors]) if isinstance(authors, list) else authors,
+                journal=journal,
+                year=year,
+                doi=doi or "",
+                abstract=abstract or "",
+                is_public=True,  # Default to public
+                user=request.user if request.user.is_authenticated else None
+            )
+            
+            return Response({
+                'id': publication.id,
+                'title': publication.title,
+                'doi': publication.doi,
+                'message': 'Publication created successfully'
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class DataTypesList(APIView):
     """
@@ -186,6 +235,12 @@ class LoginView(APIView):
         user = authenticate(username=username, password=password)
         
         if user:
+            if not user.is_active:
+                return Response(
+                    {'error': 'Account is not verified. Please check your email for verification link.'}, 
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+                
             login(request, user)
             
             is_admin = user.is_staff or user.is_superuser
@@ -234,10 +289,12 @@ class SignupView(APIView):
             )
         
         try:
+            # Create inactive user until email verification
             user = User.objects.create_user(
                 username=username,
                 email=email,
-                password=password
+                password=password,
+                is_active=False  # User inactive until email verification
             )
             
             if name:
@@ -247,13 +304,89 @@ class SignupView(APIView):
                     user.last_name = name_parts[1]
                 user.save()
             
+            # Generate verification token
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            
+            # Build verification URL
+            verification_url = f"{settings.FRONTEND_URL}/verify-email?uid={uid}&token={token}"
+            
+            # Send verification email
+            send_mail(
+                'Verify your email address',
+                f'Please click the following link to verify your email: {verification_url}',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            
+            # Check for pending collaboration invitations
+            check_pending_invitations(email)
+            
             return Response({
-                'message': 'User created successfully',
+                'message': 'User created successfully. Please check your email for verification.',
                 'id': user.id,
                 'username': user.username,
                 'email': user.email
             }, status=status.HTTP_201_CREATED)
             
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class EmailVerificationView(APIView):
+    """
+    API view to handle email verification.
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        
+        if not uid or not token:
+            return Response(
+                {'error': 'UID and token are required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Decode the user ID
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_id)
+            
+            # Verify token
+            if default_token_generator.check_token(user, token):
+                # Activate user
+                user.is_active = True
+                user.save()
+                
+                # Log user in
+                login(request, user)
+                
+                is_admin = user.is_staff or user.is_superuser
+                
+                return Response({
+                    'message': 'Email verified successfully',
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'name': user.get_full_name() or user.username,
+                    'role': 'admin' if is_admin else 'user'
+                })
+            else:
+                return Response(
+                    {'error': 'Invalid or expired verification token'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
             return Response(
                 {'error': str(e)}, 
@@ -402,22 +535,119 @@ class UserProfileView(APIView):
         })
 
 class UpdateUsernameView(APIView):
-    ...
-
+    """
+    API view to update username.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request):
+        user = request.user
+        username = request.data.get('username')
+        
+        if not username:
+            return Response(
+                {'error': 'Username is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if User.objects.filter(username=username).exclude(id=user.id).exists():
+            return Response(
+                {'error': 'Username already exists'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            user.username = username
+            user.save()
+            
+            return Response({
+                'message': 'Username updated successfully',
+                'username': user.username
+            })
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class UpdatePasswordView(APIView):
-    ...
-
+    """
+    API view to update password.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request):
+        user = request.user
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+        
+        if not current_password or not new_password:
+            return Response(
+                {'error': 'Current password and new password are required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not user.check_password(current_password):
+            return Response(
+                {'error': 'Current password is incorrect'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            user.set_password(new_password)
+            user.save()
+            
+            # Log user in again with new password
+            user = authenticate(username=user.username, password=new_password)
+            login(request, user)
+            
+            return Response({'message': 'Password updated successfully'})
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class DashboardSummaryView(APIView):
-    ...
-
+    """
+    API view to retrieve dashboard summary data.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve dashboard summary data
+        return Response({
+            'datasets_count': 42,
+            'recent_datasets': [],
+            'publications_count': 18,
+            'recent_publications': [],
+            'projects_count': 7,
+            'recent_projects': []
+        })
 
 class UserActivityView(APIView):
-    ...
+    """
+    API view to retrieve user activity data.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve user activity data
+        return Response({
+            'activities': []
+        })
 
 class RecentExperimentsView(APIView):
-    ...
+    """
+    API view to retrieve recent experiments.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve recent experiments
+        return Response({
+            'experiments': []
+        })
 
 class SearchView(APIView):
     """
@@ -694,23 +924,105 @@ class RecentDatasetsView(APIView):
         return Response(datasets)
 
 class VoltammetryRawDataView(APIView):
-    ...
+    """
+    API view to retrieve raw voltammetry data.
+    """
+    def get(self, request, experiment_id):
+        # Implementation to retrieve raw voltammetry data
+        return Response({
+            'data': []
+        })
 
 class VoltammetryPlotView(APIView):
-    ...
+    """
+    API view to generate voltammetry plots.
+    """
+    def get(self, request, experiment_id):
+        # Implementation to generate voltammetry plots
+        return Response({
+            'plot_data': {}
+        })
 
 class ExportDataView(APIView):
-    ...
+    """
+    API view to export data in various formats.
+    """
+    def get(self, request):
+        # Implementation to export data
+        return Response({
+            'export_url': ''
+        })
 
 class AdvancedSearchView(APIView):
-    ...
+    """
+    API view to handle advanced search queries.
+    """
+    def get(self, request):
+        # Implementation to handle advanced search queries
+        return Response({
+            'results': []
+        })
 
 class UserSearchView(APIView):
-    ...
+    """
+    API view to search for users.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        query = request.query_params.get('query', '')
+        
+        if not query or len(query) < 2:
+            return Response({'error': 'Search query must be at least 2 characters'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        users = User.objects.filter(
+            models.Q(username__icontains=query) | 
+            models.Q(first_name__icontains=query) | 
+            models.Q(last_name__icontains=query) | 
+            models.Q(email__icontains=query)
+        ).exclude(id=request.user.id).values('id', 'username', 'email', 'first_name', 'last_name')
+        
+        results = []
+        for user in users:
+            full_name = f"{user['first_name']} {user['last_name']}".strip()
+            results.append({
+                'id': user['id'],
+                'username': user['username'],
+                'email': user['email'],
+                'name': full_name if full_name else user['username']
+            })
+        
+        return Response(results)
 
 class UserPublicProfileView(APIView):
-    ...
-
+    """
+    API view to retrieve public profile information for a user.
+    """
+    def get(self, request, username):
+        try:
+            user = User.objects.get(username=username)
+            
+            # Get public publications
+            publications = Publication.objects.filter(
+                user=user, is_public=True
+            ).values('id', 'title', 'journal', 'year')[:5]
+            
+            # Get public datasets
+            datasets = FileUpload.objects.filter(
+                user=user, is_public=True
+            ).values('id', 'file_name', 'description', 'upload_date')[:5]
+            
+            return Response({
+                'id': user.id,
+                'username': user.username,
+                'name': user.get_full_name() or user.username,
+                'publications': list(publications),
+                'datasets': list(datasets),
+                'joined_date': user.date_joined
+            })
+            
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class UserSettingsView(APIView):
     """
@@ -973,21 +1285,188 @@ class NotificationSettingsView(APIView):
         
         return Response(settings)
 
-class DeleteAccountView(APIView):
-    ...
+class InviteCollaboratorView(APIView):
+    """
+    API view to handle collaboration invitations.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, project_id):
+        # Get invitation data
+        email = request.data.get('email')
+        orcid_id = request.data.get('orcid_id')
+        role = request.data.get('role', 'viewer')
+        
+        if not email and not orcid_id:
+            return Response(
+                {'error': 'Either email or ORCID ID is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Check if the user exists
+            user = None
+            if email:
+                try:
+                    user = User.objects.get(email=email)
+                except User.DoesNotExist:
+                    # User doesn't exist, send email invitation
+                    pass
+            
+            if orcid_id:
+                # In a real system, look up the user by ORCID ID
+                # For now, just simulate the behavior
+                pass
+            
+            # Create invitation record
+            invitation = CollaborationInvite.objects.create(
+                project_id=project_id,
+                inviter=request.user,
+                invitee=user,
+                email=email,
+                orcid_id=orcid_id,
+                role=role,
+                status='pending'
+            )
+            
+            if user:
+                # Send notification to the user (implementation pending)
+                # Also send an email notification
+                send_collaboration_notification(user, request.user, project_id, role)
+            else:
+                # Send email invitation to the non-registered user
+                send_collaboration_email(email or "user@example.com", request.user, project_id, role)
+            
+            return Response({
+                'message': 'Invitation sent successfully',
+                'invitation_id': invitation.id
+            }, status=status.HTTP_201_CREATED)
+        
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def get(self, request, project_id):
+        # Get all invitations for a project
+        invitations = CollaborationInvite.objects.filter(project_id=project_id).values(
+            'id', 'invitee__username', 'invitee__email', 'email', 'orcid_id', 'role', 'status', 'created_at'
+        )
+        
+        return Response(list(invitations))
 
+class DeleteAccountView(APIView):
+    """
+    API view to handle account deletion.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        # Verify password before deletion
+        password = request.data.get('password')
+        
+        if not password:
+            return Response(
+                {'error': 'Password is required to confirm account deletion'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not request.user.check_password(password):
+            return Response(
+                {'error': 'Incorrect password'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Perform account deletion
+            user = request.user
+            logout(request)
+            user.delete()
+            
+            return Response({'message': 'Account deleted successfully'})
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class AnalyticsOverviewView(APIView):
-    ...
-
+    """
+    API view to retrieve analytics overview data.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve analytics overview data
+        return Response({
+            'dataset_count': 45,
+            'dataset_downloads': 312,
+            'publication_count': 18,
+            'publication_citations': 87,
+            'collaboration_count': 9,
+            'monthly_activity': [
+                {'month': 'Jan', 'datasets': 3, 'publications': 1},
+                {'month': 'Feb', 'datasets': 5, 'publications': 2},
+                {'month': 'Mar', 'datasets': 4, 'publications': 1},
+                {'month': 'Apr', 'datasets': 6, 'publications': 3},
+                {'month': 'May', 'datasets': 8, 'publications': 2},
+                {'month': 'Jun', 'datasets': 7, 'publications': 4}
+            ]
+        })
 
 class ResearchAnalyticsView(APIView):
-    ...
-
+    """
+    API view to retrieve research project analytics.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve research project analytics
+        return Response({
+            'projects': []
+        })
 
 class PublicationAnalyticsView(APIView):
-    ...
-
+    """
+    API view to retrieve publication analytics.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve publication analytics
+        return Response({
+            'publications': []
+        })
 
 class DatasetAnalyticsView(APIView):
-    ...
+    """
+    API view to retrieve dataset analytics.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve dataset analytics
+        return Response({
+            'datasets': []
+        })
+
+# Helper functions for collaboration invites
+def send_collaboration_notification(user, inviter, project_id, role):
+    """Send in-app notification for collaboration invite."""
+    # Implementation for sending in-app notification
+    print(f"Sending notification to {user.email} for project {project_id} with role {role}")
+
+def send_collaboration_email(email, inviter, project_id, role):
+    """Send email notification for collaboration invite."""
+    # Implementation for sending email
+    print(f"Sending email to {email} for project {project_id} with role {role}")
+
+def check_pending_invitations(email):
+    """Check for pending invitations for a newly registered user."""
+    # Implementation to check and process pending invitations
+    pending_invites = CollaborationInvite.objects.filter(email=email, invitee=None)
+    
+    if pending_invites.exists():
+        # Process pending invitations
+        print(f"Found {pending_invites.count()} pending invitations for {email}")

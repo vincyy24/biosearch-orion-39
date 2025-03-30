@@ -1,69 +1,89 @@
 
-import React, { useState } from "react";
-import MainLayout from "@/components/layouts/AppLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import AppLayout from "@/components/layouts/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { 
+  AlertCircle, 
+  AlertTriangle, 
+  Eye, 
+  EyeOff, 
+  Key, 
+  Loader2, 
+  Lock, 
+  Mail, 
+  Save, 
+  Shield, 
+  Trash2, 
+  User 
+} from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
   DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter 
+  DialogTitle
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import {
-  User,
-  Lock,
-  Bell,
-  Eye,
-  EyeOff,
-  Shield,
-  Key,
-  AlertTriangle,
-  Mail,
-  UserCircle,
-  AtSign,
-  Save
-} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const AccountSettings = () => {
+  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const [activeTab, setActiveTab] = useState("profile");
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState("");
-  
-  // Profile state
-  const [username, setUsername] = useState(user?.username || "");
-  const [fullName, setFullName] = useState(user?.name || "");
-  const [bio, setBio] = useState(user?.bio || "");
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  
-  // Password state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  
-  // Notification settings
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [researchUpdates, setResearchUpdates] = useState(true);
-  const [publicationCitations, setPublicationCitations] = useState(true);
-  const [commentNotifications, setCommentNotifications] = useState(true);
-  const [collaborationInvites, setCollaborationInvites] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
-  const [isUpdatingNotifications, setIsUpdatingNotifications] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [loginAlertsEnabled, setLoginAlertsEnabled] = useState(true);
 
-  const handleUpdateProfile = async () => {
-    setIsUpdatingProfile(true);
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login", { 
+        replace: true, 
+        state: { from: { pathname: "/account-settings" } } 
+      });
+    }
+    
+    // Initialize form with user data
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+      setUsername(user.username || "");
+    }
+  }, [user, isAuthenticated, authLoading, navigate]);
+
+  const handleProfileUpdate = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -72,456 +92,540 @@ const AccountSettings = () => {
         title: "Profile updated",
         description: "Your profile information has been updated successfully."
       });
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    } catch (err) {
+      setError("Failed to update profile. Please try again.");
       toast({
+        variant: "destructive",
         title: "Update failed",
-        description: "There was an error updating your profile. Please try again.",
-        variant: "destructive"
+        description: "There was an error updating your profile."
       });
     } finally {
-      setIsUpdatingProfile(false);
+      setLoading(false);
     }
   };
-
-  const handleUpdatePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "New password and confirmation password must match.",
-        variant: "destructive"
-      });
-      return;
-    }
+  
+  const handleUsernameUpdate = async () => {
+    setLoading(true);
+    setError(null);
     
-    setIsUpdatingPassword(true);
     try {
+      // Validate username
+      if (!username) {
+        throw new Error("Username cannot be empty");
+      }
+      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully."
+        title: "Username updated",
+        description: "Your username has been updated successfully."
       });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update username. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: err instanceof Error ? err.message : "There was an error updating your username."
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handlePasswordUpdate = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Validate passwords
+      if (!currentPassword) {
+        throw new Error("Current password is required");
+      }
+      
+      if (!newPassword) {
+        throw new Error("New password is required");
+      }
+      
+      if (newPassword !== confirmPassword) {
+        throw new Error("New passwords do not match");
+      }
+      
+      if (newPassword.length < 8) {
+        throw new Error("New password must be at least 8 characters long");
+      }
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Reset form
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error) {
-      console.error("Error updating password:", error);
-      toast({
-        title: "Update failed",
-        description: "There was an error updating your password. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdatingPassword(false);
-    }
-  };
-
-  const handleUpdateNotifications = async () => {
-    setIsUpdatingNotifications(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
-        title: "Notification settings updated",
-        description: "Your notification preferences have been updated successfully."
+        title: "Password updated",
+        description: "Your password has been updated successfully."
       });
-    } catch (error) {
-      console.error("Error updating notification settings:", error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update password. Please try again.");
       toast({
+        variant: "destructive",
         title: "Update failed",
-        description: "There was an error updating your notification settings. Please try again.",
-        variant: "destructive"
+        description: err instanceof Error ? err.message : "There was an error updating your password."
       });
     } finally {
-      setIsUpdatingNotifications(false);
+      setLoading(false);
     }
   };
-
-  const handleDeleteAccount = async () => {
-    if (confirmDelete !== "DELETE") {
-      toast({
-        title: "Invalid confirmation",
-        description: "Please type DELETE to confirm account deletion.",
-        variant: "destructive"
-      });
-      return;
-    }
+  
+  const handleAccountDelete = async () => {
+    setLoading(true);
     
     try {
+      // Validate password
+      if (!deleteConfirmPassword) {
+        throw new Error("Password is required to confirm account deletion");
+      }
+      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Close dialog
+      setIsDeleteDialogOpen(false);
+      
+      // Log out user
+      await logout();
+      
+      // Redirect to home page
+      navigate("/", { replace: true });
       
       toast({
         title: "Account deleted",
         description: "Your account has been deleted successfully."
       });
-      
-      setIsDeleteDialogOpen(false);
-      // In a real app, you'd log the user out and redirect
-    } catch (error) {
-      console.error("Error deleting account:", error);
+    } catch (err) {
       toast({
+        variant: "destructive",
         title: "Deletion failed",
-        description: "There was an error deleting your account. Please try again.",
-        variant: "destructive"
+        description: err instanceof Error ? err.message : "There was an error deleting your account."
       });
+    } finally {
+      setLoading(false);
     }
   };
+  
+  if (authLoading) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto py-8 max-w-4xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>Loading your account settings...</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return null; // The useEffect will redirect to login
+  }
 
   return (
-    <MainLayout>
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Account Settings</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your account preferences and settings
-          </p>
-        </div>
-
-        <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-3 w-full max-w-md mb-4">
-            <TabsTrigger value="profile" className="flex items-center">
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center">
-              <Lock className="mr-2 h-4 w-4" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center">
-              <Bell className="mr-2 h-4 w-4" />
-              Notifications
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Profile Tab */}
-          <TabsContent value="profile">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <UserCircle className="mr-2 h-5 w-5" />
-                  Profile Information
-                </CardTitle>
-                <CardDescription>
-                  Update your personal information and public profile
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <AppLayout>
+      <div className="container mx-auto py-8 max-w-4xl">
+        <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
+        
+        <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="md:w-52 space-y-6">
+              <TabsList className="flex flex-col h-auto w-full p-0 bg-transparent space-y-1">
+                <TabsTrigger 
+                  value="profile" 
+                  className="justify-start w-full px-3 py-2 h-9"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="username" 
+                  className="justify-start w-full px-3 py-2 h-9"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Username
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="security" 
+                  className="justify-start w-full px-3 py-2 h-9"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Security
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="danger" 
+                  className="justify-start w-full px-3 py-2 h-9 text-destructive"
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Danger Zone
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <div className="flex-1 space-y-6">
+              <TabsContent value="profile" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Profile Information</CardTitle>
+                    <CardDescription>
+                      Update your personal information
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
-                      <Input
-                        id="fullName"
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input 
+                        id="name" 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
                         placeholder="Your full name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        placeholder="Your email"
-                        value={user?.email || ""}
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={email} 
                         disabled
+                        placeholder="Your email address"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Contact support to change your email address
+                      <p className="text-sm text-muted-foreground">
+                        Your email address is used for login and cannot be changed.
                       </p>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="username" className="flex items-center">
-                      <AtSign className="mr-1 h-4 w-4" /> Username
-                    </Label>
-                    <Input
-                      id="username"
-                      placeholder="Your username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      This will be your public username on the platform
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Input
-                      id="bio"
-                      placeholder="A short bio about yourself"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Tell others about your research interests and expertise
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isUpdatingProfile ? "Saving..." : "Save Changes"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-
-          {/* Security Tab */}
-          <TabsContent value="security">
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Key className="mr-2 h-5 w-5" />
-                  Password
-                </CardTitle>
-                <CardDescription>
-                  Update your password to maintain account security
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="currentPassword"
-                      type={showPassword ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                      onClick={() => setShowPassword(!showPassword)}
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      onClick={handleProfileUpdate} 
+                      disabled={loading}
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
                       ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Save Changes
+                        </>
                       )}
-                      <span className="sr-only">
-                        {showPassword ? "Hide password" : "Show password"}
-                      </span>
                     </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    type={showPassword ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleUpdatePassword} disabled={isUpdatingPassword}>
-                  {isUpdatingPassword ? "Updating..." : "Update Password"}
-                </Button>
-              </CardFooter>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-destructive">
-                  <AlertTriangle className="mr-2 h-5 w-5" />
-                  Delete Account
-                </CardTitle>
-                <CardDescription>
-                  Permanently delete your account and all associated data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  This action cannot be undone. Your research data and publications will remain accessible on the platform, but your account will be removed.
-                </p>
-                <Button 
-                  variant="destructive"
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                >
-                  Delete Account
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notifications Tab */}
-          <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bell className="mr-2 h-5 w-5" />
-                  Notification Preferences
-                </CardTitle>
-                <CardDescription>
-                  Manage how and when you receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Email Notifications</h4>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="username" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Username</CardTitle>
+                    <CardDescription>
+                      Update your username
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input 
+                        id="username" 
+                        value={username} 
+                        onChange={(e) => setUsername(e.target.value)} 
+                        placeholder="Your username"
+                      />
                       <p className="text-sm text-muted-foreground">
-                        Receive notifications via email
+                        Your username is used for your profile URL and @mentions.
                       </p>
                     </div>
-                    <Switch
-                      checked={emailNotifications}
-                      onCheckedChange={setEmailNotifications}
-                    />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Research Updates</h4>
+                    
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      onClick={handleUsernameUpdate} 
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Update Username
+                        </>
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="security" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Change Password</CardTitle>
+                    <CardDescription>
+                      Update your account password
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-password">Current Password</Label>
+                      <div className="relative">
+                        <Input 
+                          id="current-password" 
+                          type={showCurrentPassword ? "text" : "password"} 
+                          value={currentPassword} 
+                          onChange={(e) => setCurrentPassword(e.target.value)} 
+                          placeholder="Enter your current password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        >
+                          {showCurrentPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <div className="relative">
+                        <Input 
+                          id="new-password" 
+                          type={showNewPassword ? "text" : "password"} 
+                          value={newPassword} 
+                          onChange={(e) => setNewPassword(e.target.value)} 
+                          placeholder="Enter your new password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                        >
+                          {showNewPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                       <p className="text-sm text-muted-foreground">
-                        Updates to research projects you're part of
+                        Password must be at least 8 characters long.
                       </p>
                     </div>
-                    <Switch
-                      checked={researchUpdates}
-                      onCheckedChange={setResearchUpdates}
-                      disabled={!emailNotifications}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Publication Citations</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Notifications when your publications are cited
-                      </p>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Confirm New Password</Label>
+                      <Input 
+                        id="confirm-password" 
+                        type="password" 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)} 
+                        placeholder="Confirm your new password"
+                      />
                     </div>
-                    <Switch
-                      checked={publicationCitations}
-                      onCheckedChange={setPublicationCitations}
-                      disabled={!emailNotifications}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Comments & Mentions</h4>
-                      <p className="text-sm text-muted-foreground">
-                        When someone comments on or mentions you
-                      </p>
+                    
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      onClick={handlePasswordUpdate} 
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <Key className="mr-2 h-4 w-4" />
+                          Update Password
+                        </>
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Security Settings</CardTitle>
+                    <CardDescription>
+                      Manage your account security settings
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="two-factor">Two-Factor Authentication</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Add an extra layer of security to your account
+                        </p>
+                      </div>
+                      <Switch
+                        id="two-factor"
+                        checked={twoFactorEnabled}
+                        onCheckedChange={setTwoFactorEnabled}
+                      />
                     </div>
-                    <Switch
-                      checked={commentNotifications}
-                      onCheckedChange={setCommentNotifications}
-                      disabled={!emailNotifications}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Collaboration Invites</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Invitations to collaborate on research
-                      </p>
+                    
+                    <Separator />
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="login-alerts">Login Alerts</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when someone logs into your account
+                        </p>
+                      </div>
+                      <Switch
+                        id="login-alerts"
+                        checked={loginAlertsEnabled}
+                        onCheckedChange={setLoginAlertsEnabled}
+                      />
                     </div>
-                    <Switch
-                      checked={collaborationInvites}
-                      onCheckedChange={setCollaborationInvites}
-                      disabled={!emailNotifications}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Weekly Digest</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Weekly summary of platform activity
-                      </p>
-                    </div>
-                    <Switch
-                      checked={weeklyDigest}
-                      onCheckedChange={setWeeklyDigest}
-                      disabled={!emailNotifications}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  onClick={handleUpdateNotifications}
-                  disabled={isUpdatingNotifications || !emailNotifications}
-                >
-                  {isUpdatingNotifications ? "Saving..." : "Save Preferences"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Delete Account Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-destructive flex items-center">
-              <AlertTriangle className="mr-2 h-5 w-5" />
-              Delete Account
-            </DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. Your account will be permanently deleted.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-2">
-            <p className="text-sm">
-              Please type <strong>DELETE</strong> to confirm that you want to permanently delete your account.
-            </p>
-            <Input
-              placeholder="Type DELETE to confirm"
-              value={confirmDelete}
-              onChange={(e) => setConfirmDelete(e.target.value)}
-              className="border-destructive/50 focus-visible:ring-destructive/30"
-            />
+                  </CardContent>
+                  <CardFooter>
+                    <Button>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Settings
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="danger" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                    <CardDescription>
+                      Irreversible and destructive actions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Warning</AlertTitle>
+                      <AlertDescription>
+                        Deleting your account will permanently remove all your data, including projects, datasets, and settings. This action cannot be undone.
+                      </AlertDescription>
+                    </Alert>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Account
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </div>
           </div>
-          
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteAccount}
-              disabled={confirmDelete !== "DELETE"}
-            >
-              Delete My Account
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </MainLayout>
+        </Tabs>
+        
+        {/* Delete Account Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Account</DialogTitle>
+              <DialogDescription>
+                This action is irreversible. All your data will be permanently deleted.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-2">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Warning</AlertTitle>
+                <AlertDescription>
+                  This will permanently delete your account and all associated data.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-2">
+                <Label htmlFor="delete-confirm-password">
+                  Enter your password to confirm
+                </Label>
+                <div className="relative">
+                  <Input 
+                    id="delete-confirm-password" 
+                    type="password" 
+                    value={deleteConfirmPassword} 
+                    onChange={(e) => setDeleteConfirmPassword(e.target.value)} 
+                    placeholder="Your current password"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsDeleteDialogOpen(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleAccountDelete}
+                disabled={loading || !deleteConfirmPassword}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete My Account"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AppLayout>
   );
 };
 

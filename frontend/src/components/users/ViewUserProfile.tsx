@@ -1,318 +1,335 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { BookOpen, Database, ExternalLink, Mail, MessageSquare, User, Users } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import {
-  User,
-  Mail,
-  Globe,
-  BookOpen,
-  Microscope,
-  Database,
-  Users,
-  MessageSquare,
-  Check,
-  UserPlus,
-  ExternalLink
-} from "lucide-react";
+import PublicationCard from "@/components/publications/PublicationCard";
+
+interface Publication {
+  id: string;
+  title: string;
+  journal: string;
+  year: string;
+}
+
+interface Dataset {
+  id: string;
+  file_name: string;
+  description: string;
+  upload_date: string;
+}
 
 interface UserProfile {
   id: string;
   username: string;
   name: string;
-  email?: string;
-  bio?: string;
-  institution?: string;
-  orcidId?: string;
-  avatarUrl?: string;
-  isFollowing?: boolean;
-  publications?: number;
-  researchProjects?: number;
-  datasets?: number;
-  followers?: number;
-  following?: number;
+  publications: Publication[];
+  datasets: Dataset[];
+  joined_date: string;
 }
 
 interface ViewUserProfileProps {
   username: string;
-  isLoading?: boolean;
+  onError?: (message: string) => void;
 }
 
-const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, isLoading = false }) => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) => {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [activeTab, setActiveTab] = useState("publications");
-
+  const [activeTab, setActiveTab] = useState("overview");
+  const { isAuthenticated, user } = useAuth();
+  const { toast } = useToast();
+  
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!username) return;
-      
+      setLoading(true);
       try {
-        setLoading(true);
-        // Simulate API call
+        // In a real app, this would call the API with the username
+        // For now, we'll simulate the API call
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Mock user profile data
+        // Simulate profile data
+        const isOwnProfile = user?.username === username;
+        
         const mockProfile: UserProfile = {
-          id: "u123",
+          id: "u1",
           username: username,
-          name: "Dr. Jane Smith",
-          bio: "Researcher in electrochemical methods and materials science. Focused on developing novel sensing platforms for environmental monitoring.",
-          institution: "University of Science & Technology",
-          orcidId: "0000-0001-2345-6789",
-          isFollowing: false,
-          publications: 24,
-          researchProjects: 12,
-          datasets: 45,
-          followers: 87,
-          following: 34
+          name: username === "janesmith" ? "Dr. Jane Smith" : 
+                username === "michaelchen" ? "Dr. Michael Chen" : 
+                `${username.charAt(0).toUpperCase() + username.slice(1)} Researcher`,
+          publications: [
+            {
+              id: "p1",
+              title: "Novel Electrochemical Sensors for Glucose Detection",
+              journal: "Journal of Electroanalytical Chemistry",
+              year: "2023"
+            },
+            {
+              id: "p2",
+              title: "Machine Learning Approaches for Voltammetric Data Analysis",
+              journal: "Analytical Chemistry",
+              year: "2022"
+            }
+          ],
+          datasets: [
+            {
+              id: "d1",
+              file_name: "Cyclic Voltammetry Data Set",
+              description: "Raw data from cyclic voltammetry experiments",
+              upload_date: "2023-05-15T10:30:00Z"
+            },
+            {
+              id: "d2",
+              file_name: "Impedance Spectroscopy Measurements",
+              description: "Frequency domain measurements for battery electrodes",
+              upload_date: "2023-03-22T14:45:00Z"
+            }
+          ],
+          joined_date: "2023-01-10T08:00:00Z"
         };
         
-        setUserProfile(mockProfile);
-        setIsFollowing(mockProfile.isFollowing || false);
+        setProfile(mockProfile);
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load user profile. Please try again.",
-          variant: "destructive"
-        });
+        if (onError) {
+          onError("Failed to load user profile");
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to load user profile",
+            variant: "destructive"
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchUserProfile();
-  }, [username, toast]);
 
-  const handleFollow = async () => {
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setIsFollowing(!isFollowing);
-      
-      toast({
-        title: isFollowing ? "Unfollowed" : "Following",
-        description: isFollowing 
-          ? `You are no longer following ${userProfile?.name || username}`
-          : `You are now following ${userProfile?.name || username}`
-      });
-    } catch (error) {
-      console.error("Error toggling follow status:", error);
-      toast({
-        title: "Action failed",
-        description: "There was an error processing your request.",
-        variant: "destructive"
-      });
+    if (username) {
+      fetchUserProfile();
     }
-  };
+  }, [username, user, toast, onError]);
 
-  const handleMessage = () => {
-    // In a real app, this would open a message composer or chat
+  const handleConnectClick = () => {
     toast({
-      title: "Message feature",
-      description: "Messaging feature is coming soon."
+      title: "Request sent",
+      description: `Connection request sent to ${profile?.name}`,
     });
   };
 
-  const handleInvite = () => {
-    // In a real app, this would show an invite dialog
+  const handleMessageClick = () => {
     toast({
-      title: "Invite feature",
-      description: "Invite collaboration feature is coming soon."
+      description: "Messaging functionality will be available soon!",
     });
   };
 
-  if (isLoading || loading) {
+  if (loading) {
     return (
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-start gap-4">
-            <Skeleton className="h-16 w-16 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-5 w-1/3" />
-              <Skeleton className="h-4 w-1/2" />
-              <div className="flex gap-2 mt-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-24" />
-              </div>
+        <CardHeader>
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 rounded-full bg-muted animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-24 bg-muted animate-pulse rounded" />
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-4 bg-muted animate-pulse rounded w-full" />
+            ))}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (!userProfile) {
+  if (!profile) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <User className="h-16 w-16 text-muted-foreground/30 mb-4" />
-          <h3 className="text-xl font-medium mb-2">User Not Found</h3>
-          <p className="text-muted-foreground mb-4">
-            The user profile you're looking for doesn't exist or is not accessible.
-          </p>
-          <Button onClick={() => navigate("/search")}>
-            Search for Users
-          </Button>
+        <CardHeader>
+          <CardTitle>User not found</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>The requested user profile could not be found.</p>
         </CardContent>
       </Card>
     );
   }
 
+  const isOwnProfile = user?.username === username;
+  const joinedDate = new Date(profile.joined_date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex flex-col sm:flex-row items-start gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={userProfile.avatarUrl} alt={userProfile.name} />
-            <AvatarFallback className="text-lg">
-              {userProfile.name.split(' ').map(n => n[0]).join('')}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={`https://api.dicebear.com/7.x/personas/svg?seed=${profile.username}`} />
+                <AvatarFallback>
+                  <User className="h-8 w-8" />
+                </AvatarFallback>
+              </Avatar>
               <div>
-                <CardTitle className="text-xl">{userProfile.name}</CardTitle>
-                <div className="flex items-center gap-1 mt-1 text-muted-foreground">
-                  <span>@{userProfile.username}</span>
-                  {userProfile.orcidId && (
-                    <Badge variant="outline" className="ml-2 text-xs">
-                      ORCID
-                    </Badge>
+                <CardTitle className="text-2xl font-bold">{profile.name}</CardTitle>
+                <div className="text-muted-foreground mt-1 flex items-center">
+                  @{profile.username}
+                  <Badge variant="outline" className="ml-2">Researcher</Badge>
+                </div>
+              </div>
+            </div>
+            
+            {!isOwnProfile && isAuthenticated && (
+              <div className="flex gap-2">
+                <Button onClick={handleConnectClick}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Connect
+                </Button>
+                <Button variant="outline" onClick={handleMessageClick}>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Message
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground">
+            <p>Joined {joinedDate} • {profile.publications.length} publications • {profile.datasets.length} datasets</p>
+          </div>
+          <Separator className="my-4" />
+          
+          <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="publications">Publications</TabsTrigger>
+              <TabsTrigger value="datasets">Datasets</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <BookOpen className="mr-2 h-5 w-5" /> Recent Publications
+                  </h3>
+                  {profile.publications.length > 0 ? (
+                    <div className="space-y-3">
+                      {profile.publications.slice(0, 2).map(pub => (
+                        <div key={pub.id} className="rounded-lg border p-3">
+                          <h4 className="font-medium">{pub.title}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {pub.journal}, {pub.year}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">No publications yet</p>
+                  )}
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <Database className="mr-2 h-5 w-5" /> Recent Datasets
+                  </h3>
+                  {profile.datasets.length > 0 ? (
+                    <div className="space-y-3">
+                      {profile.datasets.slice(0, 2).map(dataset => (
+                        <div key={dataset.id} className="rounded-lg border p-3">
+                          <h4 className="font-medium">{dataset.file_name}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {dataset.description.substring(0, 60)}
+                            {dataset.description.length > 60 ? '...' : ''}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Uploaded on {new Date(dataset.upload_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">No datasets yet</p>
                   )}
                 </div>
               </div>
               
-              <div className="flex gap-2 mt-3 sm:mt-0">
-                <Button
-                  variant={isFollowing ? "secondary" : "default"}
-                  size="sm"
-                  onClick={handleFollow}
-                >
-                  {isFollowing ? (
-                    <>
-                      <Check className="mr-1 h-4 w-4" /> Following
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="mr-1 h-4 w-4" /> Follow
-                    </>
-                  )}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-3">Contact</h3>
+                <Button variant="outline" size="sm" className="mr-2">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Email
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleMessage}>
-                  <MessageSquare className="mr-1 h-4 w-4" /> Message
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleInvite}>
-                  <Users className="mr-1 h-4 w-4" /> Invite
+                <Button variant="outline" size="sm">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  ORCID Profile
                 </Button>
               </div>
-            </div>
+            </TabsContent>
             
-            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4">
-              {userProfile.institution && (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Globe className="mr-1 h-4 w-4" />
-                  {userProfile.institution}
+            <TabsContent value="publications">
+              <h3 className="text-lg font-semibold mb-4">Publications</h3>
+              {profile.publications.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {profile.publications.map(pub => (
+                    <PublicationCard 
+                      key={pub.id}
+                      publication={{
+                        id: pub.id,
+                        title: pub.title,
+                        journal: pub.journal,
+                        year: pub.year,
+                        doi: "10.1000/example",
+                      }}
+                      onView={() => {}} // Would navigate to publication detail
+                    />
+                  ))}
                 </div>
+              ) : (
+                <p className="text-muted-foreground">No publications available</p>
               )}
-              {userProfile.orcidId && (
-                <a 
-                  href={`https://orcid.org/${userProfile.orcidId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center text-sm text-muted-foreground hover:text-foreground"
-                >
-                  <ExternalLink className="mr-1 h-4 w-4" />
-                  ORCID: {userProfile.orcidId}
-                </a>
+            </TabsContent>
+            
+            <TabsContent value="datasets">
+              <h3 className="text-lg font-semibold mb-4">Datasets</h3>
+              {profile.datasets.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.datasets.map(dataset => (
+                    <Card key={dataset.id}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">{dataset.file_name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">{dataset.description}</p>
+                        <p className="text-sm mt-2">
+                          Uploaded on {new Date(dataset.upload_date).toLocaleDateString()}
+                        </p>
+                        <Button className="mt-3" size="sm">View Dataset</Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No datasets available</p>
               )}
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-2">
-        {userProfile.bio && (
-          <p className="text-sm mb-4">{userProfile.bio}</p>
-        )}
-        
-        <div className="flex flex-wrap gap-x-6 gap-y-2 mb-6 text-sm">
-          <div className="flex items-center">
-            <BookOpen className="mr-1 h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{userProfile.publications}</span>
-            <span className="ml-1 text-muted-foreground">Publications</span>
-          </div>
-          <div className="flex items-center">
-            <Microscope className="mr-1 h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{userProfile.researchProjects}</span>
-            <span className="ml-1 text-muted-foreground">Research Projects</span>
-          </div>
-          <div className="flex items-center">
-            <Database className="mr-1 h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{userProfile.datasets}</span>
-            <span className="ml-1 text-muted-foreground">Datasets</span>
-          </div>
-          <div className="flex items-center">
-            <Users className="mr-1 h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{userProfile.followers}</span>
-            <span className="ml-1 text-muted-foreground">Followers</span>
-          </div>
-        </div>
-        
-        <Tabs 
-          defaultValue="publications" 
-          value={activeTab} 
-          onValueChange={setActiveTab}
-          className="w-full"
-        >
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="publications">Publications</TabsTrigger>
-            <TabsTrigger value="research">Research</TabsTrigger>
-            <TabsTrigger value="datasets">Datasets</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="publications" className="pt-4">
-            <div className="text-center py-8 text-muted-foreground">
-              <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>Publications will be displayed here</p>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="research" className="pt-4">
-            <div className="text-center py-8 text-muted-foreground">
-              <Microscope className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>Research projects will be displayed here</p>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="datasets" className="pt-4">
-            <div className="text-center py-8 text-muted-foreground">
-              <Database className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>Datasets will be displayed here</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

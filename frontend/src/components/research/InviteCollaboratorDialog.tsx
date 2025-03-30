@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Mail, Search } from "lucide-react";
+import { Users, Mail, Search, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface User {
   id: string;
@@ -36,8 +37,10 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
   onInviteSuccess
 }) => {
   const { toast } = useToast();
-  const [inviteType, setInviteType] = useState<"email" | "search">("search");
+  const { isAuthenticated } = useAuth();
+  const [inviteType, setInviteType] = useState<"email" | "orcid" | "search">("search");
   const [email, setEmail] = useState("");
+  const [orcidId, setOrcidId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [role, setRole] = useState("viewer");
   const [loading, setLoading] = useState(false);
@@ -45,12 +48,19 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      toast({
+        title: "Search query too short",
+        description: "Please enter at least 2 characters to search",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setLoading(true);
     try {
-      // Mock API call for now
-      // In a real app, replace with actual API call
+      // In a real app, this would call the API
+      // For now, we'll simulate the API call with mock data
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Simulate search results
@@ -65,6 +75,12 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
       );
       
       setSearchResults(mockResults);
+      if (mockResults.length === 0) {
+        toast({
+          title: "No results found",
+          description: `No users found matching "${searchQuery}"`,
+        });
+      }
     } catch (error) {
       console.error("Error searching users:", error);
       toast({
@@ -80,10 +96,20 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
   const handleInvite = async () => {
     setLoading(true);
     try {
+      // Validate inputs
       if (inviteType === "email" && !email) {
         toast({
           title: "Error",
           description: "Please enter an email address.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (inviteType === "orcid" && !orcidId) {
+        toast({
+          title: "Error",
+          description: "Please enter an ORCID ID.",
           variant: "destructive"
         });
         return;
@@ -98,14 +124,23 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
         return;
       }
 
-      // Mock API call for now
-      // In a real app, replace with actual API call
+      // Prepare invite data
+      const inviteData = {
+        email: inviteType === "email" ? email : inviteType === "search" ? selectedUser?.email : undefined,
+        orcid_id: inviteType === "orcid" ? orcidId : undefined,
+        role
+      };
+
+      // In a real app, this would call the API
+      // For now, we'll simulate the API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
         title: "Invitation sent",
         description: inviteType === "email" 
           ? `Invitation sent to ${email}` 
+          : inviteType === "orcid"
+          ? `Invitation sent to ORCID ID: ${orcidId}`
           : `Invitation sent to ${selectedUser?.name || selectedUser?.username}`
       });
       
@@ -114,6 +149,7 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
       
       // Reset form
       setEmail("");
+      setOrcidId("");
       setSearchQuery("");
       setSelectedUser(null);
       setSearchResults([]);
@@ -129,6 +165,11 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
       setLoading(false);
     }
   };
+
+  // If not authenticated, don't show the dialog
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,6 +201,14 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
             <Mail className="h-4 w-4 mr-2" />
             Invite by Email
           </Button>
+          <Button 
+            variant={inviteType === "orcid" ? "default" : "outline"} 
+            onClick={() => setInviteType("orcid")}
+            className="flex-1"
+          >
+            <Users className="h-4 w-4 mr-2" />
+            ORCID ID
+          </Button>
         </div>
         
         <div className="space-y-4 mt-4">
@@ -171,7 +220,26 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
                 placeholder="colleague@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
+              <p className="text-sm text-muted-foreground">
+                We'll send an invitation email. If they're already registered, they'll also receive a notification.
+              </p>
+            </div>
+          ) : inviteType === "orcid" ? (
+            <div className="space-y-2">
+              <Label htmlFor="orcid">ORCID ID</Label>
+              <Input
+                id="orcid"
+                placeholder="0000-0000-0000-0000"
+                value={orcidId}
+                onChange={(e) => setOrcidId(e.target.value)}
+                pattern="^\d{4}-\d{4}-\d{4}-\d{4}$"
+                disabled={loading}
+              />
+              <p className="text-sm text-muted-foreground">
+                Enter the 16-digit ORCID identifier (format: 0000-0000-0000-0000)
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -181,9 +249,14 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1"
+                  disabled={loading}
                 />
                 <Button onClick={handleSearch} disabled={loading}>
-                  <Search className="h-4 w-4 mr-2" />
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Search className="h-4 w-4 mr-2" />
+                  )}
                   Search
                 </Button>
               </div>
@@ -222,7 +295,7 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="role">Collaborator role</Label>
-            <Select value={role} onValueChange={setRole}>
+            <Select value={role} onValueChange={setRole} disabled={loading}>
               <SelectTrigger id="role">
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
@@ -232,16 +305,30 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
                 <SelectItem value="admin">Admin (full control)</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-sm text-muted-foreground">
+              {role === "viewer" ? "Viewers can only view project data and files."
+                : role === "contributor" ? "Contributors can edit data and add files to the project."
+                : "Admins have full control including inviting other collaborators."}
+            </p>
           </div>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Cancel
           </Button>
           <Button onClick={handleInvite} disabled={loading}>
-            <Users className="h-4 w-4 mr-2" />
-            Send Invitation
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Users className="h-4 w-4 mr-2" />
+                Send Invitation
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
