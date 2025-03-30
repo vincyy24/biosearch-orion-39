@@ -1,19 +1,15 @@
-
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import MainLayout from "@/components/layouts/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { 
   BookOpen, 
-  Users, 
   FileText, 
   BarChart2, 
-  Download, 
   ExternalLink, 
   Upload, 
-  Edit,
   FileDown,
   Eye,
   Calendar,
@@ -26,7 +22,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import PublicationDetail from "@/components/publications/PublicationDetail";
 import ResearchVersionHistory from "@/components/research/ResearchVersionHistory";

@@ -5,10 +5,34 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink, FileText, Users, BookOpen } from "lucide-react";
-import { DOIMetadata } from "@/services/doiService";
 
-interface PublicationDetailProps {
-  publication: any;
+interface Dataset {
+  id: string;
+  title: string;
+  description: string;
+  file_path: string;
+  file_size: number;
+  file_type: string;
+  created_at: string;
+  is_public: boolean;
+}
+
+interface Publication {
+  title: string;
+  journal: string;
+  year: string;
+  authors: { name: string; isMain: boolean; affiliation: string; }[];
+  doi: string;
+  abstract: string;
+  publisher: string;
+  url: string;
+  type: string;
+  subjects: any[];
+  datasets: Dataset[];
+  referenceCount: 0
+
+}interface PublicationDetailProps {
+  publication: Publication;
   isLoading?: boolean;
 }
 
@@ -57,7 +81,7 @@ const PublicationDetail: React.FC<PublicationDetailProps> = ({ publication, isLo
               Published in {publication.journal}, {publication.year}
             </CardDescription>
           </div>
-          <Badge variant="outline" className="bg-primary/10">
+          <Badge variant="outline" className="bg-primary/10 min-w-fit">
             {publication.type}
           </Badge>
         </div>
