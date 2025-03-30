@@ -263,7 +263,6 @@ export const logoutUser = async () => {
 };
 
 export const getUserProfile = async () => {
-
   try {
     const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
       credentials: 'include', // Important for cookies

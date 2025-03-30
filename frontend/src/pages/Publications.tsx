@@ -66,6 +66,7 @@ const Publications = () => {
 
   const filteredPublications = publications.filter(pub => {
     // Filter by tab
+    
     if (activeTab === "my" && !pub.researchers.some(r => r.is_primary)) {
       return false;
     }
@@ -238,7 +239,7 @@ const renderPublicationsList = (loading: boolean, publications: Publication[], n
         </Button>
       </div>
     );
-  }
+  }  
 
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -247,7 +248,7 @@ const renderPublicationsList = (loading: boolean, publications: Publication[], n
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle className="text-lg hover:text-primary cursor-pointer" onClick={() => navigate(`/publications/${publication.doi}`)}>
+                <CardTitle className="text-lg hover:text-primary cursor-pointer" onClick={() => navigate(`/publications/details/?doi=${encodeURIComponent(publication.doi)}`)}>
                   {publication.title}
                 </CardTitle>
                 <CardDescription className="mt-1.5">
@@ -282,7 +283,7 @@ const renderPublicationsList = (loading: boolean, publications: Publication[], n
               <div className="flex items-center">
                 <Users className="w-4 h-4 mr-1.5 text-muted-foreground" />
                 <span>
-                  {publication.researchers.length} Researcher{publication.researchers.length !== 1 ? 's' : ''}
+                  {publication.researchers?.length} Researcher{publication.researchers?.length !== 1 ? 's' : ''}
                 </span>
               </div>
               
@@ -296,7 +297,7 @@ const renderPublicationsList = (loading: boolean, publications: Publication[], n
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => navigate(`/publications/${publication.doi}`)}
+                onClick={() => navigate(`/publications/details/?doi=${encodeURIComponent(publication.doi)}`)}
               >
                 View Details
               </Button>

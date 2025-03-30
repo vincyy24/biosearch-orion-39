@@ -22,13 +22,19 @@ interface ResearchVersion {
 interface ResearchVersionHistoryProps {
   projectId?: string;
   isLoading?: boolean;
+  versions: ResearchVersion[];
+  onViewVersion: (view: number) => void;
+  onDownloadVersion: (view: number) => void;
 }
 
 const ResearchVersionHistory: React.FC<ResearchVersionHistoryProps> = ({ 
   projectId,
-  isLoading = false 
+  isLoading = false,
+  versions: _versions = [],
+  onViewVersion,
+  onDownloadVersion
 }) => {
-  const [versions, setVersions] = useState<ResearchVersion[]>([]);
+  const [versions, setVersions] = useState<ResearchVersion[]>(_versions);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -183,7 +189,7 @@ const ResearchVersionHistory: React.FC<ResearchVersionHistoryProps> = ({
                   </p>
                   
                   <div className="mt-3 flex justify-end">
-                    <Button variant="outline" size="sm" className="h-8">
+                    <Button variant="outline" size="sm" className="h-8" onClick={()=> onDownloadVersion(version.version)}>
                       <Download className="h-3.5 w-3.5 mr-1" />
                       Download
                     </Button>

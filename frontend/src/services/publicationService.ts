@@ -25,7 +25,7 @@ const handleResponseErrors = async (response) => {
 };
 
 // Publication APIs
-export const fetchPublications: (page: number, perPage: number, query: string, filters: ) => Promise<Publication[]> = async (page = 1, perPage = 10, query = '', filters = {}) => {
+export const fetchPublications: (page: number, perPage: number, query: string, filters: PublicationFilters) => Promise<Publication[]> = async (page = 1, perPage = 10, query = '', filters = {}) => {
   try {
     let url = `${API_BASE_URL}/publications/?page=${page}&per_page=${perPage}`;
     if (query) {

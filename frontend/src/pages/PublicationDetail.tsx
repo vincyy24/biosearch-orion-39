@@ -43,15 +43,15 @@ interface Dataset {
 }
 
 const PublicationDetailPage = () => {
-  const { doi } = useParams<{ doi: string }>();
   const [searchParams] = useSearchParams();
+  const doi = searchParams.get("doi");
   const navigate = useNavigate();
   const { toast } = useToast();
   const [publication, setPublication] = useState<any>(null);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "details");
-
+  
   useEffect(() => {
     fetchPublicationDetails();
   }, [doi]);
@@ -61,7 +61,9 @@ const PublicationDetailPage = () => {
     
     try {
       setLoading(true);
-      const response = await axios.get(`/api/publications/${doi}/`);
+
+      const response = await axios.get(`/api/publications/${doi.replace("/", "_")}/`);
+      
       setPublication(response.data);
       
       if (response.data.datasets) {
@@ -127,25 +129,28 @@ const PublicationDetailPage = () => {
 
   const mockVersionHistory = [
     {
+      id: "101",
       version: 3,
-      date: "2023-09-15",
-      author: "Dr. Jane Smith",
+      created_at: "2023-09-15",
+      created_by: {id: "js", name: "Dr. Jane Smith"},
       changes: "Updated metadata and added new experiment results",
-      isCurrent: true,
+      is_current: true,
     },
     {
+      id: "102",
       version: 2,
-      date: "2023-08-22",
-      author: "Dr. John Doe",
+      created_at: "2023-08-22",
+      created_by: {id: "jd", name: "Dr. John Doe"},
       changes: "Added supplementary data and corrected typos",
-      isCurrent: false,
+      is_current: false,
     },
     {
+      id: "103",
       version: 1,
-      date: "2023-07-10",
-      author: "Dr. Jane Smith",
+      created_at: "2023-07-10",
+      created_by: {id: "js", name: "Dr. Jane Smith"},
       changes: "Initial publication registration",
-      isCurrent: false,
+      is_current: false,
     },
   ];
 
