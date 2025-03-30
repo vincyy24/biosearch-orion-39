@@ -35,6 +35,40 @@ import ResearchRegistration from './pages/ResearchRegistration';
 import PublicationRegistration from './pages/PublicationRegistration';
 import Analytics from './pages/Analytics';
 
+const routes = [
+  { path: "/", element: <Index /> },
+  { path: "/login", element: <Login /> },
+  { path: "/signup", element: <Signup /> },
+  { path: "/reset-password", element: <ResetPassword /> },
+  { path: "/reset-password/:token", element: <ResetPassword /> },
+  { path: "/dashboard", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+  { path: "/voltammetry", element: <Voltammetry /> },
+  { path: "/voltammetry/:id", element: <Voltammetry /> },
+  { path: "/upload", element: <ProtectedRoute><Upload /></ProtectedRoute> },
+  { path: "/browse", element: <DataBrowser /> },
+  { path: "/search", element: <SearchResults /> },
+  { path: "/advanced-search", element: <AdvancedSearch /> },
+  { path: "/research", element: <ResearchProjects /> },
+  { path: "/research/new", element: <ProtectedRoute><ResearchRegistration /></ProtectedRoute> },
+  { path: "/research/:id", element: <ResearchProjectDetail /> },
+  { path: "/publications", element: <Publications /> },
+  { path: "/publications/new", element: <ProtectedRoute><PublicationRegistration /></ProtectedRoute> },
+  { path: "/publications/details", element: <PublicationDetail /> },
+  { path: "/profile", element: <ProtectedRoute><UserProfile /></ProtectedRoute> },
+  { path: "/profile/:username", element: <UserProfile /> },
+  { path: "/account-settings", element: <ProtectedRoute><AccountSettings /></ProtectedRoute> },
+  { path: "/notifications", element: <ProtectedRoute><Notifications /></ProtectedRoute> },
+  { path: "/settings", element: <ProtectedRoute><Settings /></ProtectedRoute> },
+  { path: "/community", element: <Community /> },
+  { path: "/tools", element: <Tools /> },
+  { path: "/documentation", element: <Documentation /> },
+  { path: "/support", element: <Support /> },
+  { path: "/analytics", element: <ProtectedRoute><Analytics /></ProtectedRoute> },
+  { path: "/404", element: <NotFound /> },
+  { path: "*", element: <Navigate to="/404" replace /> }
+]
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -42,42 +76,9 @@ function App() {
         <AuthProvider>
           <AnalyticsProvider>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
-              
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/voltammetry" element={<Voltammetry />} />
-              <Route path="/voltammetry/:id" element={<Voltammetry />} />
-              <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-              <Route path="/browse" element={<DataBrowser />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/advanced-search" element={<AdvancedSearch />} />
-              
-              <Route path="/research" element={<ResearchProjects />} />
-              <Route path="/research/new" element={<ProtectedRoute><ResearchRegistration /></ProtectedRoute>} />
-              <Route path="/research/:id" element={<ResearchProjectDetail />} />
-              
-              <Route path="/publications" element={<Publications />} />
-              <Route path="/publications/new" element={<ProtectedRoute><PublicationRegistration /></ProtectedRoute>} />
-              <Route path="/publications/:doi" element={<PublicationDetail />} />
-              
-              <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-              <Route path="/profile/:username" element={<UserProfile />} />
-              <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              
-              <Route path="/community" element={<Community />} />
-              <Route path="/tools" element={<Tools />} />
-              <Route path="/documentation" element={<Documentation />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-              
-              <Route path="/404" element={<NotFound />} />
-              <Route path="*" element={<Navigate to="/404" replace />} />
+              {routes.map(
+                ({ path, element }) => <Route key={path} path={path} element={element} />
+              )}
             </Routes>
             <Toaster />
           </AnalyticsProvider>

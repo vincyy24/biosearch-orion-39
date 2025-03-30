@@ -13,11 +13,13 @@ urlpatterns = [
     path('auth/password/reset/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('auth/password/reset/confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 ]
+
 urlpatterns+=[
     # Search route
     path('search/', views.SearchView.as_view(), name='search'),
     path('search/advanced/', views.AdvancedSearchView.as_view(), name='advanced_search'),
 ]
+
 urlpatterns+=[
     # Dataset comparison routes
     path('comparisons/', views_research.dataset_comparisons, name='dataset_comparisons_all'),
@@ -32,7 +34,6 @@ urlpatterns+=[
     path('download/', views.DownloadView.as_view(), name='download'),
 ]
 
-# Add these routes to fix the 405 error
 urlpatterns += [
     # User profile and settings
     path('users/profile/<str:username>/', views.UserPublicProfileView.as_view(), name='user_profile'),
@@ -69,7 +70,6 @@ urlpatterns += [
     path('analytics/publications/', views.PublicationAnalyticsView.as_view(), name='publication_analytics'),
     path('analytics/datasets/', views.DatasetAnalyticsView.as_view(), name='dataset_analytics'),
 ]
-
 
 urlpatterns+=[
     # Publication routes
