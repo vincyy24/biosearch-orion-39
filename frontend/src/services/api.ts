@@ -184,7 +184,7 @@ export const fetchVoltammetryData = async (experimentId?: string) => {
 
 export const fetchRecentDatasets = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/recent-datasets/`);
+    const response = await fetch(`${API_BASE_URL}/dashboard/recent-datasets/`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch recent datasets');

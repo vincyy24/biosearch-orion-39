@@ -11,30 +11,9 @@ import { BookOpen, Plus, Search, Filter, Calendar, Users, Download, ExternalLink
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { fetchPublications } from "@/services/publicationService";
+import { fetchPublications, PublicationFilters } from "@/services/publicationService";
+import { Publication } from "@/types/common";
 
-interface Publication {
-  id: string;
-  doi: string;
-  title: string;
-  journal: string;
-  year: number;
-  is_public: boolean;
-  researchers: {
-    id: string;
-    name: string;
-    institution: string;
-    is_primary: boolean;
-  }[];
-  created_at: string;
-  abstract: string;
-}
-
-interface PublicationFilters {
-  is_public?: boolean;
-  year?: number;
-  sort_by?: string;
-}
 
 const Publications = () => {
   const navigate = useNavigate();
@@ -55,11 +34,10 @@ const Publications = () => {
     try {
       setLoading(true);
       const response = await fetchPublications(1, 20, searchQuery, filters);
-      setPublications(response.results || []);
-      
+      setPublications(response);
       // Extract unique years for filter
-      if (response.results?.length) {
-        const uniqueYears = Array.from(new Set(response.results.map(pub => pub.year))).filter(Boolean) as number[];
+      if (response.length) {
+        const uniqueYears = Array.from(new Set(response.map(pub => pub.year))).filter(Boolean) as number[];
         setYears(uniqueYears.sort((a, b) => b - a));
       }
     } catch (error) {
@@ -153,7 +131,7 @@ const Publications = () => {
                     <SelectValue placeholder="All Publications" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Publications</SelectItem>
+                    <SelectItem value="all">All Publications</SelectItem>
                     <SelectItem value="true">Public</SelectItem>
                     <SelectItem value="false">Private</SelectItem>
                   </SelectContent>
@@ -170,7 +148,7 @@ const Publications = () => {
                     <SelectValue placeholder="All Years" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Years</SelectItem>
+                    <SelectItem value="all">All Years</SelectItem>
                     {years.map(year => (
                       <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                     ))}

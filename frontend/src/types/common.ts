@@ -70,13 +70,20 @@ export interface SearchResponse {
 
 // Publication-related types
 export interface Publication {
-  id: number;
+  id: string;
+  doi: string;
   title: string;
-  author: string;
+  journal: string;
   year: number;
-  citations: number;
-  doi?: string;
-  abstract?: string;
+  is_public: boolean;
+  researchers: {
+    id: string;
+    name: string;
+    institution: string;
+    is_primary: boolean;
+  }[];
+  created_at: string;
+  abstract: string;
 }
 
 // Analysis-related types

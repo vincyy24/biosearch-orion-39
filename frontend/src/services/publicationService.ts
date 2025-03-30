@@ -1,6 +1,12 @@
+import { Publication } from '@/types/common';
 import { getCookie } from './api';
 import { CrossrefApiResponse } from '@/types/apiResponse';
 
+export interface PublicationFilters {
+  is_public?: boolean;
+  year?: number;
+  sort_by?: string;
+}
 const API_BASE_URL = '/api';
 
 // Helper function to handle response errors consistently
@@ -19,7 +25,7 @@ const handleResponseErrors = async (response) => {
 };
 
 // Publication APIs
-export const fetchPublications = async (page = 1, perPage = 10, query = '', filters = {}) => {
+export const fetchPublications: (page: number, perPage: number, query: string, filters: ) => Promise<Publication[]> = async (page = 1, perPage = 10, query = '', filters = {}) => {
   try {
     let url = `${API_BASE_URL}/publications/?page=${page}&per_page=${perPage}`;
     if (query) {
