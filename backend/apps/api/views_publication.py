@@ -10,20 +10,21 @@ import os
 import uuid
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from datetime import datetime
 import mimetypes
-from wsgiref.util import FileWrapper
 import traceback
 from .models import Publication, PublicationResearcher, Researcher, Dataset
 from .models_research import ResearchProject
+from urllib.parse import quote, unquote
 
 class PublicationDetail(View):
-    def get(self, request, doi=None):
+    def get(self, request, doi: str=None):
         """Get details for a specific publication by DOI"""
         if not doi:
             return JsonResponse({"error": "DOI is required"}, status=400)
         
         try:
+            # doi = quote(doi)
+            doi = doi.replace("_", "/")
             publication = Publication.objects.get(doi=doi)
             
             # Get publication datasets
@@ -47,14 +48,15 @@ class PublicationDetail(View):
             researchers_data = []
             
             for researcher in researchers:
+                pub_researcher = list(PublicationResearcher.objects.filter(publication_id=publication.id, researcher_id=researcher.id))[0]
                 researchers_data.append({
                     "id": researcher.id,
                     "name": researcher.name,
                     "institution": researcher.institution,
                     "email": researcher.email,
                     "orcid_id": researcher.orcid_id,
-                    "is_primary": researcher.is_primary,
-                    "sequence": researcher.sequence,
+                    "is_primary": pub_researcher.is_primary,
+                    "sequence": pub_researcher.sequence,
                 })
             
             data = {
@@ -71,8 +73,8 @@ class PublicationDetail(View):
                 "url": publication.url,
                 "is_public": publication.is_public,
                 "is_peer_reviewed": publication.is_peer_reviewed,
-                "created_at": publication.created_at.isoformat(),
-                "updated_at": publication.updated_at.isoformat(),
+                # "created_at": publication.created_at.isoformat(),
+                # "updated_at": publication.updated_at.isoformat(),
                 "researchers": researchers_data,
                 "datasets": datasets_data,
             }
@@ -81,6 +83,7 @@ class PublicationDetail(View):
         except Publication.DoesNotExist:
             return JsonResponse({"error": "Publication not found"}, status=404)
         except Exception as e:
+            print(e)
             return JsonResponse({"error": str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -107,7 +110,7 @@ class PublicationRegistration(View):
 
             # Create the publication first without researchers
             publication = Publication.objects.create(
-                doi=data['doi'],
+                doi=quote(quote(data['doi'], safe='')),
                 title=data['title'],
                 abstract=data.get('abstract', ''),
                 journal=data.get('journal', ''),
@@ -268,9 +271,9 @@ class PublicationsList(View):
             
             if query:
                 publications = publications.filter(title__icontains=query) | \
-                              publications.filter(doi__icontains=query) | \
-                              publications.filter(abstract__icontains=query) | \
-                              publications.filter(journal__icontains=query)
+                                publications.filter(doi__icontains=query) | \
+                                publications.filter(abstract__icontains=query) | \
+                                publications.filter(journal__icontains=query)
             
             if is_public is not None:
                 is_public = is_public.lower() == 'true'

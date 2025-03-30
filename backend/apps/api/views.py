@@ -45,8 +45,7 @@ class PublicationList(APIView):
             })
             except Publication.DoesNotExist:
                 return Response({'error': 'Publication not found'}, status=status.HTTP_404_NOT_FOUND)
-        publications = Publication.objects.filter(is_public=True).values('id', 'title', 'author', 'year', 'citations')
-        print(list(publications))
+        publications = Publication.objects.all().values('id', 'doi', 'title', 'author', 'year', 'citations', 'is_public')
         return Response(list(publications))
 
 class DataTypesList(APIView):
