@@ -1,4 +1,3 @@
-
 import { getCookie } from './api';
 import { CrossrefApiResponse } from '@/types/apiResponse';
 
@@ -166,6 +165,53 @@ export const searchCrossRefByDOI = async (doi: string): Promise<CrossrefApiRespo
     return await response.json();
   } catch (error) {
     console.error("Error searching DOI:", error);
+    throw error;
+  }
+};
+
+// Add a new function to upload data as text instead of file
+export const uploadDatasetAsText = async (
+  doi: string,
+  data: {
+    title: string;
+    description?: string;
+    dataType: string;
+    content: string; // The parsed text content of the file
+    delimiter?: string; // CSV, TSV or custom delimiter
+    headers?: string[]; // Column headers if available
+    accessLevel?: 'public' | 'private';
+  }
+) => {
+  try {
+    const csrf_token = getCookie("csrftoken");
+    const response = await fetch(`${API_BASE_URL}/publications/${doi}/upload-text/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf_token || '',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    await handleResponseErrors(response);
+    return await response.json();
+  } catch (error) {
+    console.error("Error uploading dataset:", error);
+    throw error;
+  }
+};
+
+// Add a new function to download dataset in specific format
+export const downloadDatasetWithFormat = async (datasetId: number, format: 'csv' | 'tsv' | 'txt', customDelimiter?: string) => {
+  try {
+    let url = `${API_BASE_URL}/datasets/${datasetId}/download/?format=${format}`;
+    if (format === 'txt' && customDelimiter) {
+      url += `&delimiter=${encodeURIComponent(customDelimiter)}`;
+    }
+    window.location.href = url;
+    return true;
+  } catch (error) {
+    console.error("Error downloading dataset:", error);
     throw error;
   }
 };

@@ -1,82 +1,91 @@
-
 from django.urls import path
 from . import views
 from . import views_caching
-from . import views_orcid
-from . import views_research
 from . import views_publication
+from . import views_research
 
 urlpatterns = [
-    # Authentication endpoints
-    path('auth/login/', views.LoginView.as_view(), name='api-login'),
-    path('auth/logout/', views.LogoutView.as_view(), name='api-logout'),
-    path('auth/signup/', views.SignupView.as_view(), name='api-signup'),
-    path('auth/user/', views.UserProfileView.as_view(), name='api-user'),
-    path('auth/reset-password/', views.PasswordResetRequestView.as_view(), name='api-password-reset-request'),
-    path('auth/reset-password/<str:token>/', views.PasswordResetConfirmView.as_view(), name='api-password-reset-confirm'),
-    path('auth/profile/', views.UserProfileView.as_view(), name='api-user-profile'),
-    path('auth/username/', views.UpdateUsernameView.as_view(), name='api-update-username'),
-    path('auth/password/', views.UpdatePasswordView.as_view(), name='api-update-password'),
+    # Authentication routes
+    path('csrf_token/', views.CSRFTokenView.as_view(), name='csrf_token'),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('signup/', views.SignupView.as_view(), name='signup'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('password/reset/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('password/reset/confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     
-    # Dashboard endpoints
-    path('dashboard/summary/', views.DashboardSummaryView.as_view(), name='api-dashboard-summary'),
-    path('dashboard/activity/', views.UserActivityView.as_view(), name='api-user-activity'),
-    path('dashboard/experiments/', views.RecentExperimentsView.as_view(), name='api-recent-experiments'),
+    # User profile routes
+    path('users/me/', views.UserProfileView.as_view(), name='user_profile'),
+    path('users/me/username/', views.UpdateUsernameView.as_view(), name='update_username'),
+    path('users/me/password/', views.UpdatePasswordView.as_view(), name='update_password'),
     
-    # Voltammetry data endpoints
-    path('voltammetry/', views.VoltammetryDataView.as_view(), name='api-voltammetry-list'),
-    path('voltammetry/<str:experiment_id>/', views.VoltammetryDataView.as_view(), name='api-voltammetry-detail'),
-    path('voltammetry/<str:experiment_id>/raw/', views.VoltammetryRawDataView.as_view(), name='api-voltammetry-raw-data'),
-    path('voltammetry/<str:experiment_id>/plot/', views.VoltammetryPlotView.as_view(), name='api-voltammetry-plot'),
-    path('recent-datasets/', views.RecentDatasetsView.as_view(), name='get_recent_datasets'),
-    path('voltammetry/<str:experiment_id>/export/', views.ExportDataView.as_view(), name='api-export-data'),
+    # Data routes
+    path('data-types/', views.DataTypesList.as_view(), name='data_types_list'),
+    path('data-categories/', views.DataCategoriesList.as_view(), name='data_categories_list'),
+    path('file-upload/', views.FileUploadView.as_view(), name='file_upload'),
+    path('download/', views.DownloadView.as_view(), name='download'),
     
-    # Search endpoints
-    path('search/', views.SearchView.as_view(), name='api-search'),
-    path('advanced-search/', views.AdvancedSearchView.as_view(), name='api-advanced-search'),
-    path('search/users/', views.UserSearchView.as_view(), name='api-user-search'),
+    # Publication routes
+    path('publications/', views.PublicationList.as_view(), name='publication_list'),
     
-    # Research project endpoints
-    path('research/projects/', views_research.research_projects, name='api-research-projects'),
-    path('research/projects/<str:project_id>/', views_research.research_project_detail, name='api-research-project-detail'),
-    path('research/projects/<str:project_id>/collaborators/', views_research.add_collaborator, name='api-add-collaborator'),
-    path('research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', views_research.manage_collaborator, name='api-manage-collaborator'),
-    path('research/projects/<str:project_id>/experiments/', views_research.assign_experiment, name='api-assign-experiment'),
-    path('research/projects/<str:project_id>/comparisons/', views_research.dataset_comparisons, name='api-project-comparisons'),
-    path('research/comparisons/', views_research.dataset_comparisons, name='api-comparisons'),
-    path('research/comparisons/<str:comparison_id>/', views_research.comparison_detail, name='api-comparison-detail'),
-    path('research/<str:project_id>/upload/', views_publication.ResearchFileUploadView.as_view(), name='api-research-file-upload'),
-    path('research/<str:project_id>/versions/', views_research.ResearchVersionsView.as_view(), name='api-research-versions'),
-    path('research/<str:project_id>/invite/', views_research.InviteCollaboratorView.as_view(), name='api-invite-collaborator'),
+    # Dashboard routes
+    path('dashboard/summary/', views.DashboardSummaryView.as_view(), name='dashboard_summary'),
+    path('dashboard/activity/', views.UserActivityView.as_view(), name='user_activity'),
+    path('dashboard/recent-experiments/', views.RecentExperimentsView.as_view(), name='recent_experiments'),
+    path('dashboard/recent-datasets/', views.RecentDatasetsView.as_view(), name='recent_datasets'),
     
-    # Publication endpoints
-    path('publications/', views_publication.PublicationsList.as_view(), name='api-publications-list'),
-    path('publications/<str:doi>/', views_publication.PublicationDetail.as_view(), name='api-publication-detail'),
-    path('publications/register/', views_publication.PublicationRegistration.as_view(), name='api-publication-register'),
-    path('publications/<str:doi>/upload/', views_publication.PublicationFileUploadView.as_view(), name='api-publication-file-upload'),
-    path('publications/<str:doi>/analysis/', views_publication.PublicationAnalysisView.as_view(), name='api-publication-analysis'),
-    path('datasets/<int:dataset_id>/download/', views_publication.DatasetDownloadView.as_view(), name='api-dataset-download'),
-    path('publications/search/', views_publication.PublicationSearchView.as_view(), name='api-publication-search'),
-    path('publications/doi/<str:doi>/', views_publication.DoiVerificationView.as_view(), name='api-doi-verification'),
+    # Search route
+    path('search/', views.SearchView.as_view(), name='search'),
+    path('search/advanced/', views.AdvancedSearchView.as_view(), name='advanced_search'),
     
-    # User profile and settings endpoints
-    path('user/profile/<str:username>/', views.UserPublicProfileView.as_view(), name='api-user-public-profile'),
-    path('user/settings/', views.UserSettingsView.as_view(), name='api-user-settings'),
-    path('user/notifications/', views.UserNotificationsView.as_view(), name='api-user-notifications'),
-    path('user/notifications/settings/', views.NotificationSettingsView.as_view(), name='api-notification-settings'),
-    path('user/delete/', views.DeleteAccountView.as_view(), name='api-delete-account'),
+    # Voltammetry data routes
+    path('voltammetry/', views.VoltammetryDataView.as_view(), name='voltammetry_data_list'),
+    path('voltammetry/<str:experiment_id>/', views.VoltammetryDataView.as_view(), name='voltammetry_data_detail'),
+    path('voltammetry/<str:experiment_id>/raw/', views.VoltammetryRawDataView.as_view(), name='voltammetry_raw_data'),
+    path('voltammetry/<str:experiment_id>/plot/', views.VoltammetryPlotView.as_view(), name='voltammetry_plot'),
+    path('voltammetry/export/', views.ExportDataView.as_view(), name='voltammetry_export'),
     
-    # Analytics endpoints
-    path('analytics/overview/', views.AnalyticsOverviewView.as_view(), name='api-analytics-overview'),
-    path('analytics/research/', views.ResearchAnalyticsView.as_view(), name='api-research-analytics'),
-    path('analytics/publications/', views.PublicationAnalyticsView.as_view(), name='api-publication-analytics'),
-    path('analytics/datasets/', views.DatasetAnalyticsView.as_view(), name='api-dataset-analytics'),
+    # Caching example route
+    path('caching/data-types/', views_caching.get_data_types, name='get_data_types'),
+    path('caching/experiments/', views_caching.get_paginated_experiments, name='get_paginated_experiments'),
+    path('caching/experiments/<str:experiment_id>/', views_caching.get_cached_experiment, name='get_cached_experiment'),
+    path('caching/clear/', views_caching.clear_cache, name='clear_cache'),
     
-    # ORCID integration endpoints
-    path('orcid/verify/', views_orcid.initiate_orcid_verification, name='api-orcid-verify'),
-    path('orcid/confirm/', views_orcid.confirm_orcid_verification, name='api-orcid-confirm'),
-    path('orcid/profile/', views_orcid.get_orcid_profile, name='api-orcid-profile'),
+    # Research project routes
+    path('research/projects/', views_research.research_projects, name='research_projects'),
+    path('research/projects/<str:project_id>/', views_research.research_project_detail, name='research_project_detail'),
+    path('research/projects/<str:project_id>/collaborators/', views_research.add_collaborator, name='add_collaborator'),
+    path('research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', views_research.manage_collaborator, name='manage_collaborator'),
+    path('research/projects/<str:project_id>/assign/', views_research.assign_experiment, name='assign_experiment'),
+    path('research/projects/<str:project_id>/comparisons/', views_research.dataset_comparisons, name='dataset_comparisons'),
     
-    # Caching endpoints
-    path('cache/clear/', views_caching.clear_cache, name='api-clear-cache'),
+    # Dataset comparison routes
+    path('comparisons/', views_research.dataset_comparisons, name='dataset_comparisons_all'),
+    path('comparisons/<str:comparison_id>/', views_research.comparison_detail, name='comparison_detail'),
+]
+
+# Add these routes to fix the 405 error
+urlpatterns += [
+    # Publication routes
+    path('publications/register/', views_publication.register_publication, name='register_publication'),
+    path('publications/<str:doi>/', views_publication.publication_detail, name='publication_detail'),
+    path('publications/<str:doi>/upload/', views_publication.upload_dataset, name='upload_dataset'),
+    path('publications/<str:doi>/upload-text/', views_publication.upload_dataset_as_text, name='upload_dataset_as_text'),
+    path('publications/<str:doi>/analysis/', views_publication.publication_analysis, name='publication_analysis'),
+    
+    # User profile and settings
+    path('users/profile/<str:username>/', views.UserPublicProfileView.as_view(), name='user_profile'),
+    path('users/search/', views.UserSearchView.as_view(), name='user_search'),
+    path('users/settings/', views.UserSettingsView.as_view(), name='user_settings'),
+    path('users/notifications/', views.UserNotificationsView.as_view(), name='user_notifications'),
+    path('users/notifications/settings/', views.NotificationSettingsView.as_view(), name='notification_settings'),
+    
+    # Research collaboration
+    path('research/projects/<str:project_id>/invite/', views_research.InviteCollaboratorView.as_view(), name='invite_collaborator'),
+    path('research/projects/<str:project_id>/versions/', views_research.ResearchVersionsView.as_view(), name='research_versions'),
+    
+    # Analytics
+    path('analytics/overview/', views.AnalyticsOverviewView.as_view(), name='analytics_overview'),
+    path('analytics/research/', views.ResearchAnalyticsView.as_view(), name='research_analytics'),
+    path('analytics/publications/', views.PublicationAnalyticsView.as_view(), name='publication_analytics'),
+    path('analytics/datasets/', views.DatasetAnalyticsView.as_view(), name='dataset_analytics'),
 ]

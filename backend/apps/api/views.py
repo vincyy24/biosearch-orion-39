@@ -69,7 +69,7 @@ class DataCategoriesList(APIView):
 class FileUploadView(APIView):
     """
     API view to handle file uploads from authenticated users.
-    Files will be associated with specific data types and users.
+    Files will be parsed and stored as text in the database.
     """
     permission_classes = [IsAuthenticated]
     
@@ -82,6 +82,7 @@ class FileUploadView(APIView):
         method = request.data.get('method', '')
         electrode_type = request.data.get('electrodeType', '')
         instrument = request.data.get('instrument', '')
+        delimiter = request.data.get('delimiter', ',')  # Default to CSV
         
         if not file:
             return Response(
@@ -113,41 +114,50 @@ class FileUploadView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
         
-        upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads', data_type_id)
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        file_path = os.path.join(upload_dir, file.name)
-        with open(file_path, 'wb+') as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
-        
-        file_upload = FileUpload.objects.create(
-            file_name=file.name,
-            file_path=file_path,
-            file_size=file.size,
-            data_type=data_type,
-            description=description,
-            user=request.user,
-            is_public=(access_level == 'public'),
-            category=category,
-            method=method,
-            electrode_type=electrode_type,
-            instrument=instrument
-        )
-        
-        return Response({
-            'message': 'File uploaded successfully',
-            'id': file_upload.id,
-            'file_name': file.name,
-            'file_size': file.size,
-            'data_type': data_type_id,
-            'description': description,
-            'access_level': access_level,
-            'category': category.name if category else None,
-            'method': method,
-            'electrode_type': electrode_type,
-            'instrument': instrument
-        }, status=status.HTTP_201_CREATED)
+        try:
+            # Read and parse the file content
+            content = file.read().decode('utf-8')
+            
+            # Store the file metadata and content in the database
+            file_upload = FileUpload.objects.create(
+                file_name=file.name,
+                file_content=content,  # Store as text
+                file_size=file.size,
+                data_type=data_type,
+                description=description,
+                user=request.user,
+                is_public=(access_level == 'public'),
+                category=category,
+                method=method,
+                electrode_type=electrode_type,
+                instrument=instrument,
+                delimiter=delimiter
+            )
+            
+            return Response({
+                'message': 'File uploaded successfully',
+                'id': file_upload.id,
+                'file_name': file.name,
+                'file_size': file.size,
+                'data_type': data_type_id,
+                'description': description,
+                'access_level': access_level,
+                'category': category.name if category else None,
+                'method': method,
+                'electrode_type': electrode_type,
+                'instrument': instrument
+            }, status=status.HTTP_201_CREATED)
+            
+        except UnicodeDecodeError:
+            return Response(
+                {'error': 'File is not in a valid text format'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class LoginView(APIView):
     """
@@ -512,16 +522,17 @@ class SearchView(APIView):
 
 class DownloadView(APIView):
     """
-    API view to handle file downloads.
+    API view to handle file downloads, converting stored text data to the requested format.
     """
     def get(self, request):
         dataset = request.query_params.get('dataset')
         file_format = request.query_params.get('format', 'csv')
+        delimiter = request.query_params.get('delimiter', ',')  # For custom format
         
         if not dataset:
             return Response({'error': 'Dataset is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if file_format not in ['csv', 'excel']:
+        if file_format not in ['csv', 'tsv', 'txt']:
             return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
@@ -537,47 +548,46 @@ class DownloadView(APIView):
                     status=status.HTTP_403_FORBIDDEN
                 )
                 
-            if not os.path.exists(file_upload.file_path):
-                return Response(
-                    {'error': 'File not found'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-                
             file_upload.downloads_count += 1
             file_upload.save()
-                
-            _, file_ext = os.path.splitext(file_upload.file_path)
             
-            if file_ext.lower() in ['.csv', '.xlsx', '.xls']:
-                with open(file_upload.file_path, 'rb') as file:
-                    response = HttpResponse(
-                        FileWrapper(file),
-                        content_type='application/octet-stream'
-                    )
-                    response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}"'
-                    return response
+            # Get the file content from the database
+            content = file_upload.file_content
+            
+            if not content:
+                return Response(
+                    {'error': 'File content not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Process the content based on the original delimiter and requested format
+            original_delimiter = file_upload.delimiter or ','
             
             try:
-                if file_ext.lower() == '.csv':
-                    df = pd.read_csv(file_upload.file_path)
-                else:
-                    df = pd.read_csv(file_upload.file_path, sep=None, engine='python')
+                # Parse the content as CSV
+                df = pd.read_csv(io.StringIO(content), sep=original_delimiter)
                 
                 if file_format == 'csv':
-                    response = HttpResponse(content_type='text/csv')
-                    response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}.csv"'
-                    df.to_csv(path_or_buf=response, index=False)
-                    return response
-                    
-                elif file_format == 'excel':
-                    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-                    response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}.xlsx"'
-                    with io.BytesIO() as output:
-                        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                            df.to_excel(writer, index=False)
-                        response.write(output.getvalue())
-                    return response
-            
+                    output_delimiter = ','
+                    content_type = 'text/csv'
+                    file_ext = 'csv'
+                elif file_format == 'tsv':
+                    output_delimiter = '\t'
+                    content_type = 'text/tab-separated-values'
+                    file_ext = 'tsv'
+                else:  # txt with custom delimiter
+                    output_delimiter = delimiter
+                    content_type = 'text/plain'
+                    file_ext = 'txt'
+                
+                response = HttpResponse(content_type=content_type)
+                response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}.{file_ext}"'
+                
+                if file_format == 'csv' or file_format == 'tsv' or file_format == 'txt':
+                    df.to_csv(path_or_buf=response, sep=output_delimiter, index=False)
+                
+                return response
+                
             except Exception as e:
                 return Response(
                     {'error': f'Failed to convert file: {str(e)}'}, 
@@ -585,11 +595,11 @@ class DownloadView(APIView):
                 )
                 
         except FileUpload.DoesNotExist:
-            return self._generate_sample_data(dataset, file_format)
+            return self._generate_sample_data(dataset, file_format, delimiter)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    def _generate_sample_data(self, dataset_id, file_format):
+    def _generate_sample_data(self, dataset_id, file_format, delimiter):
         if 'voltammetry' in dataset_id.lower():
             import numpy as np
             potential = np.linspace(-0.5, 0.5, 100).tolist()
@@ -704,16 +714,265 @@ class UserPublicProfileView(APIView):
 
 
 class UserSettingsView(APIView):
-    ...
-
+    """
+    API view to handle user settings.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Get user settings from the database
+        # In a real system, this would be stored in a UserSettings model
+        # For now, we'll return some default settings
+        
+        settings = {
+            'notifications': {
+                'email': True,
+                'research_updates': True,
+                'collaboration_requests': True,
+                'dataset_activity': True,
+                'system_announcements': True,
+            },
+            'privacy': {
+                'profile_visibility': 'public',
+                'show_email': False,
+                'show_orcid': True,
+                'show_research': True,
+                'show_publications': True,
+            },
+            'security': {
+                'two_factor_enabled': False,
+                'login_alerts': True,
+            }
+        }
+        
+        return Response(settings)
+    
+    def put(self, request):
+        # Update user settings
+        # In a real system, this would update a UserSettings model
+        # For now, we'll just return the settings that would be saved
+        
+        # Validate the request data
+        valid_notification_keys = ['email', 'research_updates', 'collaboration_requests', 'dataset_activity', 'system_announcements']
+        valid_privacy_keys = ['profile_visibility', 'show_email', 'show_orcid', 'show_research', 'show_publications']
+        valid_security_keys = ['two_factor_enabled', 'login_alerts']
+        
+        # Get the settings from the request
+        settings = {}
+        
+        if 'notifications' in request.data:
+            notifications = {}
+            for key, value in request.data['notifications'].items():
+                if key in valid_notification_keys:
+                    notifications[key] = bool(value)
+            settings['notifications'] = notifications
+        
+        if 'privacy' in request.data:
+            privacy = {}
+            for key, value in request.data['privacy'].items():
+                if key in valid_privacy_keys:
+                    if key == 'profile_visibility' and value in ['public', 'private', 'contacts']:
+                        privacy[key] = value
+                    elif key != 'profile_visibility':
+                        privacy[key] = bool(value)
+            settings['privacy'] = privacy
+        
+        if 'security' in request.data:
+            security = {}
+            for key, value in request.data['security'].items():
+                if key in valid_security_keys:
+                    security[key] = bool(value)
+            settings['security'] = security
+        
+        # In a real system, save the settings to the database
+        # ...
+        
+        return Response(settings)
 
 class UserNotificationsView(APIView):
-    ...
-
+    """
+    API view to handle user notifications.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Get notifications for the user
+        # In a real system, this would query a Notification model
+        # For now, we'll return some sample notifications
+        
+        # Get query parameters for filtering
+        category = request.query_params.get('category', None)
+        is_read = request.query_params.get('is_read', None)
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        
+        # Generate sample notifications
+        all_notifications = [
+            {
+                'id': 1,
+                'title': 'New collaboration invitation',
+                'message': 'You have been invited to collaborate on the project "Electrochemical Sensors for Glucose Detection"',
+                'category': 'collaboration',
+                'is_read': False,
+                'created_at': '2023-11-15T10:30:00Z',
+                'action_url': '/research/RP-12345ABC',
+            },
+            {
+                'id': 2,
+                'title': 'Publication cited',
+                'message': 'Your publication "Novel Electrochemical Methods" has been cited in a new paper',
+                'category': 'publication',
+                'is_read': True,
+                'created_at': '2023-11-14T15:45:00Z',
+                'action_url': '/publications/10.1021/jacs.0c01234',
+            },
+            {
+                'id': 3,
+                'title': 'Dataset downloaded',
+                'message': 'Your dataset "Cyclic Voltammetry Data" has been downloaded 10 times this week',
+                'category': 'dataset',
+                'is_read': False,
+                'created_at': '2023-11-13T09:15:00Z',
+                'action_url': '/datasets/DS-54321ZYX',
+            },
+            {
+                'id': 4,
+                'title': 'Research project update',
+                'message': 'John Doe made changes to the research project "Advanced Materials for Fuel Cells"',
+                'category': 'research',
+                'is_read': True,
+                'created_at': '2023-11-12T14:20:00Z',
+                'action_url': '/research/RP-13579GHI',
+            },
+            {
+                'id': 5,
+                'title': 'System update',
+                'message': 'New features have been added to the platform: Improved analytics and data visualization',
+                'category': 'system',
+                'is_read': False,
+                'created_at': '2023-11-10T11:00:00Z',
+                'action_url': '/whatsnew',
+            },
+            {
+                'id': 6,
+                'title': 'New comment on your research',
+                'message': 'Jane Smith commented on your research project "Quantum Effects in Electrochemical Systems"',
+                'category': 'research',
+                'is_read': False,
+                'created_at': '2023-11-09T16:30:00Z',
+                'action_url': '/research/RP-24680JKL/comments',
+            },
+            {
+                'id': 7,
+                'title': 'Dataset shared with you',
+                'message': 'Michael Johnson shared a dataset "Impedance Spectroscopy Database" with you',
+                'category': 'dataset',
+                'is_read': True,
+                'created_at': '2023-11-08T13:45:00Z',
+                'action_url': '/datasets/DS-09876WVU',
+            },
+            {
+                'id': 8,
+                'title': 'Collaboration request accepted',
+                'message': 'Emily Davis accepted your invitation to collaborate on "Machine Learning for Voltammetry Analysis"',
+                'category': 'collaboration',
+                'is_read': True,
+                'created_at': '2023-11-07T10:15:00Z',
+                'action_url': '/research/RP-11223MNO',
+            },
+            {
+                'id': 9,
+                'title': 'Publication review completed',
+                'message': 'Your publication "Interface Engineering for Electrochemical Devices" has completed peer review',
+                'category': 'publication',
+                'is_read': False,
+                'created_at': '2023-11-06T09:30:00Z',
+                'action_url': '/publications/10.1021/acsami.0c07890',
+            },
+            {
+                'id': 10,
+                'title': 'Account security alert',
+                'message': 'Your account was accessed from a new device. If this wasn\'t you, please update your password',
+                'category': 'system',
+                'is_read': True,
+                'created_at': '2023-11-05T20:00:00Z',
+                'action_url': '/settings/security',
+            },
+        ]
+        
+        # Filter notifications
+        filtered_notifications = all_notifications
+        
+        if category:
+            filtered_notifications = [n for n in filtered_notifications if n['category'] == category]
+        
+        if is_read is not None:
+            is_read_bool = is_read.lower() == 'true'
+            filtered_notifications = [n for n in filtered_notifications if n['is_read'] == is_read_bool]
+        
+        # Paginate notifications
+        total_count = len(filtered_notifications)
+        total_pages = (total_count + page_size - 1) // page_size
+        
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        
+        paginated_notifications = filtered_notifications[start_idx:end_idx]
+        
+        return Response({
+            'count': total_count,
+            'pages': total_pages,
+            'current_page': page,
+            'notifications': paginated_notifications,
+            'unread_count': len([n for n in all_notifications if not n['is_read']])
+        })
+    
+    def put(self, request, notification_id=None):
+        # Mark notification(s) as read
+        if notification_id:
+            # Mark a specific notification as read
+            return Response({'message': f'Notification {notification_id} marked as read'})
+        else:
+            # Mark all notifications as read
+            return Response({'message': 'All notifications marked as read'})
 
 class NotificationSettingsView(APIView):
-    ...
-
+    """
+    API view to handle notification settings.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Get notification settings for the user
+        # In a real system, this would query a NotificationSettings model
+        # For now, we'll return some default settings
+        
+        settings = {
+            'email': True,
+            'research_updates': True,
+            'collaboration_requests': True,
+            'dataset_activity': True,
+            'system_announcements': True,
+        }
+        
+        return Response(settings)
+    
+    def put(self, request):
+        # Update notification settings
+        # In a real system, this would update a NotificationSettings model
+        # For now, we'll just return the settings that would be saved
+        
+        valid_keys = ['email', 'research_updates', 'collaboration_requests', 'dataset_activity', 'system_announcements']
+        
+        settings = {}
+        for key, value in request.data.items():
+            if key in valid_keys:
+                settings[key] = bool(value)
+        
+        # In a real system, save the settings to the database
+        # ...
+        
+        return Response(settings)
 
 class DeleteAccountView(APIView):
     ...
@@ -733,4 +992,3 @@ class PublicationAnalyticsView(APIView):
 
 class DatasetAnalyticsView(APIView):
     ...
-

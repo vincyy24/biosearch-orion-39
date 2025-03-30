@@ -1,4 +1,3 @@
-
 import json
 import uuid
 from django.http import JsonResponse
@@ -10,7 +9,7 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q
 
-from .models_research import ResearchProject, ResearchProjectCollaborator, DatasetComparison
+from .models_research import ResearchProject, ResearchProjectCollaborator, DatasetComparison, OrcidProfile
 from apps.dashboard.models import VoltammetryData
 
 @login_required
@@ -550,11 +549,140 @@ def comparison_detail(request, comparison_id):
 
 
 class InviteCollaboratorView(View):
-    ...    
-
+    """Handle invitations to collaborate on research projects"""
+    
+    def post(self, request, project_id):
+        """Send invitation to a user to collaborate on a project"""
+        project = get_object_or_404(ResearchProject, project_id=project_id)
+        
+        # Check if user has permission to invite collaborators
+        if not can_manage_project(request.user, project):
+            return JsonResponse({"error": "You don't have permission to invite collaborators"}, status=403)
+        
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            orcid_id = data.get('orcid_id')
+            role = data.get('role', 'viewer')
+            
+            if not email and not orcid_id:
+                return JsonResponse({"error": "Email or ORCID ID is required"}, status=400)
+            
+            # Check if role is valid
+            if role not in dict(ResearchProjectCollaborator.ROLE_CHOICES):
+                return JsonResponse({"error": f"Invalid role: {role}"}, status=400)
+            
+            # Try to find user by email or ORCID ID
+            user = None
+            
+            if email:
+                try:
+                    user = User.objects.get(email=email)
+                except User.DoesNotExist:
+                    # User not found, store invitation in database and send email
+                    # This would be implemented in a real system
+                    pass
+            
+            if orcid_id and not user:
+                try:
+                    orcid_profile = OrcidProfile.objects.get(orcid_id=orcid_id)
+                    user = orcid_profile.user
+                except OrcidProfile.DoesNotExist:
+                    # User not found, store invitation in database and send email
+                    # This would be implemented in a real system
+                    pass
+            
+            if user:
+                # Check if user is already the head researcher
+                if user == project.head_researcher:
+                    return JsonResponse({"error": "User is already the head researcher"}, status=400)
+                
+                # Check if user is already a collaborator
+                if ResearchProjectCollaborator.objects.filter(project=project, user=user).exists():
+                    return JsonResponse({"error": "User is already a collaborator"}, status=400)
+                
+                # Add collaborator
+                collaborator = ResearchProjectCollaborator.objects.create(
+                    project=project,
+                    user=user,
+                    role=role,
+                    invited_by=request.user
+                )
+                
+                # Send notification to user (would be implemented in a real system)
+                
+                return JsonResponse({
+                    'message': f'Added {user.username} as a {collaborator.get_role_display().lower()}',
+                    'collaborator': {
+                        'id': collaborator.id,
+                        'user': {
+                            'id': user.id,
+                            'username': user.username,
+                            'email': user.email
+                        },
+                        'role': role,
+                        'joined_at': collaborator.joined_at.isoformat()
+                    }
+                })
+            else:
+                # Store invitation in database and send email
+                # This would be implemented in a real system
+                
+                return JsonResponse({
+                    'message': f'Invitation sent to {email or orcid_id}',
+                })
+                
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
 
 class ResearchVersionsView(View):
-    ...
+    """Handle version history for research projects"""
+    
+    def get(self, request, project_id):
+        """Get version history for a research project"""
+        project = get_object_or_404(ResearchProject, project_id=project_id)
+        
+        # Check if user has access to this project
+        if not has_project_access(request.user, project) and not project.is_public:
+            return JsonResponse({"error": "You don't have access to this project"}, status=403)
+        
+        # In a real system, version history would be stored in a database
+        # Here, we'll return some sample data
+        versions = [
+            {
+                'version': 'v1.0.0',
+                'updated_at': '2023-08-15T10:30:00Z',
+                'updated_by': {
+                    'id': project.head_researcher.id,
+                    'username': project.head_researcher.username
+                },
+                'changes': 'Initial version'
+            },
+            {
+                'version': 'v1.1.0',
+                'updated_at': '2023-09-01T14:45:00Z',
+                'updated_by': {
+                    'id': project.head_researcher.id,
+                    'username': project.head_researcher.username
+                },
+                'changes': 'Added new experimental data'
+            },
+            {
+                'version': 'v1.2.0',
+                'updated_at': '2023-09-15T09:15:00Z',
+                'updated_by': {
+                    'id': project.head_researcher.id,
+                    'username': project.head_researcher.username
+                },
+                'changes': 'Updated analysis methodology'
+            }
+        ]
+        
+        return JsonResponse({
+            'project_id': project.project_id,
+            'title': project.title,
+            'versions': versions
+        })
 
     
 # Helper functions

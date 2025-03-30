@@ -94,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   return (
     <div
       className={cn(
-        "h-full flex  flex-col justify-between overflow-y-auto bg-card border-r transition-all duration-300 z-40",
+        "h-screen sticky top-0 flex flex-col justify-between overflow-y-auto bg-card border-r transition-all duration-300 z-40",
         collapsed ? "w-16" : "w-64",
         className
       )}
@@ -125,7 +125,13 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                   "w-full justify-start mb-1",
                   collapsed ? "px-2" : "px-4"
                 )}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  if (item.name === "Browse Data") {
+                    navigate("/search", { state: { activeTab: "datasets" } });
+                  } else {
+                    navigate(item.path);
+                  }
+                }}
               >
                 <item.icon className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
                 {!collapsed && <span>{item.name}</span>}
