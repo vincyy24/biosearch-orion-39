@@ -126,14 +126,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                   collapsed ? "px-2" : "px-4"
                 )}
                 onClick={() => {
-                  if (item.name === "Browse Data") {
-                    navigate("/search", { state: { activeTab: "datasets" } });
-                  } else {
                     navigate(item.path);
-                  }
                 }}
               >
-                <item.icon className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-2")} />
+                <item.icon className={cn("h-5 w-5", collapsed ? "mr-0 flex-1" : "")} />
                 {!collapsed && <span>{item.name}</span>}
               </Button>
             ))}
