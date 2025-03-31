@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -133,7 +133,7 @@ const AccountSettingsPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <MainLayout>
+      <AppLayout>
         <div className="container max-w-3xl py-10">
           <Card>
             <CardHeader>
@@ -147,12 +147,12 @@ const AccountSettingsPage = () => {
             </CardContent>
           </Card>
         </div>
-      </MainLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container max-w-3xl py-10">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Settings</h1>
@@ -489,7 +489,7 @@ const AccountSettingsPage = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

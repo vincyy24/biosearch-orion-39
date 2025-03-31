@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,7 +43,7 @@ const VoltammetryPage = () => {
   };
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8 px-4">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
@@ -254,7 +254,7 @@ const VoltammetryPage = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

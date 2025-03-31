@@ -1,11 +1,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { BookOpen, FileText, Video } from "lucide-react";
 
 const Documentation = () => {
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Documentation</h1>
@@ -73,7 +73,7 @@ const Documentation = () => {
           </Card>
         </div>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

@@ -1,5 +1,5 @@
 
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, MessageSquare, Calendar, Globe } from "lucide-react";
@@ -54,7 +54,7 @@ const Community = () => {
   ];
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Community</h1>
@@ -171,7 +171,7 @@ const Community = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

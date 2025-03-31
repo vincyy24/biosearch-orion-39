@@ -1,5 +1,5 @@
 import { useState } from "react";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -154,7 +154,7 @@ const Tools = () => {
   });
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
@@ -276,7 +276,7 @@ const Tools = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

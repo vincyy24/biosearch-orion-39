@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -93,7 +93,7 @@ const DataBrowser = () => {
 
   const handleViewItem = (item: any) => {
     setSelectedItem(item);
-    
+
     if (item.publicationDoi) {
       // Navigate to the publication page with the dataset tab activated
       navigate(`/publications/${item.publicationDoi}?dataset=${item.id}`);
@@ -115,7 +115,7 @@ const DataBrowser = () => {
   });
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
@@ -319,7 +319,7 @@ const DataBrowser = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

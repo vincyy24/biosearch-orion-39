@@ -1,5 +1,5 @@
 
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ const Support = () => {
   ];
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Help & Support</h1>
@@ -159,7 +159,7 @@ const Support = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

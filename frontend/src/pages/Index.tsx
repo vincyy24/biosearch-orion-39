@@ -1,5 +1,5 @@
 
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,7 +73,7 @@ const Index = () => {
   // Track user engagement time
   useEffect(() => {
     const startTime = new Date();
-    
+
     return () => {
       const endTime = new Date();
       const sessionTimeHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
@@ -82,7 +82,7 @@ const Index = () => {
   }, []);
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8 px-4">
         <section className="py-12 md:py-24 lg:py-32 flex flex-col items-center text-center">
           <div className="space-y-4 max-w-3xl">
@@ -130,7 +130,7 @@ const Index = () => {
           <RecentDatasets />
         </section>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, FileText, Download as DownloadIcon, AlertCircle, CheckCircle } from "lucide-react";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { downloadData, fetchVoltammetryData } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -122,7 +122,7 @@ const Download = () => {
   };
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-2">Download Data</h1>
         <p className="text-muted-foreground mb-6">
@@ -305,7 +305,7 @@ const Download = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

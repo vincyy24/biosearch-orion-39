@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { fetchResearchProjects } from "@/services/researchService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +55,7 @@ const ResearchProjects = () => {
   };
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container py-8 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -96,8 +96,8 @@ const ResearchProjects = () => {
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg font-bold">{project.title}</CardTitle>
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className={STATUS_COLORS[project.status] || "bg-gray-100"}
                     >
                       {project.status}
@@ -132,9 +132,9 @@ const ResearchProjects = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleViewProject(project.id)}
                   >
                     View <ArrowRight className="ml-1 h-4 w-4" />
@@ -156,7 +156,7 @@ const ResearchProjects = () => {
           </div>
         )}
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

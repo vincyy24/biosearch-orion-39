@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  BookOpen, 
-  FileText, 
-  BarChart2, 
-  ExternalLink, 
-  Upload, 
+import {
+  BookOpen,
+  FileText,
+  BarChart2,
+  ExternalLink,
+  Upload,
   FileDown,
   Eye,
   Calendar,
-  User, 
+  User,
   Building,
   Mail,
   Microscope,
@@ -46,21 +46,21 @@ const PublicationDetailPage = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "details");
-  
+
   useEffect(() => {
     fetchPublicationDetails();
   }, [doi]);
 
   const fetchPublicationDetails = async () => {
     if (!doi) return;
-    
+
     try {
       setLoading(true);
 
       const response = await axios.get(`/api/publications/${doi.replace("/", "_")}/`);
-      
+
       setPublication(response.data);
-      
+
       if (response.data.datasets) {
         setDatasets(response.data.datasets);
       }
@@ -82,7 +82,7 @@ const PublicationDetailPage = () => {
       const response = await axios.get(`/api/datasets/${datasetId}/download/`, {
         responseType: 'blob'
       });
-      
+
       // Create a download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -91,7 +91,7 @@ const PublicationDetailPage = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       toast({
         title: "Download Started",
         description: "Your dataset download has started.",
@@ -127,7 +127,7 @@ const PublicationDetailPage = () => {
       id: "101",
       version: 3,
       created_at: "2023-09-15",
-      created_by: {id: "js", name: "Dr. Jane Smith"},
+      created_by: { id: "js", name: "Dr. Jane Smith" },
       changes: "Updated metadata and added new experiment results",
       is_current: true,
     },
@@ -135,7 +135,7 @@ const PublicationDetailPage = () => {
       id: "102",
       version: 2,
       created_at: "2023-08-22",
-      created_by: {id: "jd", name: "Dr. John Doe"},
+      created_by: { id: "jd", name: "Dr. John Doe" },
       changes: "Added supplementary data and corrected typos",
       is_current: false,
     },
@@ -143,7 +143,7 @@ const PublicationDetailPage = () => {
       id: "103",
       version: 1,
       created_at: "2023-07-10",
-      created_by: {id: "js", name: "Dr. Jane Smith"},
+      created_by: { id: "js", name: "Dr. Jane Smith" },
       changes: "Initial publication registration",
       is_current: false,
     },
@@ -151,7 +151,7 @@ const PublicationDetailPage = () => {
 
   if (loading) {
     return (
-      <MainLayout>
+      <AppLayout>
         <div className="container py-8 max-w-7xl">
           <div className="flex justify-between items-start mb-6">
             <div className="space-y-2">
@@ -160,7 +160,7 @@ const PublicationDetailPage = () => {
             </div>
             <Skeleton className="h-10 w-32" />
           </div>
-          
+
           <Tabs defaultValue="details">
             <TabsList className="mb-6">
               <TabsTrigger value="details">Details</TabsTrigger>
@@ -168,7 +168,7 @@ const PublicationDetailPage = () => {
               <TabsTrigger value="analysis">Analysis</TabsTrigger>
               <TabsTrigger value="versions">Versions</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="details">
               <div className="space-y-6">
                 <Card>
@@ -187,13 +187,13 @@ const PublicationDetailPage = () => {
             </TabsContent>
           </Tabs>
         </div>
-      </MainLayout>
+      </AppLayout>
     );
   }
 
   if (!publication) {
     return (
-      <MainLayout>
+      <AppLayout>
         <div className="container py-8 max-w-7xl">
           <div className="text-center py-16">
             <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -206,12 +206,12 @@ const PublicationDetailPage = () => {
             </Button>
           </div>
         </div>
-      </MainLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container py-8 max-w-7xl">
         <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
           <div>
@@ -231,9 +231,9 @@ const PublicationDetailPage = () => {
               {publication.journal}, {publication.year} • DOI: {publication.doi}
             </p>
           </div>
-          
+
           <div className="flex gap-2">
-            <Button 
+            <Button
               variant="outline"
               onClick={() => window.open(`https://doi.org/${publication.doi}`, '_blank')}
             >
@@ -246,7 +246,7 @@ const PublicationDetailPage = () => {
             </Button>
           </div>
         </div>
-        
+
         <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="details" className="flex items-center">
@@ -266,7 +266,7 @@ const PublicationDetailPage = () => {
               Versions
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="details">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
@@ -289,7 +289,7 @@ const PublicationDetailPage = () => {
                   referenceCount: 0
                 }} />
               </div>
-              
+
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
@@ -310,14 +310,14 @@ const PublicationDetailPage = () => {
                                 <Badge variant="outline" className="ml-2 text-xs">Primary</Badge>
                               )}
                             </div>
-                            
+
                             {researcher.institution && (
                               <div className="flex items-center mt-1 text-sm text-muted-foreground">
                                 <Building className="h-3.5 w-3.5 mr-1.5" />
                                 {researcher.institution}
                               </div>
                             )}
-                            
+
                             {researcher.email && (
                               <div className="flex items-center mt-1 text-sm text-muted-foreground">
                                 <Mail className="h-3.5 w-3.5 mr-1.5" />
@@ -330,7 +330,7 @@ const PublicationDetailPage = () => {
                     ))}
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Related Research</CardTitle>
@@ -353,7 +353,7 @@ const PublicationDetailPage = () => {
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="datasets">
             <div className="grid grid-cols-1 gap-6">
               <Card>
@@ -387,11 +387,11 @@ const PublicationDetailPage = () => {
                                     <Badge className="ml-2" variant="outline">Private</Badge>
                                   )}
                                 </div>
-                                
+
                                 {dataset.description && (
                                   <p className="text-sm text-muted-foreground">{dataset.description}</p>
                                 )}
-                                
+
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
                                   <div className="flex items-center">
                                     <FileText className="h-3.5 w-3.5 mr-1" />
@@ -406,18 +406,18 @@ const PublicationDetailPage = () => {
                                   </div>
                                 </div>
                               </div>
-                              
+
                               <div className="flex items-center gap-2 mt-4 md:mt-0">
-                                <Button 
-                                  variant="outline" 
+                                <Button
+                                  variant="outline"
                                   size="sm"
                                   onClick={() => handleDownloadDataset(dataset.id)}
                                 >
                                   <FileDown className="h-4 w-4 mr-1.5" />
                                   Download
                                 </Button>
-                                <Button 
-                                  variant="outline" 
+                                <Button
+                                  variant="outline"
                                   size="sm"
                                 >
                                   <Eye className="h-4 w-4 mr-1.5" />
@@ -446,7 +446,7 @@ const PublicationDetailPage = () => {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="analysis">
             <div className="grid grid-cols-1 gap-6">
               <Card>
@@ -464,7 +464,7 @@ const PublicationDetailPage = () => {
                       Upload datasets and create analysis visualizations to see them here.
                     </p>
                     <div className="flex justify-center gap-2">
-                      <Button 
+                      <Button
                         onClick={() => navigate(`/upload?publication=${publication.doi}`)}
                         variant="outline"
                       >
@@ -481,7 +481,7 @@ const PublicationDetailPage = () => {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="versions">
             <Card>
               <CardHeader>
@@ -501,22 +501,22 @@ const PublicationDetailPage = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 
 const formatFileSize = (bytes: number): string => {
   if (!bytes) return "Unknown size";
-  
+
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let size = bytes;
   let unitIndex = 0;
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024;
     unitIndex++;
   }
-  
+
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 };
 

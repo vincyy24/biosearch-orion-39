@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, BookOpen, Database, Microscope, Calendar } from "lucide-react";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 
@@ -163,7 +163,7 @@ const SearchResults = () => {
   };
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Search Results</h1>
 
@@ -347,7 +347,7 @@ const SearchResults = () => {
           </>
         )}
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

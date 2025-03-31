@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +41,7 @@ const NotificationsPage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -62,29 +62,29 @@ const NotificationsPage = () => {
     try {
       // Build query params
       let url = `/api/users/notifications/?page=${currentPage}`;
-      
+
       if (filterCategory !== "all") {
         url += `&category=${filterCategory}`;
       }
-      
+
       if (filterRead !== "all") {
         url += `&is_read=${filterRead === "read" ? "true" : "false"}`;
       }
 
       const response = await fetch(url);
       const data = await response.json();
-      
+
       // Simulate filtering by search query (would be done on the server in a real app)
       let filtered = data.notifications;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         filtered = filtered.filter(
-          (n: Notification) => 
-            n.title.toLowerCase().includes(query) || 
+          (n: Notification) =>
+            n.title.toLowerCase().includes(query) ||
             n.message.toLowerCase().includes(query)
         );
       }
-      
+
       setNotifications(filtered);
       setTotalPages(data.pages);
       setUnreadCount(data.unread_count);
@@ -108,17 +108,17 @@ const NotificationsPage = () => {
           "Content-Type": "application/json"
         }
       });
-      
+
       // Update the UI optimistically
-      setNotifications(prevNotifications => 
-        prevNotifications.map(n => 
+      setNotifications(prevNotifications =>
+        prevNotifications.map(n =>
           n.id === id ? { ...n, is_read: true } : n
         )
       );
-      
+
       // Update unread count
       setUnreadCount(prevCount => Math.max(0, prevCount - 1));
-      
+
       toast({
         title: "Notification marked as read",
         description: "Notification has been marked as read."
@@ -141,15 +141,15 @@ const NotificationsPage = () => {
           "Content-Type": "application/json"
         }
       });
-      
+
       // Update the UI optimistically
-      setNotifications(prevNotifications => 
+      setNotifications(prevNotifications =>
         prevNotifications.map(n => ({ ...n, is_read: true }))
       );
-      
+
       // Update unread count
       setUnreadCount(0);
-      
+
       toast({
         title: "All notifications marked as read",
         description: "All notifications have been marked as read."
@@ -192,7 +192,7 @@ const NotificationsPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <MainLayout>
+      <AppLayout>
         <div className="container max-w-5xl py-10">
           <Card>
             <CardHeader>
@@ -206,12 +206,12 @@ const NotificationsPage = () => {
             </CardContent>
           </Card>
         </div>
-      </MainLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container max-w-5xl py-10">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Notifications</h1>
@@ -325,9 +325,8 @@ const NotificationsPage = () => {
                   {loading
                     ? "Loading notifications..."
                     : notifications.length === 0
-                    ? "No notifications found"
-                    : `Showing ${notifications.length} notification${
-                        notifications.length !== 1 ? "s" : ""
+                      ? "No notifications found"
+                      : `Showing ${notifications.length} notification${notifications.length !== 1 ? "s" : ""
                       }`}
                 </CardDescription>
               </CardHeader>
@@ -349,19 +348,17 @@ const NotificationsPage = () => {
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 rounded-lg border ${
-                          !notification.is_read
+                        className={`p-4 rounded-lg border ${!notification.is_read
                             ? "bg-muted"
                             : "bg-card"
-                        }`}
+                          }`}
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-full ${
-                              !notification.is_read
+                            <div className={`p-2 rounded-full ${!notification.is_read
                                 ? "bg-primary/10 text-primary"
                                 : "bg-muted-foreground/10 text-muted-foreground"
-                            }`}>
+                              }`}>
                               {getCategoryIcon(notification.category)}
                             </div>
                             <div>
@@ -389,7 +386,7 @@ const NotificationsPage = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           {!notification.is_read && (
                             <Button
                               variant="ghost"
@@ -436,7 +433,7 @@ const NotificationsPage = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

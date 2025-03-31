@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -356,7 +356,7 @@ const Upload = () => {
     (activeTab === "publication" && !uploadState.publicationDoi);
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container py-8 mx-auto">
         <h1 className="text-3xl font-bold mb-2">Upload Research Data</h1>
         <p className="text-muted-foreground mb-8">
@@ -719,7 +719,7 @@ const Upload = () => {
           </div>
         )}
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

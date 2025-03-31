@@ -1,4 +1,4 @@
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -128,7 +128,7 @@ const Dashboard = () => {
   };
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
@@ -342,7 +342,7 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

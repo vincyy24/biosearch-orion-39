@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchResearchProjectDetails } from "@/services/researchService";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,7 +68,7 @@ const ResearchProjectDetail = () => {
 
   if (loading) {
     return (
-      <MainLayout>
+      <AppLayout>
         <div className="container py-8 max-w-7xl">
           <Button variant="ghost" className="mb-4" onClick={handleBack}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
@@ -81,13 +81,13 @@ const ResearchProjectDetail = () => {
 
           <Skeleton className="h-[500px] w-full rounded-lg" />
         </div>
-      </MainLayout>
+      </AppLayout>
     );
   }
 
   if (!project) {
     return (
-      <MainLayout>
+      <AppLayout>
         <div className="container py-8 max-w-7xl">
           <Button variant="ghost" className="mb-4" onClick={handleBack}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
@@ -102,12 +102,12 @@ const ResearchProjectDetail = () => {
 
           <Button onClick={handleBack}>Return to Projects</Button>
         </div>
-      </MainLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container py-8 max-w-7xl">
         <Button variant="ghost" className="mb-4" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
@@ -459,7 +459,7 @@ const ResearchProjectDetail = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 };
 

@@ -1,10 +1,10 @@
 import React from "react";
-import MainLayout from "@/components/layouts/AppLayout";
+import AppLayout from "@/components/layouts/AppLayout";
 import PublicationRegistrationComponent from "@/components/publications/PublicationRegistration";
 
 const PublicationRegistrationPage = () => {
     return (
-        <MainLayout>
+        <AppLayout>
             <div className="container mx-auto py-8">
                 <h1 className="text-3xl font-bold mb-2">Register Publication</h1>
                 <p className="text-muted-foreground mb-8">
@@ -14,7 +14,7 @@ const PublicationRegistrationPage = () => {
                     <PublicationRegistrationComponent />
                 </div>
             </div>
-        </MainLayout>
+        </AppLayout>
     );
 };
 
