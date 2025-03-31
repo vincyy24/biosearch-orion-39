@@ -1,4 +1,5 @@
 
+import traceback
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -121,17 +122,17 @@ class FileUploadView(APIView):
     """
     permission_classes = [IsAuthenticated]
     
-    def post(self, request):
+    def post(self, request, project_id):
         file = request.FILES.get('file')
         data_type_id = request.data.get('dataType')
         description = request.data.get('description', '')
-        access_level = request.data.get('accessLevel', 'private')  # Default to private
+        access_level = request.data.get('accessLevel', 'private')
         category_id = request.data.get('category', None)
         method = request.data.get('method', '')
         electrode_type = request.data.get('electrodeType', '')
         instrument = request.data.get('instrument', '')
-        delimiter = request.data.get('delimiter', ',')  # Default to CSV
-        
+        delimiter = request.data.get('delimiter', ',')
+        project_id = project_id
         if not file:
             return Response(
                 {'error': 'No file provided'}, 
@@ -253,6 +254,7 @@ class LoginView(APIView):
                 'role': 'admin' if is_admin else 'user'
             })
         
+        print(traceback.format_exc())
         return Response(
             {'error': 'Invalid email or password'}, 
             status=status.HTTP_401_UNAUTHORIZED
@@ -331,6 +333,7 @@ class SignupView(APIView):
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
+            print(traceback.format_exc())
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

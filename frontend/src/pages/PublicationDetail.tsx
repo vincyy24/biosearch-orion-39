@@ -56,6 +56,8 @@ const PublicationDetailPage = () => {
 
     try {
       setLoading(true);
+      console.log(doi);
+      
 
       const response = await axios.get(`/api/publications/${doi.replace("/", "_")}/`);
 

@@ -22,8 +22,8 @@ urlpatterns+=[
 
 urlpatterns+=[
     # Dataset comparison routes
-    path('comparisons/', views_research.dataset_comparisons, name='dataset_comparisons_all'),
-    path('comparisons/<str:comparison_id>/', views_research.comparison_detail, name='comparison_detail'),
+    path('comparisons/', views_research.DatasetComparisons.as_view(), name='dataset_comparisons_all'),
+    path('comparisons/<str:comparison_id>/', views_research.ComparisonDetail.as_view(), name='comparison_detail'),
 ]
 
 urlpatterns+=[
@@ -53,14 +53,14 @@ urlpatterns += [
     # Research collaboration
     path('research/projects/<str:project_id>/invite/', views_research.InviteCollaboratorView.as_view(), name='invite_collaborator'),
     path('research/projects/<str:project_id>/versions/', views_research.ResearchVersionsView.as_view(), name='research_versions'),
-
+    path('research/projects/<str:project_id>/upload/', views_research.FileUploadView.as_view(), name='research_upload'),
     # Research project routes
-    path('research/projects/', views_research.research_projects, name='research_projects'),
-    path('research/projects/<str:project_id>/', views_research.research_project_detail, name='research_project_detail'),
-    path('research/projects/<str:project_id>/collaborators/', views_research.add_collaborator, name='add_collaborator'),
-    path('research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', views_research.manage_collaborator, name='manage_collaborator'),
-    path('research/projects/<str:project_id>/assign/', views_research.assign_experiment, name='assign_experiment'),
-    path('research/projects/<str:project_id>/comparisons/', views_research.dataset_comparisons, name='dataset_comparisons'),
+    path('research/projects/', views_research.ResearchProjects.as_view(), name='research_projects'),
+    path('research/projects/<str:project_id>/', views_research.ResearchProjectDetail.as_view(), name='research_project_detail'),
+    path('research/projects/<str:project_id>/collaborators/', views_research.AddCollaborator.as_view(), name='add_collaborator'),
+    path('research/projects/<str:project_id>/collaborators/<int:collaborator_id>/', views_research.ManageCollaborator.as_view(), name='manage_collaborator'),
+    path('research/projects/<str:project_id>/assign/', views_research.AssignExperiment.as_view(), name='assign_experiment'),
+    path('research/projects/<str:project_id>/comparisons/', views_research.DatasetComparisons.as_view(), name='dataset_comparisons'),
 ]
 
 urlpatterns += [

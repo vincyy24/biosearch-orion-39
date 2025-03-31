@@ -1,4 +1,4 @@
-
+import { Publication } from '@/types/common';
 import axios from 'axios';
 
 const API_BASE_URL = '/api';
@@ -14,20 +14,22 @@ const apiClient = axios.create({
 
 // Intercept requests to add CSRF token
 apiClient.interceptors.request.use(async (config) => {
-  // Get CSRF token from API or use from cookie
-  try {
-    const { data } = await axios.get(`${API_BASE_URL}/csrf-token/`);
-    config.headers['X-CSRFToken'] = data.csrf_token;
-  } catch (error) {
-    console.error('Error fetching CSRF token:', error);
+  const csrfToken = document.cookie
+    .split('; ')
+    .find(cookie => cookie.startsWith('csrftoken='))
+    ?.split('=')[1];
+
+  if (csrfToken) {
+    config.headers['X-CSRFToken'] = decodeURIComponent(csrfToken);
   }
+
   return config;
 });
 
 // Auth API endpoints
 export const loginUser = async (email: string, password: string) => {
   try {
-    const response = await apiClient.post('/auth/login/', { email, password });
+    const response = await apiClient.post('/auth/login/', { email, password }, { withCredentials: true, withXSRFToken: true });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -203,7 +205,7 @@ export const inviteCollaborator = async (projectId: string, inviteData: any) => 
 };
 
 // Publication API endpoints
-export const getPublications = async () => {
+export const getPublications: () => Promise<Publication[]> = async () => {
   try {
     const response = await apiClient.get('/publications/');
     return response.data;
@@ -430,5 +432,20 @@ export const getDatasetAnalytics = async () => {
     throw error;
   }
 };
+
+export const fetchRecentDatasets = async () => {
+  try {
+    const response = await apiClient.get('/dashboard/recent-datasets/');
+    return await response.data;
+  } catch (error) {
+    console.error("Error fetching recent datasets:", error);
+    throw error;
+  }
+};
+
+export const fetchVisualizationUrl = async (url: string) => {
+  return `/dash/app/${url}/`
+}
+
 
 export default apiClient;

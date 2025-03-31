@@ -16,6 +16,7 @@ import { fetchResearchProjects } from "@/services/researchService";
 import { searchPublicationsByDOI } from "@/services/doiService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import axios from "axios";
+import apiClient from "@/services/api";
 
 interface FileInfo {
   id: string;
@@ -310,7 +311,7 @@ const Upload = () => {
     try {
       const uploadPromises = uploadState.files.map(async (fileInfo) => {
         const formData = new FormData();
-        formData.append('file', fileInfo.file as File);
+        formData.append('file', fileInfo.file);
         formData.append('title', fileInfo.fileName);
         formData.append('description', fileInfo.description);
         formData.append('file_type', fileInfo.dataType);
@@ -319,12 +320,12 @@ const Upload = () => {
 
         let url = '';
         if (activeTab === "project" && uploadState.projectId) {
-          url = `/api/research/${uploadState.projectId}/upload/`;
+          url = `/research/projects/${uploadState.projectId}/upload/`;
         } else if (activeTab === "publication" && uploadState.publicationDoi) {
-          url = `/api/publications/${uploadState.publicationDoi}/upload/`;
+          url = `/publications/${uploadState.publicationDoi}/upload/`;
         }
 
-        return axios.post(url, formData);
+        return apiClient.post(url, formData);
       });
 
       await Promise.all(uploadPromises);

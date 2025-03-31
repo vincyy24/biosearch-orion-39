@@ -1,5 +1,4 @@
-
-import { getCookie } from './api';
+import apiClient from "./api";
 
 const API_BASE_URL = '/api';
 
@@ -34,18 +33,9 @@ export const fetchResearchProjects = async (page = 1, pageSize = 10) => {
 
 export const createResearchProject = async (data: { title: string; description?: string; is_public?: boolean }) => {
   try {
-    const csrf_token = getCookie("csrftoken");
-    const response = await fetch(`${API_BASE_URL}/research/projects/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
-    await handleResponseErrors(response);
-    return await response.json();
+    // const csrf_token = getCookie("csrftoken");
+    const response = await apiClient.post('/research/projects/', {...data}, {withCredentials: true});
+    return await response.data;
   } catch (error) {
     console.error("Error creating research project:", error);
     throw error;
@@ -70,12 +60,12 @@ export const updateResearchProject = async (
   data: { title?: string; description?: string; is_public?: boolean; status?: string }
 ) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/research/projects/${projectId}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify(data),
@@ -90,11 +80,11 @@ export const updateResearchProject = async (
 
 export const deleteResearchProject = async (projectId: string) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/research/projects/${projectId}/`, {
       method: 'DELETE',
       headers: {
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
     });
@@ -112,12 +102,12 @@ export const addCollaborator = async (
   data: { username_or_email: string; role?: string }
 ) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/research/projects/${projectId}/collaborators/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify(data),
@@ -136,12 +126,12 @@ export const updateCollaborator = async (
   data: { role: string }
 ) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/research/projects/${projectId}/collaborators/${collaboratorId}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify(data),
@@ -156,11 +146,11 @@ export const updateCollaborator = async (
 
 export const removeCollaborator = async (projectId: string, collaboratorId: number) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/research/projects/${projectId}/collaborators/${collaboratorId}/`, {
       method: 'DELETE',
       headers: {
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
     });
@@ -175,12 +165,12 @@ export const removeCollaborator = async (projectId: string, collaboratorId: numb
 // Experiment Management APIs
 export const assignExperiment = async (projectId: string, experimentId: string) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/research/projects/${projectId}/experiments/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify({ experiment_id: experimentId }),
@@ -204,7 +194,7 @@ export const createDatasetComparison = async (
   }
 ) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const url = data.project_id
       ? `${API_BASE_URL}/research/projects/${data.project_id}/comparisons/`
       : `${API_BASE_URL}/research/comparisons/`;
@@ -213,7 +203,7 @@ export const createDatasetComparison = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify({
@@ -264,12 +254,12 @@ export const fetchComparisonDetails = async (comparisonId: string) => {
 // ORCID Verification APIs
 export const initiateOrcidVerification = async (orcidId: string) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/orcid/verify/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify({ orcid_id: orcidId }),
@@ -284,12 +274,12 @@ export const initiateOrcidVerification = async (orcidId: string) => {
 
 export const confirmOrcidVerification = async (verificationCode: string) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/orcid/confirm/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify({ verification_code: verificationCode }),

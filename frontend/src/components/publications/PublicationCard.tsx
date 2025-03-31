@@ -6,29 +6,24 @@ import { Check, ExternalLink, Eye, Download, Bookmark, BookmarkCheck } from "luc
 import { useState } from "react";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
 import { useToast } from "@/hooks/use-toast";
+import { Publication } from "@/types/common";
 
 interface PublicationCardProps {
-  id: string;
-  title: string;
-  authors: string;
-  journal: string;
-  year: string;
-  doi: string;
-  isVerified: boolean;
-  abstract?: string;
-  hasDataset?: boolean;
+  publication: Publication;
+  onView: () => void
 }
 
 const PublicationCard = ({
-  id,
-  title,
-  authors,
-  journal,
-  year,
-  doi,
-  isVerified,
-  abstract,
-  hasDataset = false
+  publication: {
+    id,
+    title,
+    researchers,
+    journal,
+    year,
+    doi,
+    abstract
+  },
+  onView
 }: PublicationCardProps) => {
   const [isSaved, setIsSaved] = useState(false);
   const { incrementSavedItems } = useAnalytics();
@@ -55,14 +50,14 @@ const PublicationCard = ({
       <CardHeader>
         <div className="flex justify-between items-start gap-2">
           <CardTitle className="text-xl">{title}</CardTitle>
-          {isVerified && (
+          {doi && (
             <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300 border-green-200 dark:border-green-800">
               <Check className="h-3 w-3" /> DOI Verified
             </Badge>
           )}
         </div>
         <CardDescription className="line-clamp-1">
-          {authors} • {journal} • {year}
+          {researchers?.map(({ name }) => name)} • {journal} • {year}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
@@ -70,26 +65,26 @@ const PublicationCard = ({
         <div className="mt-4 text-xs">
           <span className="font-semibold">DOI:</span> {doi}
         </div>
-        {hasDataset && (
+        {/* {hasDataset && (
           <Badge variant="secondary" className="mt-2">
             Has Datasets
           </Badge>
-        )}
+        )} */}
       </CardContent>
       <CardFooter className="flex justify-between pt-2 border-t">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => window.open(`https://doi.org/${doi}`, '_blank')}>
+          <Button variant="outline" size="sm" onClick={() => onView()}>
             <ExternalLink className="h-4 w-4 mr-1" /> View
           </Button>
-          {hasDataset && (
+          {/* {hasDataset && (
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-1" /> Data
             </Button>
-          )}
+          )} */}
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleSave}
           className={isSaved ? "text-primary" : ""}
         >

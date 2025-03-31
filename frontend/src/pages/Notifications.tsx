@@ -391,7 +391,7 @@ const Notifications = () => {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All types</SelectItem>
+                    <SelectItem value="all">All types</SelectItem>
                     <SelectItem value="collaboration">Collaboration</SelectItem>
                     <SelectItem value="publication">Publication</SelectItem>
                     <SelectItem value="dataset">Dataset</SelectItem>

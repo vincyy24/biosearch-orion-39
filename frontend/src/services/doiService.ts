@@ -1,6 +1,6 @@
 
 import axios from 'axios';
-import { ApiResponse } from '@/types/apiResponse';
+import { CrossrefApiResponse } from '@/types/apiResponse';
 
 export interface CrossrefAuthor {
   given: string;
@@ -38,7 +38,7 @@ export const verifyDOI = async (doi: string): Promise<DOIMetadata | null> => {
     const cleanDoi = doi.replace(/^https?:\/\/doi.org\//, '');
     
     // Call Crossref API
-    const response = await axios.get<ApiResponse>(`https://api.crossref.org/works/${cleanDoi}`, {
+    const response = await axios.get<CrossrefApiResponse>(`https://api.crossref.org/works/${cleanDoi}`, {
       headers: {
         'Accept': 'application/json',
       }

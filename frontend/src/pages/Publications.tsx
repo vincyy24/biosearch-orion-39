@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,16 +10,18 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Filter, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { getPublications } from "@/services/api";
+import { Publication } from "@/types/common";
 
-interface Publication {
-  id: string;
-  title: string;
-  journal: string;
-  year: string;
-  doi: string;
-  abstract?: string;
-  authors?: { name: string; isMain: boolean }[];
-}
+// interface Publication {
+//   id: string;
+//   title: string;
+//   journal: string;
+//   year: string;
+//   doi: string;
+//   abstract?: string;
+//   researchers?: { name: string; isMain: boolean }[];
+// }
 
 const Publications = () => {
   const { isAuthenticated } = useAuth();
@@ -38,48 +39,9 @@ const Publications = () => {
     const fetchPublications = async () => {
       setIsLoading(true);
       try {
-        // Mock data for now
-        const mockPublications: Publication[] = [
-          {
-            id: "1",
-            title: "Novel Electrochemical Sensing Mechanisms for Glucose Detection",
-            journal: "Journal of Electroanalytical Chemistry",
-            year: "2023",
-            doi: "10.1016/j.jelechem.2023.01.001",
-            authors: [
-              { name: "Jane Smith", isMain: true },
-              { name: "John Doe", isMain: false }
-            ],
-            abstract: "This paper presents a novel electrochemical sensing mechanism for glucose detection..."
-          },
-          {
-            id: "2",
-            title: "Recent Advances in Voltammetric Analysis of Pharmaceuticals",
-            journal: "Electrochimica Acta",
-            year: "2022",
-            doi: "10.1016/j.electacta.2022.02.002",
-            authors: [
-              { name: "Michael Chen", isMain: true },
-              { name: "Sarah Johnson", isMain: false }
-            ],
-            abstract: "A comprehensive review of recent advances in voltammetric techniques applied to pharmaceutical analysis..."
-          },
-          {
-            id: "3",
-            title: "Machine Learning Approaches for Electrochemical Data Analysis",
-            journal: "Analytical Chemistry",
-            year: "2021",
-            doi: "10.1021/acs.analchem.1c00123",
-            authors: [
-              { name: "David Williams", isMain: true },
-              { name: "Emma Brown", isMain: false }
-            ],
-            abstract: "This study explores various machine learning approaches for the analysis and interpretation of electrochemical data..."
-          },
-        ];
-
-        setPublications(mockPublications);
-        setFilteredPublications(mockPublications);
+        const response = await getPublications();
+        setPublications(response);
+        setFilteredPublications(response);
       } catch (error) {
         console.error("Error fetching publications:", error);
       } finally {
@@ -100,7 +62,7 @@ const Publications = () => {
         filtered = filtered.filter(pub => 
           pub.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
           pub.doi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (pub.authors && pub.authors.some(author => 
+          (pub.researchers && pub.researchers.some(author => 
             author.name.toLowerCase().includes(searchTerm.toLowerCase())
           ))
         );
@@ -108,7 +70,7 @@ const Publications = () => {
       
       // Apply year filter
       if (yearFilter) {
-        filtered = filtered.filter(pub => pub.year === yearFilter);
+        filtered = filtered.filter(pub => String(pub.year) === yearFilter);
       }
       
       // Apply type filter (would need to add type to the publication interface)
@@ -130,8 +92,10 @@ const Publications = () => {
     navigate("/publications/new");
   };
 
-  const handleViewPublication = (id: string) => {
-    navigate(`/publications/details?id=${id}`);
+  const handleViewPublication = (doi: string) => {
+    console.log(doi);
+    
+    navigate(`/publications/details?doi=${doi.replace("/", "_")}`);
   };
 
   return (
@@ -203,7 +167,7 @@ const Publications = () => {
                     <SelectValue placeholder="Select Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Years</SelectItem>
+                    <SelectItem value="all">All Years</SelectItem>
                     <SelectItem value="2023">2023</SelectItem>
                     <SelectItem value="2022">2022</SelectItem>
                     <SelectItem value="2021">2021</SelectItem>
@@ -218,7 +182,7 @@ const Publications = () => {
                     <SelectValue placeholder="Select Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="article">Article</SelectItem>
                     <SelectItem value="review">Review</SelectItem>
                     <SelectItem value="conference">Conference Paper</SelectItem>
@@ -262,7 +226,7 @@ const Publications = () => {
               <PublicationCard
                 key={publication.id}
                 publication={publication}
-                onView={() => handleViewPublication(publication.id)}
+                onView={() => handleViewPublication(decodeURI(decodeURI(publication.doi)).replace("/", "_"))}
               />
             ))}
           </div>

@@ -1,5 +1,8 @@
+from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import User
+
+from .models_research import ResearchProject
 
 
 class Researcher(models.Model):
@@ -31,11 +34,14 @@ class Publication(models.Model):
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255)
     abstract = models.TextField(blank=True, null=True)
+    publisher = models.CharField(max_length=255, blank=True, null=True)
     journal = models.CharField(max_length=255, blank=True, null=True)
     year = models.CharField(max_length=4, blank=True, null=True)
     doi = models.CharField(max_length=100, unique=True, blank=True, null=True)
     citations = models.IntegerField(default=0)
     is_public = models.BooleanField(default=True)
+    url = models.URLField(max_length=500, blank=True, null=True)
+    is_peer_reviewed = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -127,7 +133,7 @@ class DataCategory(models.Model):
 
 class FileUpload(models.Model):
     file_name = models.CharField(max_length=255)
-    file_content = models.TextField()  # Store file content as text
+    file_content = models.TextField(default='')  # Store file content as text
     file_size = models.IntegerField()
     data_type = models.ForeignKey(DataType, on_delete=models.SET_NULL, null=True)
     description = models.TextField(blank=True, null=True)
@@ -140,6 +146,12 @@ class FileUpload(models.Model):
         null=True, 
         blank=True,
         help_text="Categorization of the dataset (e.g., Published, Under Review)"
+    )
+    project_id = models.ForeignKey(
+        ResearchProject,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
     method = models.CharField(max_length=100, blank=True, null=True,
                             help_text="Experiment method (e.g., Cyclic, Constant, Square wave)")

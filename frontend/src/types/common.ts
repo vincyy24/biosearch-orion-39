@@ -84,6 +84,7 @@ export interface Publication {
   }[];
   created_at: string;
   abstract: string;
+  is_peer_reviewed: boolean;
 }
 
 // Analysis-related types

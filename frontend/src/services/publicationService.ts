@@ -1,7 +1,6 @@
-import { Publication } from '@/types/common';
-import { getCookie } from './api';
+// import { Publication } from '@/types/common';
 import { CrossrefApiResponse } from '@/types/apiResponse';
-
+import apiClient from './api';
 export interface PublicationFilters {
   is_public?: boolean;
   year?: number;
@@ -27,23 +26,20 @@ const handleResponseErrors = async (response) => {
 // Publication APIs
 export const fetchPublications: (page: number, perPage: number, query: string, filters: PublicationFilters) => Promise<Publication[]> = async (page = 1, perPage = 10, query = '', filters = {}) => {
   try {
-    let url = `${API_BASE_URL}/publications/?page=${page}&per_page=${perPage}`;
+    let url = '/publications/?page=${page}&per_page=${perPage}';
     if (query) {
-      url += `&query=${encodeURIComponent(query)}`;
+      // url += `&query=${encodeURIComponent(query)}`;
     }
     
     // Add filters as query parameters
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        url += `&${key}=${encodeURIComponent(String(value))}`;
-      }
-    });
+    // Object.entries(filters).forEach(([key, value]) => {
+    //   if (value !== undefined && value !== null && value !== '') {
+    //     url += `&${key}=${encodeURIComponent(String(value))}`;
+    //   }
+    // });
     
-    const response = await fetch(url, {
-      credentials: 'include',
-    });
-    await handleResponseErrors(response);
-    return await response.json();
+    const response = await apiClient('/publications/', {params: {page, per_page: perPage, ...filters}, withCredentials: true});
+    return await response.data;
   } catch (error) {
     console.error("Error fetching publications:", error);
     throw error;
@@ -52,20 +48,19 @@ export const fetchPublications: (page: number, perPage: number, query: string, f
 
 export const fetchPublicationDetails = async (doi: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/publications/${doi}/`, {
-      credentials: 'include',
+    const response = await apiClient(`/publications/${doi}/`, {
+      withCredentials: true, withXSRFToken: true
     });
-    await handleResponseErrors(response);
-    return await response.json();
+    // await handleResponseErrors(response);
+    return await response.data;
   } catch (error) {
     console.error("Error fetching publication details:", error);
     throw error;
   }
 };
-
-export const registerPublication = async (data: {
-  doi: string;
-  title: string;
+interface Publication{
+  doi?: string;
+  title?: string;
   abstract?: string;
   journal?: string;
   volume?: string;
@@ -77,19 +72,20 @@ export const registerPublication = async (data: {
   is_public?: boolean;
   is_peer_reviewed?: boolean;
   researchers?: Array<{
-    name: string;
+    name?: string;
     institution?: string;
     email?: string;
     orcid_id?: string;
   }>;
-}) => {
+}
+export const registerPublication = async (data: Publication) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/publications/register/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify(data),
@@ -107,11 +103,11 @@ export const uploadDatasetToPublication = async (
   formData: FormData
 ) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/publications/${doi}/upload/`, {
       method: 'POST',
       headers: {
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: formData,
@@ -140,7 +136,7 @@ export const fetchPublicationAnalysis = async (doi: string) => {
 export const downloadDataset = async (datasetId: number) => {
   try {
     // For direct downloads, we use window.location to trigger the browser's download
-    window.location.href = `${API_BASE_URL}/datasets/${datasetId}/download/`;
+    window.location.href = '/datasets/${datasetId}/download/';
     return true;
   } catch (error) {
     console.error("Error downloading dataset:", error);
@@ -189,12 +185,12 @@ export const uploadDatasetAsText = async (
   }
 ) => {
   try {
-    const csrf_token = getCookie("csrftoken");
+    // const csrf_token = getCookie("csrftoken");
     const response = await fetch(`${API_BASE_URL}/publications/${doi}/upload-text/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrf_token || '',
+        // 'X-CSRFToken': csrf_token || '',
       },
       credentials: 'include',
       body: JSON.stringify(data),
@@ -210,7 +206,7 @@ export const uploadDatasetAsText = async (
 // Add a new function to download dataset in specific format
 export const downloadDatasetWithFormat = async (datasetId: number, format: 'csv' | 'tsv' | 'txt', customDelimiter?: string) => {
   try {
-    let url = `${API_BASE_URL}/datasets/${datasetId}/download/?format=${format}`;
+    let url = '/datasets/${datasetId}/download/?format=${format}';
     if (format === 'txt' && customDelimiter) {
       url += `&delimiter=${encodeURIComponent(customDelimiter)}`;
     }

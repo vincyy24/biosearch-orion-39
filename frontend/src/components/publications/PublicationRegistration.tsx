@@ -40,7 +40,7 @@ import { registerPublication, verifyDOI, searchCrossRefByDOI } from "@/services/
 import { CrossrefApiResponse, CrossrefPublicationItem } from "@/types/apiResponse";
 
 const formSchema = z.object({
-  doi: z.string().min(1, "DOI is required"),
+  doi: z.string().min(1, "DOI is required"), // Ensure DOI is required
   title: z.string().min(1, "Title is required"),
   abstract: z.string().optional(),
   journal: z.string().optional(),
@@ -227,7 +227,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-end gap-4">
+              <div className="flex items-center gap-4">
                 <FormField
                   control={form.control}
                   name="doi"
@@ -253,7 +253,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                   variant="outline"
                   onClick={handleDOIVerification}
                   disabled={isVerifyingDOI || isSubmitting}
-                  className="mb-[2px]"
+                  className=""
                 >
                   {isVerifyingDOI ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

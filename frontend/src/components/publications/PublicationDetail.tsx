@@ -112,8 +112,8 @@ const PublicationDetail: React.FC<PublicationDetailProps> = ({ publication, isLo
                   {author.name}
                 </span>
                 {author.isMain && (
-                  <Badge className="ml-2" variant="secondary">
-                    Main Author
+                  <Badge className="ml-2 text-center" variant="secondary">
+                    Main
                   </Badge>
                 )}
                 {author.affiliation && (

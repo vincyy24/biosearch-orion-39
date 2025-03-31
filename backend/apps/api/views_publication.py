@@ -23,7 +23,6 @@ class PublicationDetail(View):
             return JsonResponse({"error": "DOI is required"}, status=400)
         
         try:
-            # doi = quote(doi)
             doi = doi.replace("_", "/")
             publication = Publication.objects.get(doi=doi)
             
@@ -65,9 +64,9 @@ class PublicationDetail(View):
                 "title": publication.title,
                 "abstract": publication.abstract,
                 "journal": publication.journal,
-                "volume": publication.volume,
-                "issue": publication.issue,
-                "pages": publication.pages,
+                # "volume": publication.volume,
+                # "issue": publication.issue,
+                # "pages": publication.pages,
                 "year": publication.year,
                 "publisher": publication.publisher,
                 "url": publication.url,
@@ -83,7 +82,7 @@ class PublicationDetail(View):
         except Publication.DoesNotExist:
             return JsonResponse({"error": "Publication not found"}, status=404)
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
             return JsonResponse({"error": str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -110,13 +109,13 @@ class PublicationRegistration(View):
 
             # Create the publication first without researchers
             publication = Publication.objects.create(
-                doi=quote(quote(data['doi'], safe='')),
+                doi=data['doi'],
                 title=data['title'],
                 abstract=data.get('abstract', ''),
                 journal=data.get('journal', ''),
-                volume=data.get('volume', ''),
-                issue=data.get('issue', ''),
-                pages=data.get('pages', ''),
+                # volume=data.get('volume', ''),
+                # issue=data.get('issue', ''),
+                # pages=data.get('pages', ''),
                 year=data.get('year', None),
                 publisher=data.get('publisher', ''),
                 url=data.get('url', ''),
