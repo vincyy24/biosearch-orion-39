@@ -3,6 +3,7 @@ import React, { ReactNode, useState, useEffect } from "react";
 import Navbar from "@/components/navigation/Navbar";
 import Sidebar from "@/components/navigation/Sidebar";
 import Footer from "@/components/layouts/Footer";
+import { SidebarProvider } from "../ui/sidebar";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -32,16 +33,18 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {showSidebar && !isMobile && <Sidebar />}
-      <div className="flex flex-col flex-1 min-h-screen overflow-x-hidden">
-        <Navbar />
-        <main className="flex-1">
-          {children}
-        </main>
-        {showFooter && <Footer />}
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-background">
+        {showSidebar && !isMobile && <Sidebar />}
+        <div className="flex flex-col flex-1 min-h-screen overflow-x-hidden">
+          <Navbar />
+          <main className="flex-1">
+            {children}
+          </main>
+          {showFooter && <Footer />}
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
