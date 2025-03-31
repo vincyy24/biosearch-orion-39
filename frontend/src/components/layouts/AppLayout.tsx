@@ -4,6 +4,7 @@ import Navbar from "@/components/navigation/Navbar";
 import Sidebar from "@/components/navigation/Sidebar";
 import Footer from "@/components/layouts/Footer";
 import { SidebarProvider } from "../ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -17,6 +18,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   showFooter = true
 }) => {
   const [isMobile, setIsMobile] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   // Check if the current window width is mobile
   useEffect(() => {
@@ -32,10 +34,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({
     };
   }, []);
 
+  // Determine whether to show the sidebar based on auth status
+  const shouldShowSidebar = showSidebar && isAuthenticated && !isMobile;
+
   return (
     <SidebarProvider>
       <div className="flex flex-1 min-h-screen bg-background">
-        {showSidebar && !isMobile && (
+        {shouldShowSidebar && (
           <div className="sticky top-0 h-screen">
             <Sidebar />
           </div>

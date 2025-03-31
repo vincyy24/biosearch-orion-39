@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const STATUS_COLORS = {
   active: "bg-green-100 text-green-800 hover:bg-green-200",
@@ -23,6 +24,7 @@ const ResearchProjects = () => {
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const loadProjects = async () => {

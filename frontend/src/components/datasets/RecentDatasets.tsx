@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchRecentDatasets } from "@/services/api";
@@ -20,6 +21,8 @@ interface Dataset {
   method?: string;
   electrode?: string;
   instrument?: string;
+  experiment_type?: string;
+  electrode_material?: string;
 }
 
 const RecentDatasets = () => {
@@ -32,9 +35,9 @@ const RecentDatasets = () => {
     try {
       setLoading(true);
       const data = await fetchRecentDatasets();
-      setDatasets(data);
+      setDatasets(data.results || []);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load recent datasets:", err);
       setError("Failed to load recent datasets. Please try again later.");
       toast({

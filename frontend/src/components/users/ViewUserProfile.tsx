@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,12 +9,14 @@ import { BookOpen, Database, ExternalLink, Mail, MessageSquare, User, Users } fr
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import PublicationCard from "@/components/publications/PublicationCard";
+import { fetchUserProfile } from "@/services/api";
 
 interface Publication {
   id: string;
   title: string;
   journal: string;
   year: string;
+  doi?: string;
 }
 
 interface Dataset {
@@ -32,6 +33,8 @@ interface UserProfile {
   publications: Publication[];
   datasets: Dataset[];
   joined_date: string;
+  orcid_id?: string;
+  email?: string;
 }
 
 interface ViewUserProfileProps {
@@ -47,56 +50,13 @@ const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) 
   const { toast } = useToast();
   
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const loadUserProfile = async () => {
       setLoading(true);
       try {
-        // In a real app, this would call the API with the username
-        // For now, we'll simulate the API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate profile data
-        const isOwnProfile = user?.username === username;
-        
-        const mockProfile: UserProfile = {
-          id: "u1",
-          username: username,
-          name: username === "janesmith" ? "Dr. Jane Smith" : 
-                username === "michaelchen" ? "Dr. Michael Chen" : 
-                `${username.charAt(0).toUpperCase() + username.slice(1)} Researcher`,
-          publications: [
-            {
-              id: "p1",
-              title: "Novel Electrochemical Sensors for Glucose Detection",
-              journal: "Journal of Electroanalytical Chemistry",
-              year: "2023"
-            },
-            {
-              id: "p2",
-              title: "Machine Learning Approaches for Voltammetric Data Analysis",
-              journal: "Analytical Chemistry",
-              year: "2022"
-            }
-          ],
-          datasets: [
-            {
-              id: "d1",
-              file_name: "Cyclic Voltammetry Data Set",
-              description: "Raw data from cyclic voltammetry experiments",
-              upload_date: "2023-05-15T10:30:00Z"
-            },
-            {
-              id: "d2",
-              file_name: "Impedance Spectroscopy Measurements",
-              description: "Frequency domain measurements for battery electrodes",
-              upload_date: "2023-03-22T14:45:00Z"
-            }
-          ],
-          joined_date: "2023-01-10T08:00:00Z"
-        };
-        
-        setProfile(mockProfile);
+        const profileData = await fetchUserProfile(username);
+        setProfile(profileData);
       } catch (error) {
-        console.error("Error fetching user profile:", error);
+        console.error("Error loading user profile:", error);
         if (onError) {
           onError("Failed to load user profile");
         } else {
@@ -112,9 +72,9 @@ const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) 
     };
 
     if (username) {
-      fetchUserProfile();
+      loadUserProfile();
     }
-  }, [username, user, toast, onError]);
+  }, [username, toast, onError]);
 
   const handleConnectClick = () => {
     toast({

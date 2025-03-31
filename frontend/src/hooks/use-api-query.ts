@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { ApiResponse } from '@/types/common';
+import apiClient from '@/services/api';
 
 // Generic API query hook
 export function useApiQuery<T>(
@@ -80,12 +80,8 @@ export function useExperiment(experimentId: string, options?: UseQueryOptions) {
   return useApiQuery(
     ['experiment', experimentId],
     async () => {
-      const response = await fetch(`/api/voltammetry/${experimentId}/`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch experiment');
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/dashboard/voltammetry/${experimentId}/`);
+      return response.data;
     },
     options
   );
@@ -96,19 +92,16 @@ export function useExportExperiment(experimentId: string, format: 'csv' | 'json'
   return useApiMutation<{ success: boolean }, void>(
     'exportExperiment',
     async () => {
-      const response = await fetch(`/api/experiment-export/${experimentId}/?format=${format}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to export experiment as ${format}`);
-      }
+      const response = await apiClient.get(`/api/experiment-export/${experimentId}/?format=${format}`, {
+        responseType: 'blob'
+      });
       
       // For file downloads, we need to handle the response as a blob
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       
       // Get filename from Content-Disposition header if available
-      const contentDisposition = response.headers.get('Content-Disposition');
+      const contentDisposition = response.headers['content-disposition'];
       let filename = `experiment_${experimentId}.${format}`;
       
       if (contentDisposition) {
@@ -133,6 +126,84 @@ export function useExportExperiment(experimentId: string, format: 'csv' | 'json'
       meta: {
         successMessage: `Experiment exported successfully as ${format}`,
       }
+    }
+  );
+}
+
+// Research projects hooks
+export function useResearchProjects(page = 1, pageSize = 10) {
+  return useApiQuery(
+    ['researchProjects', page, pageSize],
+    async () => {
+      const response = await apiClient.get('/api/research/projects/', {
+        params: { page, page_size: pageSize }
+      });
+      return response.data;
+    }
+  );
+}
+
+export function useResearchProject(projectId: string) {
+  return useApiQuery(
+    ['researchProject', projectId],
+    async () => {
+      const response = await apiClient.get(`/api/research/projects/${projectId}/`);
+      return response.data;
+    }
+  );
+}
+
+// Publications hooks
+export function usePublications(page = 1, perPage = 10, query = '', filters = {}) {
+  return useApiQuery(
+    ['publications', page, perPage, query, filters],
+    async () => {
+      const params = { page, per_page: perPage, query, ...filters };
+      const response = await apiClient.get('/api/publications/', { params });
+      return response.data;
+    }
+  );
+}
+
+export function usePublication(doi: string) {
+  return useApiQuery(
+    ['publication', doi],
+    async () => {
+      const response = await apiClient.get(`/api/publications/${doi}/`);
+      return response.data;
+    }
+  );
+}
+
+// User profile and settings hooks
+export function useUserProfile(username: string) {
+  return useApiQuery(
+    ['userProfile', username],
+    async () => {
+      const response = await apiClient.get(`/api/users/profile/${username}/`);
+      return response.data;
+    }
+  );
+}
+
+export function useUserSettings() {
+  return useApiQuery(
+    ['userSettings'],
+    async () => {
+      const response = await apiClient.get('/api/users/settings/');
+      return response.data;
+    }
+  );
+}
+
+export function useUserNotifications(page = 1, perPage = 10) {
+  return useApiQuery(
+    ['userNotifications', page, perPage],
+    async () => {
+      const response = await apiClient.get('/api/users/notifications/', {
+        params: { page, per_page: perPage }
+      });
+      return response.data;
     }
   );
 }
