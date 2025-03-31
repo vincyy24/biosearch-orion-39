@@ -1,5 +1,3 @@
-
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -68,7 +66,7 @@ const routes = [
   { path: "/analytics", element: <ProtectedRoute><Analytics /></ProtectedRoute> },
   { path: "/404", element: <NotFound /> },
   { path: "*", element: <Navigate to="/404" replace /> }
-]
+];
 
 
 function App() {
