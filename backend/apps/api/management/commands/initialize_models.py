@@ -25,7 +25,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'Created {len(electrodes)} default electrodes'))
                 
                 # Create default instruments
-                instruments = ['Autolab PGSTAT', 'CHI Electrochemical Workstation', 'Gamry Potentiostat']
+                instruments = ['Autolab PGSTAT', 'CHI Electrochemical Workstation', 'Gamry Potentiostat', 'MiniStat']
                 for instrument_name in instruments:
                     Instrument.objects.get_or_create(name=instrument_name)
                 self.stdout.write(self.style.SUCCESS(f'Created {len(instruments)} default instruments'))
@@ -42,9 +42,9 @@ class Command(BaseCommand):
                     User.objects.create_superuser(
                         username='admin',
                         email='admin@example.com',
-                        password='adminpassword'
+                        password='admin'
                     )
-                    self.stdout.write(self.style.SUCCESS('Created default superuser admin/adminpassword'))
+                    self.stdout.write(self.style.SUCCESS('Created default superuser admin/admin'))
                 
             self.stdout.write(self.style.SUCCESS('Database initialized successfully!'))
             

@@ -1,9 +1,11 @@
-
 from django.shortcuts import render
 from django.http import JsonResponse
 from .models import VoltammetryData
 from django.db.models import Q
-import json
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import FileUpload
 
 def get_voltammetry_data(request, experiment_id=None):
     """API view to get voltammetry data"""
@@ -107,3 +109,75 @@ def get_search_suggestions(request):
     all_suggestions = list(title_suggestions) + list(electrode_suggestions) + list(electrolyte_suggestions)
     
     return JsonResponse({'suggestions': all_suggestions[:10]})
+
+
+class DashboardSummaryView(APIView):
+    """
+    API view to retrieve dashboard summary data.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve dashboard summary data
+        return Response({
+            'datasets_count': 42,
+            'recent_datasets': [],
+            'publications_count': 18,
+            'recent_publications': [],
+            'projects_count': 7,
+            'recent_projects': []
+        })
+
+
+class UserActivityView(APIView):
+    """
+    API view to retrieve user activity data.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve user activity data
+        return Response({
+            'activities': []
+        })
+
+
+class RecentExperimentsView(APIView):
+    """
+    API view to retrieve recent experiments.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Implementation to retrieve recent experiments
+        return Response({
+            'experiments': []
+        })
+
+
+class RecentDatasetsView(APIView):
+    """
+    API view to get recent public datasets for the homepage.
+    """
+    def get(self, request):
+        recent_datasets = FileUpload.objects.filter(
+            is_public=True
+        ).order_by('-upload_date')[:5]
+        
+        datasets = []
+        for dataset in recent_datasets:
+            datasets.append({
+                'id': dataset.id,
+                'title': dataset.file_name,
+                'description': dataset.description,
+                'category': dataset.data_type.name if dataset.data_type else "Unknown",
+                'access': 'public',
+                'author': dataset.user.username,
+                'date': dataset.upload_date.isoformat(),
+                'downloads': dataset.downloads_count,
+                'method': dataset.method,
+                'electrode': dataset.electrode_type,
+                'instrument': dataset.instrument,
+            })
+        return Response(datasets)
+

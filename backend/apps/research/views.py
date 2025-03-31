@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q
 
-from .models_research import ResearchProject, ResearchProjectCollaborator, DatasetComparison, OrcidProfile
+from .models import ResearchProject, ResearchProjectCollaborator, DatasetComparison, OrcidProfile
 from apps.dashboard.models import VoltammetryData, FileUpload
 
 @method_decorator(csrf_exempt, name='dispatch')

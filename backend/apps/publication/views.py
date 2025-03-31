@@ -12,9 +12,81 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import mimetypes
 import traceback
-from .models import Publication, PublicationResearcher, Researcher, Dataset
-from .models_research import ResearchProject
-from urllib.parse import quote, unquote
+from .models import Publication, PublicationResearcher, Researcher, Dataset, ResearchProject
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+# Create your views here.
+
+
+class PublicationList(APIView):
+    """
+    API view to list and create publications
+    """
+    def get(self, request):
+        publication_id = request.data.get("publication_id")
+    
+        if publication_id:
+            try:
+                publication = Publication.objects.get(id=publication_id)
+                return Response({
+                'id': publication.id,
+                'title': publication.title,
+                'author': publication.author,
+                'year': publication.year,
+                'citations': publication.citations
+            })
+            except Publication.DoesNotExist:
+                return Response({'error': 'Publication not found'}, status=status.HTTP_404_NOT_FOUND)
+        publications = Publication.objects.all().values('id', 'doi', 'title', 'author', 'year', 'citations', 'is_public')
+        return Response(list(publications))
+    
+    def post(self, request):
+        """
+        Create a new publication
+        """
+        # Get data from request
+        title = request.data.get('title')
+        authors = request.data.get('authors')
+        journal = request.data.get('journal')
+        year = request.data.get('year')
+        doi = request.data.get('doi')
+        abstract = request.data.get('abstract')
+        
+        # Validate required fields
+        if not title or not authors or not journal or not year:
+            return Response(
+                {'error': 'Title, authors, journal, and year are required fields'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Create the publication
+            publication = Publication.objects.create(
+                title=title,
+                author=", ".join([author['name'] for author in authors]) if isinstance(authors, list) else authors,
+                journal=journal,
+                year=year,
+                doi=doi or "",
+                abstract=abstract or "",
+                is_public=True,  # Default to public
+                user=request.user if request.user.is_authenticated else None
+            )
+            
+            return Response({
+                'id': publication.id,
+                'title': publication.title,
+                'doi': publication.doi,
+                'message': 'Publication created successfully'
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class PublicationDetail(View):
     def get(self, request, doi: str=None):

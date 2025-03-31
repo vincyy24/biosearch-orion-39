@@ -1,4 +1,3 @@
-
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.core.paginator import Paginator
