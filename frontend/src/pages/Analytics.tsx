@@ -1,354 +1,328 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer
-} from "recharts";
-import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie } from "recharts";
+import { Loader2, Download, Eye, Bookmark, Users, TrendingUp, Calendar, RefreshCw } from "lucide-react";
+import { useAnalytics } from "@/contexts/AnalyticsContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
-
-interface AnalyticsData {
-  dataset_count: number;
-  dataset_downloads: number;
-  publication_count: number;
-  publication_citations: number;
-  collaboration_count: number;
-  monthly_activity: {
-    month: string;
-    datasets: number;
-    publications: number;
-  }[];
-}
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Analytics = () => {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [isLoading, setIsLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+  const { data, isLoading, error, refreshData } = useAnalytics();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const [timeRange, setTimeRange] = useState("30d");
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Colors for charts
-  const COLORS = ["#8B5CF6", "#22C55E", "#3B82F6", "#F97316", "#EF4444"];
-
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch analytics data from API
-        // For now, we'll use mock data
-        const mockData: AnalyticsData = {
-          dataset_count: 45,
-          dataset_downloads: 312,
-          publication_count: 18,
-          publication_citations: 87,
-          collaboration_count: 9,
-          monthly_activity: [
-            { month: "Jan", datasets: 3, publications: 1 },
-            { month: "Feb", datasets: 5, publications: 2 },
-            { month: "Mar", datasets: 4, publications: 1 },
-            { month: "Apr", datasets: 6, publications: 3 },
-            { month: "May", datasets: 8, publications: 2 },
-            { month: "Jun", datasets: 7, publications: 4 },
-            { month: "Jul", datasets: 9, publications: 3 },
-            { month: "Aug", datasets: 10, publications: 5 },
-            { month: "Sep", datasets: 12, publications: 6 },
-            { month: "Oct", datasets: 15, publications: 7 },
-            { month: "Nov", datasets: 18, publications: 8 },
-            { month: "Dec", datasets: 20, publications: 9 }
-          ]
-        };
-        
-        setAnalyticsData(mockData);
-      } catch (error) {
-        console.error("Error fetching analytics data:", error);
-        toast({
-          variant: "destructive",
-          title: "Failed to load analytics",
-          description: "There was an error fetching analytics data. Please try again later."
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (isAuthenticated) {
-      fetchAnalytics();
-    } else {
-      setIsLoading(false);
+  // Redirect if not authenticated
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please log in to view analytics",
+      });
+      navigate("/login", { state: { from: "/analytics" } });
     }
-  }, [isAuthenticated, toast]);
+  }, [isAuthenticated, navigate, toast]);
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await refreshData();
+      toast({
+        title: "Refreshed",
+        description: "Analytics data has been updated",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Refresh failed",
+        description: "Could not refresh analytics data",
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Generate sample data for different time periods
+  const generateTimeSeriesData = (period: string) => {
+    const now = new Date();
+    const data = [];
+    
+    let days = 30;
+    if (period === "7d") days = 7;
+    if (period === "90d") days = 90;
+    if (period === "1y") days = 365;
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - (days - i - 1));
+      
+      // Generate random but realistic looking data
+      const views = Math.floor(Math.random() * 50) + 10;
+      const downloads = Math.floor(Math.random() * 15) + 5;
+      
+      data.push({
+        date: date.toISOString().split('T')[0],
+        views,
+        downloads
+      });
+    }
+    
+    return data;
+  };
+
+  const timeSeriesData = generateTimeSeriesData(timeRange);
+  
+  // Sample data for pie chart
+  const experimentTypeData = [
+    { name: 'Cyclic Voltammetry', value: 40 },
+    { name: 'Differential Pulse', value: 25 },
+    { name: 'Linear Sweep', value: 20 },
+    { name: 'Chronoamperometry', value: 10 },
+    { name: 'Other', value: 5 }
+  ];
+  
+  // Sample data for bar chart
+  const userActivityData = [
+    { name: 'Mon', uploads: 12, downloads: 19 },
+    { name: 'Tue', uploads: 19, downloads: 21 },
+    { name: 'Wed', uploads: 30, downloads: 28 },
+    { name: 'Thu', uploads: 27, downloads: 32 },
+    { name: 'Fri', uploads: 18, downloads: 24 },
+    { name: 'Sat', uploads: 23, downloads: 22 },
+    { name: 'Sun', uploads: 34, downloads: 29 }
+  ];
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   if (!isAuthenticated) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto py-6 max-w-7xl">
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics</CardTitle>
-              <CardDescription>
-                You need to be logged in to view analytics.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </AppLayout>
-    );
+    return null; // Don't render anything if not authenticated
   }
-
-  if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto py-6 max-w-7xl">
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics</CardTitle>
-              <CardDescription>
-                Loading analytics data...
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </CardContent>
-          </Card>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  const pieData = [
-    { name: "Datasets", value: analyticsData?.dataset_count || 0 },
-    { name: "Publications", value: analyticsData?.publication_count || 0 },
-    { name: "Collaborations", value: analyticsData?.collaboration_count || 0 }
-  ];
 
   return (
     <AppLayout>
-      <div className="container mx-auto py-6 space-y-6 max-w-7xl">
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        
-        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="datasets">Datasets</TabsTrigger>
-            <TabsTrigger value="publications">Publications</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="overview" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="container py-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Analytics</h1>
+            <p className="text-muted-foreground">
+              Insights and statistics about your research data
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-[150px]">
+                <Calendar className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Time Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+                <SelectItem value="1y">Last year</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Total Datasets</CardTitle>
-                  <CardDescription>All your uploaded datasets</CardDescription>
+                  <CardTitle className="text-sm font-medium">Total Views</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{analyticsData?.dataset_count}</div>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    {analyticsData?.dataset_downloads} total downloads
+                  <div className="flex items-center">
+                    <Eye className="h-5 w-5 text-primary mr-2" />
+                    <div className="text-2xl font-bold">{data.totalViews.toLocaleString()}</div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +{Math.floor(data.totalViews * 0.12)} from previous period
                   </p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Publications</CardTitle>
-                  <CardDescription>Your registered publications</CardDescription>
+                  <CardTitle className="text-sm font-medium">Total Downloads</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{analyticsData?.publication_count}</div>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    {analyticsData?.publication_citations} total citations
+                  <div className="flex items-center">
+                    <Download className="h-5 w-5 text-primary mr-2" />
+                    <div className="text-2xl font-bold">{data.totalDownloads.toLocaleString()}</div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +{Math.floor(data.totalDownloads * 0.08)} from previous period
                   </p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Collaborations</CardTitle>
-                  <CardDescription>Active collaborations</CardDescription>
+                  <CardTitle className="text-sm font-medium">Saved Items</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{analyticsData?.collaboration_count}</div>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    Across {analyticsData?.collaboration_count || 0} projects
+                  <div className="flex items-center">
+                    <Bookmark className="h-5 w-5 text-primary mr-2" />
+                    <div className="text-2xl font-bold">{data.totalSavedItems.toLocaleString()}</div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +{Math.floor(data.totalSavedItems * 0.15)} from previous period
                   </p>
                 </CardContent>
               </Card>
             </div>
-            
-            {/* Activity Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Activity</CardTitle>
-                <CardDescription>
-                  Dataset uploads and publication registrations over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={analyticsData?.monthly_activity || []}
-                      margin={{
-                        top: 10,
-                        right: 30,
-                        left: 0,
-                        bottom: 0,
-                      }}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Activity Over Time</CardTitle>
+                  <CardDescription>
+                    Views and downloads over the selected time period
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart
+                      data={timeSeriesData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(date) => {
+                          // Simplify date format based on time range
+                          if (timeRange === "7d") {
+                            return new Date(date).toLocaleDateString(undefined, { weekday: 'short' });
+                          } else if (timeRange === "1y") {
+                            return new Date(date).toLocaleDateString(undefined, { month: 'short' });
+                          } else {
+                            return new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                          }
+                        }}
+                      />
                       <YAxis />
-                      <Tooltip />
+                      <Tooltip 
+                        labelFormatter={(date) => new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      />
                       <Legend />
-                      <Area 
-                        type="monotone" 
-                        dataKey="datasets" 
-                        stackId="1"
-                        stroke="#8B5CF6" 
-                        fill="#8B5CF6" 
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="publications" 
-                        stackId="2" 
-                        stroke="#3B82F6" 
-                        fill="#3B82F6" 
-                      />
-                    </AreaChart>
+                      <Line type="monotone" dataKey="views" stroke="#8884d8" activeDot={{ r: 8 }} name="Views" />
+                      <Line type="monotone" dataKey="downloads" stroke="#82ca9d" name="Downloads" />
+                    </LineChart>
                   </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Distribution Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Content Distribution</CardTitle>
-                <CardDescription>
-                  Distribution of your research content
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Experiment Types</CardTitle>
+                  <CardDescription>
+                    Distribution of experiment types
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={pieData}
+                        data={experimentTypeData}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100}
+                        outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
+                        nameKey="name"
+                        label={(entry) => entry.name}
+                        labelLine={false}
                       >
-                        {pieData.map((entry, index) => (
+                        {experimentTypeData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        formatter={(value) => [`${value}`, 'Count']}
-                      />
-                      <Legend />
+                      <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
                     </PieChart>
                   </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="datasets" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Dataset Analytics</CardTitle>
-                <CardDescription>Performance of your datasets</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={[
-                        { name: 'Dataset A', downloads: 45, shares: 12 },
-                        { name: 'Dataset B', downloads: 32, shares: 8 },
-                        { name: 'Dataset C', downloads: 78, shares: 21 },
-                        { name: 'Dataset D', downloads: 23, shares: 5 },
-                        { name: 'Dataset E', downloads: 56, shares: 15 },
-                      ]}
-                      margin={{
-                        top: 20,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                      }}
-                    >
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Weekly Activity</CardTitle>
+                  <CardDescription>
+                    Uploads and downloads by day of week
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={userActivityData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="downloads" fill="#8B5CF6" />
-                      <Bar dataKey="shares" fill="#3B82F6" />
+                      <Bar dataKey="uploads" fill="#8884d8" name="Uploads" />
+                      <Bar dataKey="downloads" fill="#82ca9d" name="Downloads" />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="publications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Publication Analytics</CardTitle>
-                <CardDescription>Citations and impact of your publications</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={[
-                        { name: 'Publication A', citations: 23, views: 456 },
-                        { name: 'Publication B', citations: 17, views: 321 },
-                        { name: 'Publication C', citations: 45, views: 876 },
-                        { name: 'Publication D', citations: 12, views: 234 },
-                        { name: 'Publication E', citations: 29, views: 543 },
-                      ]}
-                      margin={{
-                        top: 20,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="citations" fill="#F97316" />
-                      <Bar dataKey="views" fill="#22C55E" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Most Popular Data</CardTitle>
+                  <CardDescription>
+                    Your most viewed research data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {data.popularData.slice(0, 5).map((item, i) => (
+                      <div key={item.id} className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-medium">
+                          {i + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium leading-none mb-1 truncate">
+                            {item.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {item.views} views
+                          </p>
+                          <Progress 
+                            value={(item.views / data.popularData[0].views) * 100}
+                            className="h-1.5 mt-2"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
       </div>
     </AppLayout>
   );

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layouts/AppLayout";
@@ -15,7 +16,7 @@ import PublicationRegistration from "@/components/publications/PublicationRegist
 import { fetchResearchProjects } from "@/services/researchService";
 import { searchPublicationsByDOI } from "@/services/doiService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import axios from "axios";
+import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/services/api";
 
 interface FileInfo {
@@ -38,6 +39,7 @@ interface Project {
   id: string;
   title: string;
   is_public: boolean;
+  is_head: boolean; // Added to check if user is head researcher
 }
 
 interface Publication {
@@ -51,6 +53,7 @@ const Upload = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isAuthenticated, user } = useAuth();
 
   const [uploadState, setUploadState] = useState<UploadState>({
     isPublic: false,
@@ -68,10 +71,23 @@ const Upload = () => {
 
   const [isUploading, setIsUploading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [activeTab, setActiveTab] = useState("project");
   const [showRegisterPublication, setShowRegisterPublication] = useState(false);
   const [selectedItemIsPublic, setSelectedItemIsPublic] = useState<boolean | null>(null);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please log in to upload data",
+      });
+      navigate("/login", { state: { from: "/upload" } });
+    }
+  }, [isAuthenticated, navigate, toast]);
 
   // Fetch research projects
   useEffect(() => {
@@ -80,9 +96,14 @@ const Upload = () => {
         const response = await fetchResearchProjects();
         const projectsWithVisibility = response.results.map((project: any) => ({
           ...project,
-          is_public: Boolean(project.is_public)
+          is_public: Boolean(project.is_public),
+          is_head: Boolean(project.is_head)
         }));
         setProjects(projectsWithVisibility || []);
+        
+        // Filter projects to show only those where user is head researcher
+        const userHeadProjects = projectsWithVisibility.filter((project: Project) => project.is_head);
+        setFilteredProjects(userHeadProjects);
       } catch (error) {
         console.error("Error loading research projects:", error);
         toast({
@@ -112,9 +133,11 @@ const Upload = () => {
       }
     };
 
-    loadProjects();
-    loadPublications();
-  }, [toast]);
+    if (isAuthenticated) {
+      loadProjects();
+      loadPublications();
+    }
+  }, [isAuthenticated, toast]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileId: string) => {
     const selectedFiles = e.target.files;
@@ -311,18 +334,25 @@ const Upload = () => {
     try {
       const uploadPromises = uploadState.files.map(async (fileInfo) => {
         const formData = new FormData();
-        formData.append('file', fileInfo.file);
-        formData.append('title', fileInfo.fileName);
-        formData.append('description', fileInfo.description);
-        formData.append('file_type', fileInfo.dataType);
-        formData.append('experiment_type', fileInfo.experimentType);
-        formData.append('is_public', uploadState.isPublic.toString());
+        
+        if (fileInfo.file) {
+          // Read the file as text
+          const fileText = await fileInfo.file.text();
+          
+          // Append the text content instead of the file
+          formData.append('file_content', fileText);
+          formData.append('file_name', fileInfo.fileName);
+          formData.append('description', fileInfo.description);
+          formData.append('file_type', fileInfo.dataType);
+          formData.append('experiment_type', fileInfo.experimentType);
+          formData.append('is_public', uploadState.isPublic.toString());
+        }
 
         let url = '';
         if (activeTab === "project" && uploadState.projectId) {
-          url = `/research/projects/${uploadState.projectId}/upload/`;
+          url = `/api/research/projects/${uploadState.projectId}/upload/`;
         } else if (activeTab === "publication" && uploadState.publicationDoi) {
-          url = `/publications/${uploadState.publicationDoi}/upload/`;
+          url = `/api/publications/${uploadState.publicationDoi}/upload/`;
         }
 
         return apiClient.post(url, formData);
@@ -355,6 +385,10 @@ const Upload = () => {
 
   const isInputDisabled = (activeTab === "project" && !uploadState.projectId) ||
     (activeTab === "publication" && !uploadState.publicationDoi);
+
+  if (!isAuthenticated) {
+    return null; // Don't render anything if not authenticated
+  }
 
   return (
     <AppLayout>
@@ -416,7 +450,7 @@ const Upload = () => {
                               <SelectValue placeholder="Select a research project" />
                             </SelectTrigger>
                             <SelectContent>
-                              {projects.map((project) => (
+                              {filteredProjects.map((project) => (
                                 <SelectItem key={project.id} value={project.id.toString()}>
                                   {project.title} {!project.is_public && "(Private)"}
                                 </SelectItem>

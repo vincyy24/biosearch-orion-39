@@ -35,7 +35,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   return (
     <SidebarProvider>
       <div className="flex flex-1 min-h-screen bg-background">
-        {showSidebar && !isMobile && <Sidebar />}
+        {showSidebar && !isMobile && (
+          <div className="sticky top-0 h-screen">
+            <Sidebar />
+          </div>
+        )}
         <div className="flex flex-col flex-1 min-h-screen overflow-x-hidden">
           <Navbar />
           <main className="flex-1">

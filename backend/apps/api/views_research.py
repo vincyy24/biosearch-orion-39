@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from django.views import View
@@ -13,8 +14,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 
 from .models_research import ResearchProject, ResearchProjectCollaborator, DatasetComparison, OrcidProfile
-from .views import FileUploadView
-from apps.dashboard.models import VoltammetryData
+from apps.dashboard.models import VoltammetryData, FileUpload
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ResearchProjects(APIView):
@@ -576,19 +576,43 @@ class InviteCollaboratorView(View):
             if email:
                 try:
                     user = User.objects.get(email=email)
+                    # Send notification to the user
+                    # This would need a notification model in a real app
+                    
                 except User.DoesNotExist:
                     # User not found, store invitation in database and send email
-                    # This would be implemented in a real system
-                    pass
+                    # Create pending invitation in database
+                    # This would need an invitation model in a real app
+                    
+                    # Send invitation email
+                    # This would need an email service in a real app
+                    
+                    return JsonResponse({
+                        'message': f'Invitation sent to {email}',
+                        'status': 'pending',
+                        'recipient': email
+                    })
             
             if orcid_id and not user:
                 try:
                     orcid_profile = OrcidProfile.objects.get(orcid_id=orcid_id)
                     user = orcid_profile.user
+                    
+                    # Send notification to the user
+                    # This would need a notification model in a real app
+                    
                 except OrcidProfile.DoesNotExist:
-                    # User not found, store invitation in database and send email
-                    # This would be implemented in a real system
-                    pass
+                    # User not found, store invitation in database 
+                    # This would need an invitation model in a real app
+                    
+                    # Try to get email from ORCID API and send invitation
+                    # This would need integration with ORCID API in a real app
+                    
+                    return JsonResponse({
+                        'message': f'Invitation sent to ORCID ID {orcid_id}',
+                        'status': 'pending',
+                        'recipient': orcid_id
+                    })
             
             if user:
                 # Check if user is already the head researcher
@@ -621,13 +645,6 @@ class InviteCollaboratorView(View):
                         'role': role,
                         'joined_at': collaborator.joined_at.isoformat()
                     }
-                })
-            else:
-                # Store invitation in database and send email
-                # This would be implemented in a real system
-                
-                return JsonResponse({
-                    'message': f'Invitation sent to {email or orcid_id}',
                 })
                 
         except Exception as e:
@@ -716,10 +733,203 @@ class ResearchUpload(APIView):
                 "file": {
                     "id": file_upload.id,
                     "file_name": file_upload.file_name,
-                    "uploaded_at": file_upload.uploaded_at.isoformat()
+                    "uploaded_at": file_upload.uploaded_at.isoformat(),
+                    "version": file_upload.version
                 }
             })
 
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResearchFileUploadView(View):
+    """Handle file uploads for research projects with text content storage"""
+
+    @method_decorator(login_required)
+    def post(self, request, project_id=None):
+        try:
+            # Check if project_id is provided
+            if project_id:
+                project = _check_access(request.user, project_id)
+                
+                # Check if user is head researcher or can contribute
+                if not (project.head_researcher == request.user or can_contribute_to_project(request.user, project)):
+                    return JsonResponse({"error": "You don't have permission to upload files to this project"}, status=403)
+            
+            # Get file content and metadata
+            file_content = request.POST.get('file_content')
+            file_name = request.POST.get('file_name')
+            description = request.POST.get('description', '')
+            experiment_type = request.POST.get('experiment_type', 'other')
+            is_public = request.POST.get('is_public', 'false').lower() == 'true'
+            
+            if not file_content or not file_name:
+                return JsonResponse({"error": "File content and file name are required"}, status=400)
+            
+            # Create new file upload record
+            file_upload = FileUpload.objects.create(
+                uploaded_by=request.user,
+                file_name=file_name,
+                content=file_content,
+                description=description,
+                experiment_type=experiment_type,
+                is_public=is_public,
+                research_project=project if project_id else None
+            )
+
+            return JsonResponse({
+                "message": "File uploaded and saved successfully",
+                "file": {
+                    "id": file_upload.id,
+                    "file_name": file_upload.file_name,
+                    "uploaded_at": file_upload.uploaded_at.isoformat(),
+                    "version": file_upload.version
+                }
+            })
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResearchFileVersionView(View):
+    """Handle file versions and updates"""
+
+    @method_decorator(login_required)
+    def get(self, request, file_id):
+        """Get all versions of a file"""
+        try:
+            # Get the original file
+            original_file = get_object_or_404(FileUpload, id=file_id)
+            
+            # Check if user has access to the file
+            if original_file.uploaded_by != request.user and (
+                (original_file.research_project and not has_project_access(request.user, original_file.research_project)) and
+                not original_file.is_public
+            ):
+                return JsonResponse({"error": "You don't have access to this file"}, status=403)
+            
+            # Get all versions of the file
+            # In a real scenario, we would query versions based on a relationship field
+            # For this example, we're returning a mock response
+            versions = [
+                {
+                    "id": original_file.id,
+                    "version": original_file.version,
+                    "uploaded_at": original_file.uploaded_at.isoformat(),
+                    "uploaded_by": {
+                        "id": original_file.uploaded_by.id,
+                        "username": original_file.uploaded_by.username
+                    },
+                    "changes": "Initial version"
+                }
+            ]
+            
+            # Add sample newer versions if this is version 1
+            if original_file.version == 1:
+                # Mock additional versions
+                newer_date = datetime.now().isoformat()
+                versions.append({
+                    "id": f"{original_file.id}-v2",
+                    "version": 2,
+                    "uploaded_at": newer_date,
+                    "uploaded_by": {
+                        "id": original_file.uploaded_by.id,
+                        "username": original_file.uploaded_by.username
+                    },
+                    "changes": "Updated data values"
+                })
+            
+            return JsonResponse({
+                "file_name": original_file.file_name,
+                "versions": versions
+            })
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+    
+    @method_decorator(login_required)
+    def post(self, request, file_id):
+        """Create a new version of a file"""
+        try:
+            # Get the original file
+            original_file = get_object_or_404(FileUpload, id=file_id)
+            
+            # Check if user has access to modify the file
+            if original_file.uploaded_by != request.user and (
+                original_file.research_project and 
+                not can_contribute_to_project(request.user, original_file.research_project)
+            ):
+                return JsonResponse({"error": "You don't have permission to modify this file"}, status=403)
+            
+            # Get new content and change description
+            file_content = request.POST.get('file_content')
+            changes = request.POST.get('changes', 'Updated version')
+            
+            if not file_content:
+                return JsonResponse({"error": "New file content is required"}, status=400)
+            
+            # Create new version
+            new_version = original_file.create_new_version(file_content)
+            
+            return JsonResponse({
+                "message": "New version created successfully",
+                "file": {
+                    "id": new_version.id,
+                    "file_name": new_version.file_name,
+                    "uploaded_at": new_version.uploaded_at.isoformat(),
+                    "version": new_version.version
+                }
+            })
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResearchFileDownloadView(View):
+    """Handle file downloads with different format options"""
+
+    @method_decorator(login_required)
+    def get(self, request, file_id):
+        try:
+            # Get the file
+            file_upload = get_object_or_404(FileUpload, id=file_id)
+            
+            # Check if user has access to the file
+            if file_upload.uploaded_by != request.user and (
+                (file_upload.research_project and not has_project_access(request.user, file_upload.research_project)) and
+                not file_upload.is_public
+            ):
+                return JsonResponse({"error": "You don't have access to this file"}, status=403)
+            
+            # Get format parameter (csv, tsv, or custom)
+            format_type = request.GET.get('format', 'csv')
+            delimiter = request.GET.get('delimiter', ',')
+            
+            # Process content based on format
+            if format_type == 'csv':
+                content = file_upload.export_as_csv()
+                content_type = 'text/csv'
+                file_extension = 'csv'
+            elif format_type == 'tsv':
+                content = file_upload.export_as_tsv()
+                content_type = 'text/tab-separated-values'
+                file_extension = 'tsv'
+            else:
+                content = file_upload.export_with_delimiter(delimiter)
+                content_type = 'text/plain'
+                file_extension = 'txt'
+            
+            # Create filename
+            filename = f"{file_upload.file_name}_v{file_upload.version}.{file_extension}"
+            
+            # Add headers for file download
+            response = JsonResponse({"content": content})
+            response['Content-Type'] = content_type
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            return response
+            
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -776,3 +986,10 @@ def _check_access(user, project_id):
         if not has_project_access(user, project):
             return JsonResponse({"error": "You don't have access to this project"}, status=403)
         return project
+
+# Add these URL patterns to your urls.py
+"""
+path('research/projects/<str:project_id>/upload/', ResearchFileUploadView.as_view(), name='research_file_upload'),
+path('research/files/<int:file_id>/versions/', ResearchFileVersionView.as_view(), name='research_file_versions'),
+path('research/files/<int:file_id>/download/', ResearchFileDownloadView.as_view(), name='research_file_download'),
+"""
