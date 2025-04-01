@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-
-
 class ContactSupport(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='support_requests', null=True, blank=True)
     subject = models.CharField(max_length=255)
@@ -18,5 +16,3 @@ class ContactSupport(models.Model):
         verbose_name = "Contact Support"
         verbose_name_plural = "Contact Support Requests"
         ordering = ['-created_at']
-
-

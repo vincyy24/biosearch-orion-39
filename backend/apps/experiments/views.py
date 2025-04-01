@@ -1,17 +1,22 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
+from .models import Electrode, Instrument, VoltammetryTechnique
+
 
 class ExperimentDataView(APIView):
     """
     API view to handle voltammetry data.
     """
+
     def get(self, request, experiment_id=None):
         from apps.dashboard.models import VoltammetryData
-        
+
         if experiment_id:
             try:
-                experiment = VoltammetryData.objects.get(experiment_id=experiment_id)
+                experiment = VoltammetryData.objects.get(
+                    experiment_id=experiment_id)
                 return Response({
                     'id': experiment.experiment_id,
                     'title': experiment.title,
@@ -40,6 +45,7 @@ class ExperimentRawDataView(APIView):
     """
     API view to retrieve raw voltammetry data.
     """
+
     def get(self, request, experiment_id):
         # Implementation to retrieve raw voltammetry data
         return Response({
@@ -51,6 +57,7 @@ class ExperimentPlotView(APIView):
     """
     API view to generate voltammetry plots.
     """
+
     def get(self, request, experiment_id):
         # Implementation to generate voltammetry plots
         return Response({
@@ -62,8 +69,53 @@ class ExportDataView(APIView):
     """
     API view to export data in various formats.
     """
+
     def get(self, request):
         # Implementation to export data
         return Response({
             'export_url': ''
         })
+
+
+# class Methods(APIView):
+#     """
+#     API view to get the list of methods
+#     """
+#     permission_classes = [AllowAny]
+
+#     def get(self, request):
+#         methods = Method.objects.all().values('id', 'name')
+#         return Response(list(methods))
+
+
+class Electrodes(APIView):
+    """
+    API view to get the list of electrodes
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        electrodes = Electrode.objects.all().values('id', 'type')
+        return Response(list(electrodes))
+
+
+class Instruments(APIView):
+    """
+    API view to get the list of instruments
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        instruments = Instrument.objects.all().values('id', 'name')
+        return Response(list(instruments))
+
+
+class VoltammetryTechniques(APIView):
+    """
+    API view to get the list of voltammetry techniques
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        techniques = VoltammetryTechnique.objects.all().values('id', 'name')
+        return Response(list(techniques))

@@ -1,20 +1,25 @@
-import json
-import uuid
-from datetime import datetime
-from rest_framework.views import APIView
-from django.http import JsonResponse
-from django.views import View
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from datetime import datetime
+import json
+import os
+import uuid
 
-from .models import ResearchProject, ResearchProjectCollaborator, DatasetComparison, OrcidProfile
-from apps.dashboard.models import VoltammetryData, FileUpload
+from backend.apps.collaboration.models import ResearchCollaborator
+from backend.apps.data.models import Dataset, DatasetComparison, FileUpload
+from backend.apps.experiments.models import Experiment
+from backend.apps.research.models import Research
+from backend.apps.users.models import OrcidProfile
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ResearchProjects(APIView):
@@ -22,10 +27,10 @@ class ResearchProjects(APIView):
     @method_decorator(login_required)
     def get(self, request):
         # List projects the user is involved in
-        headed_projects = ResearchProject.objects.filter(head_researcher=request.user)
+        headed_projects = Research.objects.filter(head_researcher=request.user)
         
         # Projects where user is a collaborator
-        collaborated_projects = ResearchProject.objects.filter(
+        collaborated_projects = Research.objects.filter(
             collaborators__user=request.user
         )
         
@@ -84,7 +89,7 @@ class ResearchProjects(APIView):
             project_id = f"RP-{uuid.uuid4().hex[:8].upper()}"
             
             # Create the project
-            project = ResearchProject.objects.create(
+            project = Research.objects.create(
                 project_id=project_id,
                 title=title,
                 description=description,
@@ -183,7 +188,7 @@ class ResearchProjectDetail(APIView):
                 project.description = data['description']
             if 'is_public' in data:
                 project.is_public = data['is_public']
-            if 'status' in data and data['status'] in dict(ResearchProject.PROJECT_STATUS):
+            if 'status' in data and data['status'] in dict(Research.PROJECT_STATUS):
                 project.status = data['status']
             
             project.save()
@@ -234,7 +239,7 @@ class AddCollaborator(APIView):
                 return JsonResponse({"error": "Username or email is required"}, status=400)
             
             # Check if role is valid
-            if role not in dict(ResearchProjectCollaborator.ROLE_CHOICES):
+            if role not in dict(ResearchCollaborator.ROLE_CHOICES):
                 return JsonResponse({"error": f"Invalid role: {role}"}, status=400)
             
             # Find the user
@@ -250,11 +255,11 @@ class AddCollaborator(APIView):
                 return JsonResponse({"error": "User is already the head researcher"}, status=400)
             
             # Check if user is already a collaborator
-            if ResearchProjectCollaborator.objects.filter(project=project, user=user).exists():
+            if ResearchCollaborator.objects.filter(project=project, user=user).exists():
                 return JsonResponse({"error": "User is already a collaborator"}, status=400)
             
             # Add collaborator
-            collaborator = ResearchProjectCollaborator.objects.create(
+            collaborator = ResearchCollaborator.objects.create(
                 project=project,
                 user=user,
                 role=role,
@@ -286,7 +291,7 @@ class ManageCollaborator(APIView):
     def put(self, request, collaborator_id, project_id):
         # Update collaborator role
         project = _check_access(request.user, project_id)
-        collaborator = get_object_or_404(ResearchProjectCollaborator, id=collaborator_id, project=project)
+        collaborator = get_object_or_404(ResearchCollaborator, id=collaborator_id, project=project)
         try:
             data = json.loads(request.body)
             role = data.get('role')
@@ -295,7 +300,7 @@ class ManageCollaborator(APIView):
                 return JsonResponse({"error": "Role is required"}, status=400)
             
             # Check if role is valid
-            if role not in dict(ResearchProjectCollaborator.ROLE_CHOICES):
+            if role not in dict(ResearchCollaborator.ROLE_CHOICES):
                 return JsonResponse({"error": f"Invalid role: {role}"}, status=400)
             
             collaborator.role = role
@@ -321,7 +326,7 @@ class ManageCollaborator(APIView):
     def delete(self, request, collaborator_id, project_id):
         # Remove collaborator
         project = _check_access(request.user, project_id)
-        collaborator = get_object_or_404(ResearchProjectCollaborator, id=collaborator_id, project=project)
+        collaborator = get_object_or_404(ResearchCollaborator, id=collaborator_id, project=project)
         username = collaborator.user.username
         collaborator.delete()
         
@@ -343,7 +348,7 @@ class AssignExperiment(APIView):
                 return JsonResponse({"error": "Experiment ID is required"}, status=400)
             
             # Get the experiment
-            experiment = get_object_or_404(VoltammetryData, experiment_id=experiment_id)
+            experiment = get_object_or_404(Experiment, experiment_id=experiment_id)
             
             # Assign to project
             experiment.research_project = project
@@ -385,9 +390,9 @@ class DatasetComparisons(APIView):
             datasets = []
             for dataset_id in dataset_ids:
                 try:
-                    dataset = VoltammetryData.objects.get(experiment_id=dataset_id)
+                    dataset = Experiment.objects.get(experiment_id=dataset_id)
                     datasets.append(dataset)
-                except VoltammetryData.DoesNotExist:
+                except Experiment.DoesNotExist:
                     return JsonResponse({"error": f"Dataset {dataset_id} not found"}, status=404)
             
             # Check if user has access to all datasets
@@ -437,7 +442,7 @@ class DatasetComparisons(APIView):
         # List comparisons
         # If project_id is provided, filter by project
         if project_id:
-            project = get_object_or_404(ResearchProject, project_id=project_id)
+            project = get_object_or_404(Research, project_id=project_id)
             
             # Check if user has access to project
             if not has_project_access(request.user, project) and not project.is_public:
@@ -500,11 +505,11 @@ class ComparisonDetail(APIView):
             has_access = False
             for dataset_id in comparison.datasets:
                 try:
-                    dataset = VoltammetryData.objects.get(experiment_id=dataset_id)
+                    dataset = Experiment.objects.get(experiment_id=dataset_id)
                     if dataset.research_project and has_project_access(request.user, dataset.research_project):
                         has_access = True
                         break
-                except VoltammetryData.DoesNotExist:
+                except Experiment.DoesNotExist:
                     continue
             
             if not has_access:
@@ -514,7 +519,7 @@ class ComparisonDetail(APIView):
         datasets = []
         for dataset_id in comparison.datasets:
             try:
-                dataset = VoltammetryData.objects.get(experiment_id=dataset_id)
+                dataset = Experiment.objects.get(experiment_id=dataset_id)
                 datasets.append({
                     'id': dataset.experiment_id,
                     'title': dataset.title,
@@ -522,7 +527,7 @@ class ComparisonDetail(APIView):
                     'scan_rate': dataset.scan_rate,
                     'electrode_material': dataset.electrode_material
                 })
-            except VoltammetryData.DoesNotExist:
+            except Experiment.DoesNotExist:
                 datasets.append({
                     'id': dataset_id,
                     'title': 'Unknown dataset',
@@ -545,13 +550,13 @@ class ComparisonDetail(APIView):
         })
 
 @method_decorator(csrf_exempt, name='dispatch')
-class InviteCollaboratorView(View):
+class InviteCollaboratorView(APIView):
     """Handle invitations to collaborate on research projects"""
     
     @method_decorator(login_required)
     def post(self, request, project_id):
         """Send invitation to a user to collaborate on a project"""
-        project = get_object_or_404(ResearchProject, project_id=project_id)
+        project = get_object_or_404(Research, project_id=project_id)
         
         # Check if user has permission to invite collaborators
         if not can_manage_project(request.user, project):
@@ -567,7 +572,7 @@ class InviteCollaboratorView(View):
                 return JsonResponse({"error": "Email or ORCID ID is required"}, status=400)
             
             # Check if role is valid
-            if role not in dict(ResearchProjectCollaborator.ROLE_CHOICES):
+            if role not in dict(ResearchCollaborator.ROLE_CHOICES):
                 return JsonResponse({"error": f"Invalid role: {role}"}, status=400)
             
             # Try to find user by email or ORCID ID
@@ -620,11 +625,11 @@ class InviteCollaboratorView(View):
                     return JsonResponse({"error": "User is already the head researcher"}, status=400)
                 
                 # Check if user is already a collaborator
-                if ResearchProjectCollaborator.objects.filter(project=project, user=user).exists():
+                if ResearchCollaborator.objects.filter(project=project, user=user).exists():
                     return JsonResponse({"error": "User is already a collaborator"}, status=400)
                 
                 # Add collaborator
-                collaborator = ResearchProjectCollaborator.objects.create(
+                collaborator = ResearchCollaborator.objects.create(
                     project=project,
                     user=user,
                     role=role,
@@ -651,12 +656,12 @@ class InviteCollaboratorView(View):
             return JsonResponse({"error": str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ResearchVersionsView(View):
+class ResearchVersionsView(APIView):
     """Handle version history for research projects"""
     
     def get(self, request, project_id):
         """Get version history for a research project"""
-        project = get_object_or_404(ResearchProject, project_id=project_id)
+        project = get_object_or_404(Research, project_id=project_id)
         
         # Check if user has access to this project
         if not has_project_access(request.user, project) and not project.is_public:
@@ -741,8 +746,63 @@ class ResearchUpload(APIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
-class ResearchFileUploadView(View):
+class ResearchFileUploadView(APIView):
+    @method_decorator(login_required)
+    def post(self, request, project_id=None):
+        """Upload a file to a research project"""
+        if not project_id:
+            return JsonResponse({"error": "Project ID is required"}, status=400)
+            
+        try:
+            project = get_object_or_404(Research, project_id=project_id)
+            
+            # Check if the current user is authorized to upload to this project
+            if (request.user != project.head_researcher and 
+                not project.collaborators.filter(user=request.user).exists()):
+                return JsonResponse({"error": "You are not authorized to upload to this project"}, status=403)
+            
+            # Check if file is in the request
+            if 'file' not in request.FILES:
+                return JsonResponse({"error": "No file was uploaded"}, status=400)
+                
+            file = request.FILES['file']
+            
+            # Generate a unique file name to prevent overwriting
+            file_name = f"{uuid.uuid4()}_{file.name}"
+            
+            # Create directory if it doesn't exist
+            upload_path = os.path.join('research', project_id, 'datasets')
+            full_path = os.path.join(settings.MEDIA_ROOT, upload_path)
+            os.makedirs(full_path, exist_ok=True)
+            
+            # Save the file
+            file_path = os.path.join(upload_path, file_name)
+            path = default_storage.save(file_path, ContentFile(file.read()))
+            
+            # Create dataset record
+            dataset = Dataset.objects.create(
+                title=request.POST.get('title', file.name),
+                description=request.POST.get('description', ''),
+                file_path=path,
+                file_size=file.size,
+                file_type=file.content_type,
+                is_public=request.POST.get('is_public', 'false').lower() == 'true' and project.is_public,
+                research_project=project,
+            )
+            
+            return JsonResponse({
+                "message": "File uploaded successfully",
+                "dataset_id": dataset.id,
+                "file_path": path,
+            })
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResearchFileUploadView(APIView):
     """Handle file uploads for research projects with text content storage"""
 
     @method_decorator(login_required)
@@ -791,7 +851,7 @@ class ResearchFileUploadView(View):
             return JsonResponse({"error": str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ResearchFileVersionView(View):
+class ResearchFileVersionView(APIView):
     """Handle file versions and updates"""
 
     @method_decorator(login_required)
@@ -886,7 +946,7 @@ class ResearchFileVersionView(View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ResearchFileDownloadView(View):
+class ResearchFileDownloadView(APIView):
     """Handle file downloads with different format options"""
 
     @method_decorator(login_required)
@@ -945,7 +1005,7 @@ def has_project_access(user, project):
         return True
     
     # Check if user is a collaborator
-    return ResearchProjectCollaborator.objects.filter(project=project, user=user).exists()
+    return ResearchCollaborator.objects.filter(project=project, user=user).exists()
 
 def can_manage_project(user, project):
     """Check if a user can manage a project"""
@@ -954,7 +1014,7 @@ def can_manage_project(user, project):
         return True
     
     # Check if user is a manager
-    return ResearchProjectCollaborator.objects.filter(
+    return ResearchCollaborator.objects.filter(
         project=project, user=user, role='manager'
     ).exists()
 
@@ -965,7 +1025,7 @@ def can_contribute_to_project(user, project):
         return True
     
     # Check if user is a contributor
-    return ResearchProjectCollaborator.objects.filter(
+    return ResearchCollaborator.objects.filter(
         project=project, user=user, role__in=['contributor', 'manager']
     ).exists()
 
@@ -975,13 +1035,13 @@ def get_user_role_in_project(user, project):
         return 'head'
     
     try:
-        collaborator = ResearchProjectCollaborator.objects.get(project=project, user=user)
+        collaborator = ResearchCollaborator.objects.get(project=project, user=user)
         return collaborator.role
-    except ResearchProjectCollaborator.DoesNotExist:
+    except ResearchCollaborator.DoesNotExist:
         return None
 
 def _check_access(user, project_id):
-        project = get_object_or_404(ResearchProject, project_id=project_id)
+        project = get_object_or_404(Research, project_id=project_id)
         # Check if user has access to this project
         if not has_project_access(user, project):
             return JsonResponse({"error": "You don't have access to this project"}, status=403)

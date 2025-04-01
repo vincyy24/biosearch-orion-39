@@ -1,7 +1,44 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# Create your models here.
+
+class DataType(models.Model):
+    id = models.CharField(max_length=50, primary_key=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
+class DataCategory(models.Model):
+    """Model for categorizing datasets by their publication status"""
+    PUBLISHED = 'published'
+    PEER_REVIEW = 'peer_review'
+    RESEARCH = 'research'
+    OTHER = 'other'
+    
+    CATEGORY_CHOICES = [
+        (PUBLISHED, 'Published Data'),
+        (PEER_REVIEW, 'Under Peer Review'),
+        (RESEARCH, 'Under Research'),
+        (OTHER, 'Other'),
+    ]
+    
+    name = models.CharField(
+        max_length=20, 
+        choices=CATEGORY_CHOICES, 
+        default=RESEARCH
+    )
+    description = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return self.get_name_display()
+    
+    class Meta:
+        verbose_name = "Data Category"
+        verbose_name_plural = "Data Categories"
+
+
 class Dataset(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='')
@@ -51,51 +88,25 @@ class DatasetComparison(models.Model):
         verbose_name = "Dataset Comparison"
         verbose_name_plural = "Dataset Comparisons"
 
-class DataCategory(models.Model):
-    """Model for categorizing datasets by their publication status"""
-    PUBLISHED = 'published'
-    PEER_REVIEW = 'peer_review'
-    RESEARCH = 'research'
-    OTHER = 'other'
-    
-    CATEGORY_CHOICES = [
-        (PUBLISHED, 'Published Data'),
-        (PEER_REVIEW, 'Under Peer Review'),
-        (RESEARCH, 'Under Research'),
-        (OTHER, 'Other'),
-    ]
-    
-    name = models.CharField(
-        max_length=20, 
-        choices=CATEGORY_CHOICES, 
-        default=RESEARCH
-    )
-    description = models.TextField(blank=True, null=True)
-    
-    def __str__(self):
-        return self.get_name_display()
-    
-    class Meta:
-        verbose_name = "Data Category"
-        verbose_name_plural = "Data Categories"
 
 class FileUpload(models.Model):
     file_name = models.CharField(max_length=255)
-    file_content = models.TextField(default='')  # Store file content as text
-    file_size = models.IntegerField()
-    data_type = models.ForeignKey('DataType', on_delete=models.SET_NULL, null=True)
+    content = models.TextField()
     description = models.TextField(blank=True, null=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='file_uploads')
     upload_date = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    experiment_type = models.CharField(max_length=50, default='other')
+    data_type = models.ForeignKey('DataType', on_delete=models.SET_NULL, null=True)
     is_public = models.BooleanField(default=False)
+    version = models.IntegerField(default=1)
     category = models.ForeignKey(
-        DataCategory, 
+        'DataCategory', 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
         help_text="Categorization of the dataset (e.g., Published, Under Review)"
     )
-    project_id = models.ForeignKey(
+    research_id = models.ForeignKey(
         'Research',
         on_delete=models.SET_NULL,
         null=True,
@@ -108,14 +119,39 @@ class FileUpload(models.Model):
     delimiter = models.CharField(max_length=5, default=',')
 
     def __str__(self):
-        return f"{self.file_name} ({self.data_type})"
+        return f"{self.file_name} ({self.data_type}) v({self.version}) (by {self.uploaded_by})"
+
+    def create_new_version(self, new_content):
+        """Create a new version of this file"""
+        new_version = FileUpload.objects.get(pk=self.pk)
+        new_version.pk = None  # Create a new record
+        new_version.version = self.version + 1
+        new_version.content = new_content
+        new_version.save()
+        return new_version
+
+    @property
+    def access_status(self):
+        """Return a string representation of the access status"""
+        return ("private", "public")[int(self.is_public)]
+
+    def export_as_csv(self):
+        """Export content as CSV format"""
+        return self.content
+    
+    def export_as_tsv(self):
+        """Export content as TSV format (replace commas with tabs)"""
+        if ',' in self.content:
+            return self.content.replace(',', '\t')
+        return self.content
+    
+    def export_with_delimiter(self, delimiter):
+        """Export with custom delimiter"""
+        if ',' in self.content and delimiter != ',':
+            return self.content.replace(',', delimiter)
+        return self.content
 
     class Meta:
         verbose_name = "Uploaded File"
         verbose_name_plural = "Uploaded Files"
         ordering = ['-upload_date']
-        
-    @property
-    def access_status(self):
-        """Return a string representation of the access status"""
-        return "public" if self.is_public else "private"

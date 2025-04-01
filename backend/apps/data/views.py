@@ -10,7 +10,7 @@ from .models import DataCategory, DataType, FileUpload
 
 # Create your views here.
 
-class DataTypesList(APIView):
+class DataTypesListView(APIView):
     """
     API view to retrieve available data types from the database.
     """
@@ -18,7 +18,7 @@ class DataTypesList(APIView):
         data_types = DataType.objects.all().values('id', 'name')
         return Response(list(data_types))
 
-class DataCategoriesList(APIView):
+class DataCategoriesListView(APIView):
     """
     API view to retrieve available data categories from the database.
     """

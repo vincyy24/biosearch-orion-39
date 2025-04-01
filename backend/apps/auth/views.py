@@ -1,21 +1,17 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
-from django.conf import settings
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 import traceback
-# from apps.collaboration.views import check_pending_invitations
-from django.utils.encoding import force_str
-from django.utils.http import urlsafe_base64_decode
 
-# Create your views here.
-
+from apps.collaboration.models import CollaborationInvite
 
 class LoginView(APIView):
     """
@@ -184,6 +180,7 @@ class DeleteAccountView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
 class LogoutView(APIView):
     """
     API view to handle user logout.
@@ -242,6 +239,7 @@ class PasswordResetRequestView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
 class PasswordResetConfirmView(APIView):
     """
     API view to handle password reset confirmation.
@@ -284,3 +282,14 @@ class PasswordResetConfirmView(APIView):
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+# Helper Functions
+def check_pending_invitations(email):
+    """Check for pending invitations for a newly registered user."""
+    # Implementation to check and process pending invitations
+    pending_invites = CollaborationInvite.objects.filter(email=email, invitee=None)
+    
+    if pending_invites.exists():
+        # Process pending invitations
+        print(f"Found {pending_invites.count()} pending invitations for {email}")

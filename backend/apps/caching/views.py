@@ -1,16 +1,18 @@
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-from apps.dashboard.models import VoltammetryData
 from django.views.decorators.cache import cache_page
+
+from apps.experiments.models import Experiment
 
 # Cache the results for 5 minutes (300 seconds)
 @cache_page(300)
 def get_data_types(request):
     """Return all data types with caching"""
-    from apps.api.models import DataType
+    from apps.data.models import DataType
     data_types = list(DataType.objects.all().values())
     return JsonResponse({"data_types": data_types})
+
 
 def get_paginated_experiments(request):
     """Return paginated experiment data"""
@@ -18,7 +20,7 @@ def get_paginated_experiments(request):
     page_size = request.GET.get('page_size', 10)
     
     # Get all experiments
-    experiments = VoltammetryData.objects.all().order_by('-date_created')
+    experiments = Experiment.objects.all().order_by('-date_created')
     
     # Paginate the results
     paginator = Paginator(experiments, page_size)
@@ -38,6 +40,7 @@ def get_paginated_experiments(request):
     
     return JsonResponse(data)
 
+
 def get_cached_experiment(request, experiment_id):
     """Get a single experiment with caching"""
     # Try to get from cache first
@@ -47,7 +50,7 @@ def get_cached_experiment(request, experiment_id):
     if not experiment:
         # If not in cache, get from database
         try:
-            data = VoltammetryData.objects.get(experiment_id=experiment_id)
+            data = Experiment.objects.get(experiment_id=experiment_id)
             experiment = {
                 'experiment_id': data.experiment_id,
                 'title': data.title,
@@ -65,7 +68,7 @@ def get_cached_experiment(request, experiment_id):
             }
             # Save to cache for 10 minutes
             cache.set(cache_key, experiment, 600)
-        except VoltammetryData.DoesNotExist:
+        except Experiment.DoesNotExist:
             return JsonResponse({'error': 'Experiment not found'}, status=404)
     
     return JsonResponse(experiment)

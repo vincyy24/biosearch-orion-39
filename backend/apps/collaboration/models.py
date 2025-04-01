@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from apps.research.models import Research
 
 class ResearchCollaborator(models.Model):
     ROLE_CHOICES = (
@@ -40,8 +39,8 @@ class CollaborationInvite(models.Model):
         ('contributor', 'Contributor'),
         ('admin', 'Admin'),
     )
-    
-    project_id = models.CharField(max_length=100)  # Project identifier
+
+    research_id = models.ForeignKey('Research', on_delete=models.CASCADE, related_name='invitations')
     inviter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invites')
     invitee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_invites', null=True, blank=True)
     email = models.EmailField(blank=True, null=True)  # For non-registered users
@@ -50,6 +49,6 @@ class CollaborationInvite(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
-        return f"Invitation to {self.invitee.username if self.invitee else self.email or self.orcid_id} for {self.project_id}"
+        return f"Invitation to {self.invitee.username if self.invitee else self.email or self.orcid_id} for {self.research_id}"
