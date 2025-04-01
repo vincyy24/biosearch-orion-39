@@ -124,33 +124,6 @@ const PublicationDetailPage = () => {
     });
   };
 
-  const mockVersionHistory = [
-    {
-      id: "101",
-      version: 3,
-      created_at: "2023-09-15",
-      created_by: { id: "js", name: "Dr. Jane Smith" },
-      changes: "Updated metadata and added new experiment results",
-      is_current: true,
-    },
-    {
-      id: "102",
-      version: 2,
-      created_at: "2023-08-22",
-      created_by: { id: "jd", name: "Dr. John Doe" },
-      changes: "Added supplementary data and corrected typos",
-      is_current: false,
-    },
-    {
-      id: "103",
-      version: 1,
-      created_at: "2023-07-10",
-      created_by: { id: "js", name: "Dr. Jane Smith" },
-      changes: "Initial publication registration",
-      is_current: false,
-    },
-  ];
-
   if (loading) {
     return (
       <AppLayout>
@@ -494,7 +467,7 @@ const PublicationDetailPage = () => {
               </CardHeader>
               <CardContent>
                 <ResearchVersionHistory
-                  versions={mockVersionHistory}
+                  // versions={}
                   onViewVersion={handleViewVersion}
                   onDownloadVersion={handleDownloadVersion}
                 />

@@ -24,7 +24,7 @@ import { Search, Filter, Eye, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SampleDataChart from "@/components/charts/SampleDataChart";
 import VoltammetryPlot from "@/components/visualizations/VoltammetryPlot";
-import { fetchVisualizationUrl } from "@/services/api";
+// import { fetchVisualizationUrl } from "@/services/api";
 
 // Sample data for demonstration
 const sampleData = [
@@ -75,10 +75,10 @@ const DataBrowser = () => {
   useEffect(() => {
     // Fetch dashboard URL based on selected visualization
     if (selectedVisualization === "publications") {
-      const url = fetchVisualizationUrl("PublicationsViz");
+      const url = "/dash/app/PublicationsViz";
       setDashboardUrl(url);
     } else if (selectedVisualization === "voltammetry") {
-      const url = fetchVisualizationUrl("VoltammetryViz");
+      const url = "/dash/app/VoltammetryViz";
       setDashboardUrl(url);
     }
   }, [selectedVisualization]);

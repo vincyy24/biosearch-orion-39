@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { getUserProfile, loginUser, logoutUser, signupUser } from "@/services/api";
+import { getCurrentUser, loginUser, logoutUser, registerUser } from "@/services/auth";
+import { fetchUserProfile } from "@/services/api";
 
 interface User {
   id: string;
@@ -45,8 +46,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const checkAuthStatus = async () => {
       try {
         setLoading(true);
-        const userData = await getUserProfile();
-        
+        const currentUser = await getCurrentUser();
+        const userData = await fetchUserProfile(currentUser.name);
+
         if (userData) {
           setUser(userData);
         } else {
@@ -66,22 +68,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      
+
       const userData = await loginUser(email, password);
       setUser(userData);
-      
+
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
-      
+
       return true;
     } catch (error) {
       console.error('Login error:', error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
+      const errorMessage = error instanceof Error
+        ? error.message
         : "An unexpected error occurred. Please try again.";
-        
+
       toast({
         variant: "destructive",
         title: "Login failed",
@@ -104,14 +106,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email: "googleuser@example.com",
         role: "user"
       };
-      
+
       setUser(mockUser);
-      
+
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
-      
+
       return true;
     } catch (error) {
       console.error('Google login error:', error);
@@ -129,9 +131,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signup = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      
-      await signupUser(username, email, password);
-
+      registerUser(username, email, password);
       toast({
         title: "Account created",
         description: "Your account has been successfully created! You can now log in.",
@@ -139,10 +139,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return true;
     } catch (error) {
       console.error('Signup error:', error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
+      const errorMessage = error instanceof Error
+        ? error.message
         : "An unexpected error occurred. Please try again.";
-        
+
       toast({
         variant: "destructive",
         title: "Signup failed",
@@ -157,18 +157,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
-      
+
       setUser(null);
-      
+
       await logoutUser();
-      
+
       toast({
         title: "Logout successful",
         description: "You have been logged out.",
       });
     } catch (error) {
       console.error('Logout error:', error);
-      
+
       toast({
         variant: "destructive",
         title: "Logout completed with warnings",
