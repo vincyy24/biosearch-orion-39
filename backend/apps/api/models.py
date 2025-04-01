@@ -1,12 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from backend.apps.common.models import CreatedAtModel
 
-class ContactSupport(models.Model):
+
+class ContactSupport(CreatedAtModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='support_requests', null=True, blank=True)
     subject = models.CharField(max_length=255)
     message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
     processed = models.BooleanField(default=False)
     
     def __str__(self):

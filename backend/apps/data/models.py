@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from backend.apps.common.models import CreatedAtModel, TimeStampedModel
+
 
 class DataType(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
@@ -39,13 +41,12 @@ class DataCategory(models.Model):
         verbose_name_plural = "Data Categories"
 
 
-class Dataset(models.Model):
+class Dataset(CreatedAtModel):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='')
     file_path = models.CharField(max_length=500)
     file_size = models.BigIntegerField()
     file_type = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
     is_public = models.BooleanField(default=False)
     
     # Relationships
@@ -67,14 +68,12 @@ class Dataset(models.Model):
     def __str__(self):
         return f"{self.title} ({self.file_type})"
 
-class DatasetComparison(models.Model):
+class DatasetComparison(TimeStampedModel):
     """Model for comparing multiple datasets"""
     comparison_id = models.CharField(max_length=50, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_comparisons')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=False)
     
     # Store the experiment IDs and comparison results as JSON

@@ -2,16 +2,17 @@
 from django.http import HttpResponse, JsonResponse
 import csv
 import json
-from .models import VoltammetryData
 import pandas as pd
 from io import BytesIO
 import datetime
 
+from backend.apps.experiments.models import Experiment
+
 def export_experiment_csv(request, experiment_id):
     """Export a single experiment as CSV"""
     try:
-        experiment = VoltammetryData.objects.get(experiment_id=experiment_id)
-    except VoltammetryData.DoesNotExist:
+        experiment = Experiment.objects.get(experiment_id=experiment_id)
+    except Experiment.DoesNotExist:
         return JsonResponse({'error': 'Experiment not found'}, status=404)
     
     # Create the HttpResponse object with CSV header
@@ -50,8 +51,8 @@ def export_experiment_csv(request, experiment_id):
 def export_experiment_json(request, experiment_id):
     """Export a single experiment as JSON"""
     try:
-        experiment = VoltammetryData.objects.get(experiment_id=experiment_id)
-    except VoltammetryData.DoesNotExist:
+        experiment = Experiment.objects.get(experiment_id=experiment_id)
+    except Experiment.DoesNotExist:
         return JsonResponse({'error': 'Experiment not found'}, status=404)
     
     # Create the data dictionary
@@ -85,8 +86,8 @@ def export_experiment_json(request, experiment_id):
 def export_experiment_excel(request, experiment_id):
     """Export a single experiment as Excel"""
     try:
-        experiment = VoltammetryData.objects.get(experiment_id=experiment_id)
-    except VoltammetryData.DoesNotExist:
+        experiment = Experiment.objects.get(experiment_id=experiment_id)
+    except Experiment.DoesNotExist:
         return JsonResponse({'error': 'Experiment not found'}, status=404)
     
     # Create a pandas DataFrame with the metadata

@@ -1,12 +1,16 @@
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.http import JsonResponse
-from django.utils import timezone
-from django.views.decorators.http import require_http_methods
-from datetime import timedelta
-import json
-import uuid
+import re
+
+from backend.apps.common.models import CreatedAtModel
+
+def validate_orcid(value):
+    pattern = r'^\d{4}-\d{4}-\d{4}-\d{4}$'
+    if not re.match(pattern, value):
+        raise ValidationError('ORCID must be in the format 0000-0000-0000-0000')
+
+
 
 class UserSetting(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
@@ -33,11 +37,10 @@ class UserSetting(models.Model):
         verbose_name = "User Setting"
         verbose_name_plural = "User Settings"
 
-class Notification(models.Model):
+class Notification(CreatedAtModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     message = models.TextField()
     is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"Notification for {self.user.username}: {self.message[:30]}..."
@@ -50,7 +53,7 @@ class Notification(models.Model):
 class OrcidProfile(models.Model):
     """Model for storing ORCID profile information"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='orcid_profile')
-    orcid_id = models.CharField(max_length=19, unique=True)  # Format: 0000-0000-0000-0000
+    orcid_id = models.CharField(max_length=19, unique=True, validators=[validate_orcid])  # Format: 0000-0000-0000-0000
     is_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=64, blank=True, null=True)
     token_expiry = models.DateTimeField(blank=True, null=True)

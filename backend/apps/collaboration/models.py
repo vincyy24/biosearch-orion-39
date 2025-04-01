@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from backend.apps.common.models import TimeStampedModel
+
+
 class ResearchCollaborator(models.Model):
     ROLE_CHOICES = (
         ('viewer', 'Viewer'),
@@ -15,7 +18,7 @@ class ResearchCollaborator(models.Model):
     invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_invitations')
 
     def __str__(self):
-        return f"{self.user.username} - {self.get_role_display()} on {self.project.title}"
+        return f"{self.user.username} - {self.get_role_display()} on {self.research.title}"
 
     class Meta:
         verbose_name = "Research Collaborator"
@@ -23,7 +26,7 @@ class ResearchCollaborator(models.Model):
         unique_together = ('research', 'user')
 
 
-class CollaborationInvite(models.Model):
+class CollaborationInvite(TimeStampedModel):
     """
     Model to store collaboration invitations.
     If invitee is null but email is provided, it means invitation to a non-registered user.
@@ -47,8 +50,6 @@ class CollaborationInvite(models.Model):
     orcid_id = models.CharField(max_length=19, blank=True, null=True)  # ORCID ID format: 0000-0000-0000-0000
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='viewer')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Invitation to {self.invitee.username if self.invitee else self.email or self.orcid_id} for {self.research_id}"
