@@ -10,7 +10,9 @@ class DataTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DataType
-        fields = ['id', 'name']
+        fields = [
+            'id',
+            'name']
 
 
 class DataCategorySerializer(serializers.ModelSerializer):
@@ -21,7 +23,11 @@ class DataCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DataCategory
-        fields = ['id', 'name', 'description']
+        fields = [
+            'id',
+            'name',
+            'description',
+        ]
 
 
 class FileUploadSerializer(serializers.ModelSerializer):
@@ -30,6 +36,20 @@ class FileUploadSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = FileUpload
-        fields = ['file_name', 'content', 'description', 'uploaded_by', 'upload_date', 
-                  'experiment_type', 'data_type', 'is_public', 'version', 'category',
-                  'research_id', 'method', 'electrode_type', 'instrument', 'delimiter']
+        fields = [
+            'file_name',
+            'content',
+            'description',
+            'uploaded_by',
+            'upload_date',
+            'experiment_type',
+            'data_type',
+            'is_public',
+            'version',
+            'category',
+            'research_id',
+            'method',
+            'electrode_type',
+            'instrument',
+            'delimiter',
+        ]

@@ -15,11 +15,11 @@ import json
 import os
 import uuid
 
-from backend.apps.collaboration.models import ResearchCollaborator
-from backend.apps.data.models import Dataset, DatasetComparison, FileUpload
-from backend.apps.experiments.models import Experiment
-from backend.apps.research.models import Research
-from backend.apps.users.models import OrcidProfile
+from apps.collaboration.models import ResearchCollaborator
+from apps.data.models import Dataset, DatasetComparison, FileUpload
+from apps.experiments.models import Experiment
+from apps.research.models import Research
+from apps.users.models import OrcidProfile
 
 
 @method_decorator(csrf_exempt, name='dispatch')

@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from backend.apps.common.models import CreatedAtModel, TimeStampedModel
+from apps.common.models import CreatedAtModel, TimeStampedModel
 
 
 class Publication(TimeStampedModel):
@@ -25,10 +25,12 @@ class Publication(TimeStampedModel):
     user = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True)
     researchers = models.ManyToManyField(
-        to='Researcher',
+        to='research.Researcher',
         through='PublicationResearcher',
         related_name='publications'
     )
+    publication_data = models.JSONField(blank=True, null=True)
+    thumbnail = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.title} ({self.year}) by {self.author}"
@@ -38,7 +40,7 @@ class Publication(TimeStampedModel):
 
 
 class PublicationResearcher(models.Model):
-    researcher = models.ForeignKey('Researcher', on_delete=models.CASCADE)
+    researcher = models.ForeignKey('research.Researcher', on_delete=models.CASCADE)
     publication = models.ForeignKey('Publication', on_delete=models.CASCADE)
     is_primary = models.BooleanField(default=False)
     sequence = models.PositiveIntegerField(default=1)
@@ -56,6 +58,7 @@ class DoiVerificationLog(CreatedAtModel):
     doi = models.CharField(max_length=255)
     verified = models.BooleanField(default=False)
     verification_response = models.TextField(blank=True, null=True)
+
     def __str__(self):
         return f"Verification of {self.doi} - {('Unverified', 'Verified')[int(self.verified)]}"
 

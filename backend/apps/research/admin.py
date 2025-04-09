@@ -4,8 +4,8 @@ from .models import Research, Researcher, ResearchLibrary
 
 @admin.register(Research)
 class ResearchAdmin(admin.ModelAdmin):
-    list_display = ('research_id', 'title', 'head_researcher', 'status', 'is_public', 'created_at')
-    list_filter = ('status', 'is_public')
+    list_display = ('research_id', 'title', 'head_researcher', 'status', 'created_at')
+    list_filter = ('status',)
     search_fields = ('research_id', 'title', 'head_researcher__username')
     date_hierarchy = 'created_at'
 

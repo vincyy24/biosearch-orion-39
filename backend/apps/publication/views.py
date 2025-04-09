@@ -164,7 +164,7 @@ class PublicationRegistrationView(APIView):
     def post(self, request):
         """Register a new publication"""
         try:
-            data = json.loads(request.body)
+            data = request.data
 
             # Required fields
             required_fields = ['doi', 'title']

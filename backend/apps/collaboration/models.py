@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from backend.apps.common.models import TimeStampedModel
+from apps.common.models import TimeStampedModel
 
 
 class ResearchCollaborator(models.Model):
@@ -10,12 +10,16 @@ class ResearchCollaborator(models.Model):
         ('contributor', 'Contributor'),
         ('manager', 'Manager'),
     )
-    research = models.ForeignKey('Research', on_delete=models.CASCADE, related_name='collaborators')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='research_collaborations')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='viewer')
-    
+    research = models.ForeignKey(
+        'research.Research', on_delete=models.CASCADE, related_name='collaborations')
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='research_collaborations')
+    role = models.CharField(
+        max_length=20, choices=ROLE_CHOICES, default='viewer')
+
     joined_at = models.DateTimeField(auto_now_add=True)
-    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_invitations')
+    invited_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name='sent_invitations')
 
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()} on {self.research.title}"
@@ -43,13 +47,20 @@ class CollaborationInvite(TimeStampedModel):
         ('admin', 'Admin'),
     )
 
-    research_id = models.ForeignKey('Research', on_delete=models.CASCADE, related_name='invitations')
-    inviter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invites')
-    invitee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_invites', null=True, blank=True)
-    email = models.EmailField(blank=True, null=True)  # For non-registered users
-    orcid_id = models.CharField(max_length=19, blank=True, null=True)  # ORCID ID format: 0000-0000-0000-0000
-    role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='viewer')
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    research_id = models.ForeignKey(
+        'research.Research', on_delete=models.CASCADE, related_name='invitations')
+    inviter = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='sent_invites')
+    invitee = models.ForeignKey(User, on_delete=models.CASCADE,
+                                related_name='received_invites', null=True, blank=True)
+    # For non-registered users
+    email = models.EmailField(blank=True, null=True)
+    # ORCID ID format: 0000-0000-0000-0000
+    orcid_id = models.CharField(max_length=19, blank=True, null=True)
+    role = models.CharField(
+        max_length=15, choices=ROLE_CHOICES, default='viewer')
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default='pending')
 
     def __str__(self):
         return f"Invitation to {self.invitee.username if self.invitee else self.email or self.orcid_id} for {self.research_id}"

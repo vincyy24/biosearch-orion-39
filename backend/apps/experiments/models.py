@@ -1,6 +1,6 @@
 from django.db import models
 
-from backend.apps.common.models import CreatedAtModel
+from apps.common.models import CreatedAtModel, TimeStampedModel
 
 
 class Instrument(models.Model):
@@ -24,15 +24,21 @@ class VoltammetryTechnique(models.Model):
         return self.name
 
 
-class Experiment(models.Model):
+class Experiment(TimeStampedModel):
     """Model for storing voltammetry experimental data"""
 
     experiment_id = models.CharField(max_length=50, unique=True, db_index=True)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField(auto_now=True)
-
+    researcher = models.ForeignKey(
+        'auth.User', on_delete=models.CASCADE, related_name='experiments')
+    instrument = models.ForeignKey(
+        Instrument, on_delete=models.CASCADE, related_name='experiments')
+    electrode = models.ForeignKey(
+        Electrode, on_delete=models.CASCADE, related_name='experiments')    
+    voltammetry_technique = models.ForeignKey(
+        VoltammetryTechnique, on_delete=models.CASCADE, related_name='experiments')
+    
     experiment_type = models.CharField(max_length=50, choices=[
         ('cyclic', 'Cyclic Voltammetry'),
         ('differential_pulse', 'Differential Pulse Voltammetry'),
@@ -66,7 +72,7 @@ class Experiment(models.Model):
 
     # New: Link to Research Project
     research = models.ForeignKey(
-        'Research', null=True, blank=True, on_delete=models.SET_NULL, related_name='experiments')
+        'research.Research', null=True, blank=True, on_delete=models.SET_NULL, related_name='experiments')
 
     def __str__(self):
         return f"{self.title} ({self.experiment_id}) v{self.version}"
@@ -104,15 +110,22 @@ class Experiment(models.Model):
 
 
 class ExperimentFile(CreatedAtModel):
-    experiment_id = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name='files')
+    experiment = models.ForeignKey(
+        Experiment,
+        on_delete=models.CASCADE,
+        related_name='files',
+    )
     file_name = models.CharField(max_length=255)
     file_path = models.CharField(max_length=255)
     data_type = models.CharField(max_length=50, blank=True, null=True)
     data_category = models.CharField(max_length=50, blank=True, null=True)
-    access_level = models.CharField(max_length=10, choices=[
-        ('public', 'Public'),
-        ('private', 'Private')
-    ], default='private')
+    access_level = models.CharField(
+        max_length=10,
+        choices=[
+            ('public', 'Public'),
+            ('private', 'Private')
+        ], default='private',
+    )
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):

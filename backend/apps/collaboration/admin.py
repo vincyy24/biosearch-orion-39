@@ -6,8 +6,8 @@ admin.site.register(CollaborationInvite)
 
 @admin.register(ResearchCollaborator)
 class ResearchCollaboratorAdmin(admin.ModelAdmin):
-    list_display = ('user', 'research', 'role', 'joined_at')
+    list_display = ('user', 'research_id', 'role', 'joined_at')
     list_filter = ('role',)
     search_fields = ('research__title', 'user__username')
-    date_hierarchy = 'created_at'
+    date_hierarchy = 'joined_at'
 

@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 from apps.collaboration.models import ResearchCollaborator
-from backend.apps.common.models import TimeStampedModel
+from apps.common.models import TimeStampedModel
 
 
 class Research(TimeStampedModel):
@@ -17,8 +17,10 @@ class Research(TimeStampedModel):
     research_id = models.CharField(max_length=50, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    head_researcher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='headed_researches')
-    collaborators = models.ForeignKey('ResearchCollaborator', on_delete=models.CASCADE, related_name='researches')
+    head_researcher = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='headed_researches')
+    collaborators = models.ForeignKey(
+        'collaboration.ResearchCollaborator', on_delete=models.CASCADE, related_name='researches')
     status = models.CharField(max_length=20, choices=STATUS, default='active')
 
     def __str__(self):
