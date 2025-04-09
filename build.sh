@@ -7,11 +7,9 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
-# Navigate to frontend directory
+# Navigate to frontend directory and install dependencies if needed
 cd frontend
-
-# Install dependencies if needed
-npm install
+npm install 
 
 # Build the frontend
 npm run build

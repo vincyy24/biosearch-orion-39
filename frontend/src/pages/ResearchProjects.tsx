@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layouts/AppLayout";
-import { fetchResearchProjects } from "@/services/researchService";
+import { fetchResearchProjects, fetchPublicResearchProjects } from "@/services/researchService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Microscope, Plus, ArrowRight, Users, Calendar, Lock, Globe } from "lucide-react";
@@ -10,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const STATUS_COLORS = {
   active: "bg-green-100 text-green-800 hover:bg-green-200",
@@ -22,31 +24,47 @@ const ResearchProjects = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState("public");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchResearchProjects(page);
-        setProjects(response.results || []);
-        setTotalPages(Math.ceil(response.count / 10));
-      } catch (error) {
-        console.error("Error fetching research projects:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load research projects. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadProjects();
-  }, [page, toast]);
+  }, [page, activeTab, isAuthenticated]);
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      
+      let response;
+      if (activeTab === "my" && isAuthenticated) {
+        // Fetch only user's research projects
+        response = await fetchResearchProjects(page);
+      } else {
+        // Fetch public research projects
+        response = await fetchPublicResearchProjects(page);
+      }
+      
+      setProjects(response.results || []);
+      setTotalPages(Math.ceil((response.count || 0) / 10));
+    } catch (error) {
+      console.error("Error fetching research projects:", error);
+      setProjects([]);
+      toast({
+        title: "Error",
+        description: "Failed to load research projects. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    setPage(1); // Reset to first page when tab changes
+  };
 
   const handleCreateNew = () => {
     navigate("/research/new");
@@ -62,12 +80,21 @@ const ResearchProjects = () => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Research Projects</h1>
-            <p className="text-muted-foreground mt-1">Manage and explore your research projects</p>
+            <p className="text-muted-foreground mt-1">Manage and explore research projects</p>
           </div>
-          <Button onClick={handleCreateNew}>
-            <Plus className="w-4 h-4 mr-2" /> New Project
-          </Button>
+          {isAuthenticated && (
+            <Button onClick={handleCreateNew}>
+              <Plus className="w-4 h-4 mr-2" /> New Project
+            </Button>
+          )}
         </div>
+
+        <Tabs defaultValue="public" value={activeTab} onValueChange={handleTabChange} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="public">Public Projects</TabsTrigger>
+            {isAuthenticated && <TabsTrigger value="my">My Projects</TabsTrigger>}
+          </TabsList>
+        </Tabs>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -119,10 +146,12 @@ const ResearchProjects = () => {
                           : "1 researcher"}
                       </span>
                     </div>
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                      <span>Created {format(new Date(project.created_at), "MMM dd, yyyy")}</span>
-                    </div>
+                    {project.created_at && (
+                      <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <span>Created {format(new Date(project.created_at), "MMM dd, yyyy")}</span>
+                      </div>
+                    )}
                     <div className="flex items-center">
                       {project.is_public ? (
                         <Globe className="w-4 h-4 mr-2 text-muted-foreground" />
@@ -148,13 +177,17 @@ const ResearchProjects = () => {
         ) : (
           <div className="text-center py-16">
             <Microscope className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-medium mb-2">No research projects yet</h3>
+            <h3 className="text-xl font-medium mb-2">No research projects found</h3>
             <p className="text-muted-foreground mb-6">
-              Create your first research project to start organizing your experiments
+              {activeTab === "my" && isAuthenticated
+                ? "Create your first research project to start organizing your experiments"
+                : "There are no public research projects available at the moment"}
             </p>
-            <Button onClick={handleCreateNew}>
-              <Plus className="w-4 h-4 mr-2" /> Create Research Project
-            </Button>
+            {isAuthenticated && activeTab === "my" && (
+              <Button onClick={handleCreateNew}>
+                <Plus className="w-4 h-4 mr-2" /> Create Research Project
+              </Button>
+            )}
           </div>
         )}
       </div>

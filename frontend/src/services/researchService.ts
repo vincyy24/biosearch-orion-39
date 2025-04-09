@@ -3,10 +3,27 @@ import apiClient from "./api";
 
 // Research Project APIs
 export const fetchResearchProjects = async (page = 1, pageSize = 10) => {
-  const response = await apiClient.get('/api/research/projects/', {
-    params: { page, page_size: pageSize }
-  });
-  return response.data;
+  try {
+    const response = await apiClient.get('/api/research/projects/', {
+      params: { page, page_size: pageSize }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching research projects:", error);
+    return { results: [], count: 0 };
+  }
+};
+
+export const fetchPublicResearchProjects = async (page = 1, pageSize = 10) => {
+  try {
+    const response = await apiClient.get('/api/research/projects/public/', {
+      params: { page, page_size: pageSize }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching public research projects:", error);
+    return { results: [], count: 0 };
+  }
 };
 
 export const createResearchProject = async (data: { title: string; description?: string; is_public?: boolean }) => {
@@ -15,8 +32,13 @@ export const createResearchProject = async (data: { title: string; description?:
 };
 
 export const fetchResearchProjectDetails = async (projectId: string) => {
-  const response = await apiClient.get(`/api/research/projects/${projectId}/`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/api/research/projects/${projectId}/`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching project ${projectId} details:`, error);
+    throw error;
+  }
 };
 
 export const updateResearchProject = async (
@@ -25,6 +47,18 @@ export const updateResearchProject = async (
 ) => {
   const response = await apiClient.put(`/api/research/projects/${projectId}/`, data);
   return response.data;
+};
+
+export const updateResearchVisibility = async (projectId: string, isPublic: boolean) => {
+  try {
+    const response = await apiClient.patch(`/api/research/projects/${projectId}/visibility/`, {
+      is_public: isPublic
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating project ${projectId} visibility:`, error);
+    throw error;
+  }
 };
 
 export const deleteResearchProject = async (projectId: string) => {

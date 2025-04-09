@@ -1,3 +1,4 @@
+
 import { Publication } from '@/types/common';
 import apiClient from './api';
 import { CrossrefApiResponse } from '@/types/apiResponse';
@@ -11,14 +12,35 @@ export interface PublicationFilters {
 
 // Publication APIs
 export const fetchPublications = async (page = 1, perPage = 10, query = '', filters = {}): Promise<Publication[] | null> => {
-  const params = { page, per_page: perPage, query, ...filters };
-  const response = await apiClient.get('/api/publications/', { params });
-  return response.data;
+  try {
+    const params = { page, per_page: perPage, query, ...filters };
+    const response = await apiClient.get('/api/publications/', { params });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching publications:", error);
+    return null;
+  }
+};
+
+export const fetchMyPublications = async (page = 1, perPage = 10, query = ''): Promise<Publication[] | null> => {
+  try {
+    const params = { page, per_page: perPage, query, owner_only: true };
+    const response = await apiClient.get('/api/publications/my/', { params });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching my publications:", error);
+    return null;
+  }
 };
 
 export const fetchPublicationDetails = async (doi: string): Promise<Publication | null> => {
-  const response = await apiClient.get(`/api/publications/${doi}/`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/api/publications/${doi}/`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching publication details for DOI ${doi}:`, error);
+    return null;
+  }
 };
 
 export const registerPublication = async (data) => {
@@ -90,4 +112,16 @@ export const downloadDatasetWithFormat = async (datasetId: number, format: 'csv'
   }
   window.location.href = url;
   return true;
+};
+
+export const updatePublicationVisibility = async (doi: string, isPublic: boolean) => {
+  try {
+    const response = await apiClient.patch(`/api/publications/${doi}/visibility/`, {
+      is_public: isPublic
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating publication visibility for DOI ${doi}:`, error);
+    throw error;
+  }
 };
