@@ -22,7 +22,7 @@ export const getNotifications = async (): Promise<Notification[]> => {
 
 export const markNotificationAsRead = async (notificationId: number): Promise<boolean> => {
   try {
-    const response = await apiClient.post(`/api/users/notifications/${notificationId}/read/`);
+    await apiClient.post(`/api/users/notifications/${notificationId}/read/`);
     return true;
   } catch (error) {
     console.error("Error marking notification as read:", error);
@@ -32,7 +32,7 @@ export const markNotificationAsRead = async (notificationId: number): Promise<bo
 
 export const markAllNotificationsAsRead = async (): Promise<boolean> => {
   try {
-    const response = await apiClient.post('/api/users/notifications/read-all/');
+    await apiClient.post('/api/users/notifications/read-all/');
     return true;
   } catch (error) {
     console.error("Error marking all notifications as read:", error);
@@ -42,7 +42,7 @@ export const markAllNotificationsAsRead = async (): Promise<boolean> => {
 
 export const deleteNotification = async (notificationId: number): Promise<boolean> => {
   try {
-    const response = await apiClient.delete(`/api/users/notifications/${notificationId}/`);
+    await apiClient.delete(`/api/users/notifications/${notificationId}/`);
     return true;
   } catch (error) {
     console.error("Error deleting notification:", error);

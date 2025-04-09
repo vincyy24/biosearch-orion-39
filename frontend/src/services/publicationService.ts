@@ -67,7 +67,6 @@ export const searchCrossRefByDOI = async (doi: string): Promise<CrossrefApiRespo
   }
 };
 
-// Add a new function to upload data as text instead of file
 export const uploadDatasetAsText = async (
   doi: string,
   data: {
@@ -84,7 +83,6 @@ export const uploadDatasetAsText = async (
   return response.data;
 };
 
-// Add a new function to download dataset in specific format
 export const downloadDatasetWithFormat = async (datasetId: number, format: 'csv' | 'tsv' | 'txt', customDelimiter?: string) => {
   let url = `${apiClient.defaults.baseURL}/api/datasets/${datasetId}/download/?format=${format}`;
   if (format === 'txt' && customDelimiter) {

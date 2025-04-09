@@ -1,6 +1,12 @@
 
 #!/bin/bash
 
+# Make sure npm is available
+if ! command -v npm &> /dev/null; then
+    echo "npm is not installed. Please install npm first."
+    exit 1
+fi
+
 # Navigate to frontend directory
 cd frontend
 

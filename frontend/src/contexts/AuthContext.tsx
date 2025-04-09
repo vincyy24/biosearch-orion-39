@@ -1,20 +1,30 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { getCurrentUser, loginUser, logoutUser, registerUser } from "@/services/auth";
-import { fetchUserProfile } from "@/services/api";
+import { 
+  getCurrentUser, 
+  loginUser, 
+  logoutUser, 
+  registerUser,
+  resetPassword as resetPasswordService,
+  confirmResetPassword as confirmResetPasswordService
+} from "@/services/auth";
 
 interface User {
   id: string;
   name?: string;
   username: string;
   email: string;
-  role?: string;
+  first_name?: string;
+  last_name?: string;
+  is_staff?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
+  isAdmin?: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
   signup: (username: string, email: string, password: string) => Promise<boolean>;
@@ -40,17 +50,24 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = '/api';
 
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
         setLoading(true);
         const currentUser = await getCurrentUser();
-        const userData = await fetchUserProfile(currentUser.name);
-
-        if (userData) {
-          setUser(userData);
+        
+        if (currentUser) {
+          // Transform the user data to match our User interface
+          setUser({
+            id: currentUser.id.toString(),
+            username: currentUser.username,
+            email: currentUser.email,
+            first_name: currentUser.first_name,
+            last_name: currentUser.last_name,
+            is_staff: currentUser.is_staff,
+            name: currentUser.first_name ? `${currentUser.first_name} ${currentUser.last_name || ''}`.trim() : currentUser.username
+          });
         } else {
           setUser(null);
         }
@@ -69,20 +86,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setLoading(true);
 
-      const userData = await loginUser(email, password);
-      setUser(userData);
+      const response = await loginUser(email, password);
+      
+      if (response && response.user) {
+        const userData = response.user;
+        setUser({
+          id: userData.id.toString(),
+          username: userData.username,
+          email: userData.email,
+          name: userData.username // Default to username if name not provided
+        });
 
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
 
-      return true;
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = error instanceof Error
         ? error.message
-        : "An unexpected error occurred. Please try again.";
+        : "Login failed. Please check your credentials and try again.";
 
       toast({
         variant: "destructive",
@@ -96,42 +124,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const loginWithGoogle = async (): Promise<boolean> => {
-    try {
-      setLoading(true);
-      console.log("Google login would be implemented here");
-      const mockUser = {
-        id: "google-user-123",
-        username: "googleuser",
-        name: "Google User",
-        email: "googleuser@example.com",
-        role: "user"
-      };
-
-      setUser(mockUser);
-
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Google login error:', error);
-      toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: "An unexpected error occurred with Google login.",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
+    toast({
+      variant: "destructive",
+      title: "Not implemented",
+      description: "Google login is not available yet.",
+    });
+    return false;
   };
 
   const signup = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      registerUser(username, email, password);
+      await registerUser(username, email, password);
       toast({
         title: "Account created",
         description: "Your account has been successfully created! You can now log in.",
@@ -141,7 +145,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('Signup error:', error);
       const errorMessage = error instanceof Error
         ? error.message
-        : "An unexpected error occurred. Please try again.";
+        : "Registration failed. Please try again.";
 
       toast({
         variant: "destructive",
@@ -157,18 +161,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
-
-      setUser(null);
-
       await logoutUser();
-
+      setUser(null);
       toast({
         title: "Logout successful",
         description: "You have been logged out.",
       });
     } catch (error) {
       console.error('Logout error:', error);
-
+      // Still clear the user state even if the server request fails
+      setUser(null);
       toast({
         variant: "destructive",
         title: "Logout completed with warnings",
@@ -182,27 +184,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const resetPassword = async (email: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/auth/password-reset/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errorMessage = data.error || data.message || "Failed to send reset email";
-        toast({
-          variant: "destructive",
-          title: "Password reset failed",
-          description: errorMessage,
-        });
-        return false;
-      }
-
+      await resetPasswordService(email);
       toast({
         title: "Password reset email sent",
         description: "Check your email for the password reset link",
@@ -224,27 +206,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const confirmResetPassword = async (token: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/auth/password-reset/confirm/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, password }),
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errorMessage = data.error || data.message || "Failed to reset password";
-        toast({
-          variant: "destructive",
-          title: "Password reset failed",
-          description: errorMessage,
-        });
-        return false;
-      }
-
+      await confirmResetPasswordService(token, password);
       toast({
         title: "Password reset successful",
         description: "Your password has been updated. You can now log in with your new password.",
@@ -269,6 +231,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         user,
         isAuthenticated: !!user,
         loading,
+        isAdmin: user?.is_staff,
         login,
         loginWithGoogle,
         signup,

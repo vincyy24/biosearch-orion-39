@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -227,17 +228,21 @@ const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) 
                 </div>
               </div>
               
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3">Contact</h3>
-                <Button variant="outline" size="sm" className="mr-2">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Email
-                </Button>
-                <Button variant="outline" size="sm">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  ORCID Profile
-                </Button>
-              </div>
+              {isAuthenticated && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-3">Contact</h3>
+                  <Button variant="outline" size="sm" className="mr-2">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send Email
+                  </Button>
+                  {profile.orcid_id && (
+                    <Button variant="outline" size="sm">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      ORCID Profile
+                    </Button>
+                  )}
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="publications">
@@ -252,7 +257,7 @@ const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) 
                         title: pub.title,
                         journal: pub.journal,
                         year: pub.year,
-                        doi: "10.1000/example",
+                        doi: pub.doi || "",
                       }}
                       onView={() => {}} // Would navigate to publication detail
                     />
