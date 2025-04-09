@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -39,6 +40,7 @@ const routes = [
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
   { path: "/verify-email", element: <VerifyEmail /> },
+  { path: "/verify-email/:token", element: <VerifyEmail /> },
   { path: "/reset-password", element: <ResetPassword /> },
   { path: "/reset-password/:token", element: <ResetPassword /> },
   { path: "/dashboard", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
@@ -53,7 +55,7 @@ const routes = [
   { path: "/research/:id", element: <ResearchProjectDetail /> },
   { path: "/publications", element: <Publications /> },
   { path: "/publications/new", element: <ProtectedRoute><PublicationRegistration /></ProtectedRoute> },
-  { path: "/publications/details", element: <PublicationDetail /> },
+  { path: "/publications/:doi", element: <PublicationDetail /> },
   { path: "/profile", element: <ProtectedRoute><UserProfile /></ProtectedRoute> },
   { path: "/profile/:username", element: <UserProfile /> },
   { path: "/account-settings", element: <ProtectedRoute><AccountSettings /></ProtectedRoute> },

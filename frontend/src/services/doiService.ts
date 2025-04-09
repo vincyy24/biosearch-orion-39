@@ -1,6 +1,6 @@
-
 import axios from 'axios';
 import { CrossrefApiResponse } from '@/types/apiResponse';
+import apiClient from './api';
 
 export interface CrossrefAuthor {
   given: string;
@@ -15,7 +15,7 @@ export interface DOIMetadata {
   title?: string[];
   author?: CrossrefAuthor[];
   publisher?: string;
-  'container-title'?: string[]; // journal name
+  'container-title'?: string[];
   issued?: { 'date-parts': number[][] };
   URL?: string;
   type?: string;
@@ -37,7 +37,7 @@ export const verifyDOI = async (doi: string): Promise<DOIMetadata | null> => {
     // Clean the DOI - remove any URL prefixes if present
     const cleanDoi = doi.replace(/^https?:\/\/doi.org\//, '');
     
-    // Call Crossref API
+    // Call Crossref API - external API so we keep using axios directly
     const response = await axios.get<CrossrefApiResponse>(`https://api.crossref.org/works/${cleanDoi}`, {
       headers: {
         'Accept': 'application/json',
@@ -129,13 +129,11 @@ export const searchPublicationsByDOI = async (doiList: string[]): Promise<Format
 
 export const getResearcherPublications = async (orcidId: string): Promise<FormattedDOIMetadata[]> => {
   try {
-    // In a real implementation, this would query the Crossref API with the ORCID ID
-    // For now, we'll simulate it with a dummy response
-    // This would be replaced with actual Crossref API integration
-    const response = await axios.get(`https://api.crossref.org/works?filter=orcid:${orcidId}`);
+    // For ORCID publications, call our backend API
+    const response = await apiClient.get(`/api/orcid/publications/${orcidId}`);
     
-    if (response.status === 200 && response.data.message?.items) {
-      return response.data.message.items.map((item: any) => formatDOIMetadata(item)).filter(Boolean) as FormattedDOIMetadata[];
+    if (response.status === 200 && response.data) {
+      return response.data.items.map((item: any) => formatDOIMetadata(item)).filter(Boolean) as FormattedDOIMetadata[];
     }
     
     return [];

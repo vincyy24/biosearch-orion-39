@@ -1,17 +1,47 @@
 
 import apiClient from './api';
 
-export const loginUser = async (email: string, password: string) => {
+export interface LoginResponse {
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  token?: string;
+  message?: string;
+}
+
+export interface CurrentUserResponse {
+  id: number;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  is_staff?: boolean;
+  last_login?: string;
+  date_joined?: string;
+}
+
+export interface RegistrationResponse {
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  message: string;
+}
+
+export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
   const response = await apiClient.post('/api/auth/login/', { email, password });
   return response.data;
 };
 
-export const logoutUser = async () => {
+export const logoutUser = async (): Promise<any> => {
   const response = await apiClient.post('/api/auth/logout/');
   return response.data;
 };
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = async (): Promise<CurrentUserResponse | null> => {
   try {
     const response = await apiClient.get('/api/users/current/');
     return response.data;
@@ -24,7 +54,7 @@ export const getCurrentUser = async () => {
   }
 };
 
-export const registerUser = async (username: string, email: string, password: string) => {
+export const registerUser = async (username: string, email: string, password: string): Promise<RegistrationResponse> => {
   const response = await apiClient.post('/api/users/create/', {
     username,
     email,
@@ -33,28 +63,28 @@ export const registerUser = async (username: string, email: string, password: st
   return response.data;
 };
 
-export const sendVerificationEmail = async (email: string) => {
+export const sendVerificationEmail = async (email: string): Promise<any> => {
   const response = await apiClient.post('/api/users/verify-email/', {
     email,
   });
   return response.data;
 };
 
-export const verifyEmail = async (token: string) => {
+export const verifyEmail = async (token: string): Promise<any> => {
   const response = await apiClient.post('/api/users/verify-email/confirm/', {
     token,
   });
   return response.data;
 };
 
-export const resetPassword = async (email: string) => {
+export const resetPassword = async (email: string): Promise<any> => {
   const response = await apiClient.post('/api/users/reset-password/', {
     email,
   });
   return response.data;
 };
 
-export const confirmResetPassword = async (token: string, password: string) => {
+export const confirmResetPassword = async (token: string, password: string): Promise<any> => {
   const response = await apiClient.post('/api/users/reset-password/confirm/', {
     token,
     password,

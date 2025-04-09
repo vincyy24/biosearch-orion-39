@@ -126,7 +126,11 @@ export const inviteCollaborator = async (projectId: string, data: { email?: stri
 
 // Research file management
 export const uploadResearchFile = async (projectId: string, formData: FormData) => {
-  const response = await apiClient.post(`/api/research/projects/${projectId}/upload/`, formData);
+  const response = await apiClient.post(`/api/research/projects/${projectId}/upload/`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    }
+  });
   return response.data;
 };
 

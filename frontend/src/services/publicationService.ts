@@ -1,6 +1,7 @@
 import { Publication } from '@/types/common';
 import apiClient from './api';
 import { CrossrefApiResponse } from '@/types/apiResponse';
+import axios from 'axios';
 
 export interface PublicationFilters {
   is_public?: boolean;
@@ -26,7 +27,11 @@ export const registerPublication = async (data) => {
 };
 
 export const uploadDatasetToPublication = async (doi: string, formData: FormData) => {
-  const response = await apiClient.post(`/api/publications/${doi}/upload/`, formData);
+  const response = await apiClient.post(`/api/publications/${doi}/upload/`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    }
+  });
   return response.data;
 };
 
@@ -36,19 +41,16 @@ export const fetchPublicationAnalysis = async (doi: string) => {
 };
 
 export const downloadDataset = async (datasetId: number) => {
-  // For direct downloads, we use window.location to trigger the browser's download
-  window.location.href = `/api/datasets/${datasetId}/download/`;
+  // For direct downloads, we'll use window.location
+  window.location.href = `${apiClient.defaults.baseURL}/api/datasets/${datasetId}/download/`;
   return true;
 };
 
-// CrossRef API for DOI verification
+// CrossRef API for DOI verification - these are external API calls, so we'll keep using axios directly
 export const verifyDOI = async (doi: string): Promise<CrossrefApiResponse> => {
   try {
-    const response = await fetch(`https://api.crossref.org/works/${encodeURIComponent(doi)}`);
-    if (!response.ok) {
-      throw new Error(`DOI verification failed: ${response.statusText}`);
-    }
-    return await response.json();
+    const response = await axios.get(`https://api.crossref.org/works/${encodeURIComponent(doi)}`);
+    return response.data;
   } catch (error) {
     console.error("Error verifying DOI:", error);
     throw error;
@@ -57,11 +59,8 @@ export const verifyDOI = async (doi: string): Promise<CrossrefApiResponse> => {
 
 export const searchCrossRefByDOI = async (doi: string): Promise<CrossrefApiResponse> => {
   try {
-    const response = await fetch(`https://api.crossref.org/works?filter=doi:${encodeURIComponent(doi)}`);
-    if (!response.ok) {
-      throw new Error(`DOI search failed: ${response.statusText}`);
-    }
-    return await response.json();
+    const response = await axios.get(`https://api.crossref.org/works?filter=doi:${encodeURIComponent(doi)}`);
+    return response.data;
   } catch (error) {
     console.error("Error searching DOI:", error);
     throw error;
@@ -75,9 +74,9 @@ export const uploadDatasetAsText = async (
     title: string;
     description?: string;
     dataType: string;
-    content: string; // The parsed text content of the file
-    delimiter?: string; // CSV, TSV or custom delimiter
-    headers?: string[]; // Column headers if available
+    content: string;
+    delimiter?: string;
+    headers?: string[];
     accessLevel?: 'public' | 'private';
   }
 ) => {
@@ -87,7 +86,7 @@ export const uploadDatasetAsText = async (
 
 // Add a new function to download dataset in specific format
 export const downloadDatasetWithFormat = async (datasetId: number, format: 'csv' | 'tsv' | 'txt', customDelimiter?: string) => {
-  let url = `/api/datasets/${datasetId}/download/?format=${format}`;
+  let url = `${apiClient.defaults.baseURL}/api/datasets/${datasetId}/download/?format=${format}`;
   if (format === 'txt' && customDelimiter) {
     url += `&delimiter=${encodeURIComponent(customDelimiter)}`;
   }

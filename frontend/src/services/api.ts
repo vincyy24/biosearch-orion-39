@@ -1,5 +1,13 @@
 
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
+
+// Helper function to get cookies
+export const getCookie = (name: string): string | undefined => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift();
+  return undefined;
+};
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
@@ -10,14 +18,11 @@ const apiClient = axios.create({
 });
 
 // Add a request interceptor to automatically add the CSRF token to requests
-apiClient.interceptors.request.use(config => {
+apiClient.interceptors.request.use((config: AxiosRequestConfig) => {
   // Get the CSRF token from cookies if it exists
-  const csrfToken = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('csrftoken='))
-    ?.split('=')[1];
+  const csrfToken = getCookie('csrftoken');
 
-  if (csrfToken) {
+  if (csrfToken && config.headers) {
     config.headers['X-CSRFToken'] = csrfToken;
   }
   
@@ -55,23 +60,94 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Datasets API
-export const fetchRecentDatasets = async () => {
+// API Type Definitions
+export interface Dataset {
+  id: string;
+  title: string;
+  description?: string;
+  author: string;
+  date: string;
+  category: string;
+  access: 'public' | 'private';
+  downloads: number;
+  method?: string;
+  electrode?: string;
+  instrument?: string;
+  experiment_type?: string;
+}
+
+export interface VoltammetryData {
+  id: string;
+  title: string;
+  description: string;
+  data: any[];
+  metadata: {
+    electrode: string;
+    technique: string;
+    scan_rate?: number;
+    electrolyte?: string;
+    reference_electrode?: string;
+    date: string;
+  };
+}
+
+export interface UserProfile {
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  affiliation: string;
+  bio: string;
+  avatar_url: string;
+  is_verified: boolean;
+  publications_count: number;
+  datasets_count: number;
+  research_projects_count: number;
+  date_joined: string;
+  last_active: string;
+  orcid_id?: string;
+}
+
+export interface UserSettings {
+  email_notifications: boolean;
+  display_name_preference: 'username' | 'full_name';
+  default_visibility: 'public' | 'private';
+  theme_preference: 'light' | 'dark' | 'system';
+}
+
+export interface NotificationItem {
+  id: number;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  link?: string;
+  type?: 'info' | 'success' | 'warning' | 'error';
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+// API endpoints - Datasets
+export const fetchRecentDatasets = async (): Promise<PaginatedResponse<Dataset>> => {
   const response = await apiClient.get('/api/dashboard/recent-datasets/');
   return response.data;
 };
 
-export const fetchDatasetById = async (datasetId) => {
+export const fetchDatasetById = async (datasetId: string): Promise<Dataset> => {
   const response = await apiClient.get(`/api/dashboard/datasets/${datasetId}/`);
   return response.data;
 };
 
-export const fetchDatasetVersions = async (datasetId) => {
+export const fetchDatasetVersions = async (datasetId: string) => {
   const response = await apiClient.get(`/api/research/files/${datasetId}/versions/`);
   return response.data;
 };
 
-export const downloadDataset = async (fileId, format = 'csv') => {
+export const downloadDataset = async (fileId: string, format: 'csv' | 'xlsx' | 'json' = 'csv') => {
   const response = await apiClient.get(`/api/research/files/${fileId}/download/?format=${format}`, {
     responseType: 'blob'
   });
@@ -100,51 +176,52 @@ export const downloadDataset = async (fileId, format = 'csv') => {
   return response.data;
 };
 
-export const fetchVoltammetryData = async (experimentId) => {
+// API endpoints - Voltammetry
+export const fetchVoltammetryData = async (experimentId: string): Promise<VoltammetryData> => {
   const response = await apiClient.get(`/api/dashboard/voltammetry/${experimentId}/`);
   return response.data;
 };
 
-export const fetchAllVoltammetryData = async (filters = {}) => {
+export const fetchAllVoltammetryData = async (filters = {}): Promise<PaginatedResponse<VoltammetryData>> => {
   const response = await apiClient.get('/api/dashboard/voltammetry/', { params: filters });
   return response.data;
 };
 
-export const searchVoltammetryData = async (query, filters = {}) => {
+export const searchVoltammetryData = async (query: string, filters = {}): Promise<PaginatedResponse<VoltammetryData>> => {
   const params = { query, ...filters };
   const response = await apiClient.get('/api/dashboard/search-voltammetry/', { params });
   return response.data;
 };
 
-export const fetchUserProfile = async (username) => {
+// API endpoints - Users
+export const fetchUserProfile = async (username: string): Promise<UserProfile> => {
   const response = await apiClient.get(`/api/users/profile/${username}/`);
   return response.data;
 };
 
-// User settings and notifications
-export const fetchUserSettings = async () => {
+export const fetchUserSettings = async (): Promise<UserSettings> => {
   const response = await apiClient.get('/api/users/settings/');
   return response.data;
 };
 
-export const updateUserSettings = async (settings) => {
+export const updateUserSettings = async (settings: Partial<UserSettings>) => {
   const response = await apiClient.put('/api/users/settings/', settings);
   return response.data;
 };
 
-export const fetchUserNotifications = async (page = 1, perPage = 10) => {
+export const fetchUserNotifications = async (page = 1, perPage = 10): Promise<PaginatedResponse<NotificationItem>> => {
   const response = await apiClient.get('/api/users/notifications/', {
     params: { page, per_page: perPage }
   });
   return response.data;
 };
 
-export const markNotificationRead = async (notificationId) => {
+export const markNotificationRead = async (notificationId: number) => {
   const response = await apiClient.put(`/api/users/notifications/${notificationId}/read/`);
   return response.data;
 };
 
-export const deleteNotification = async (notificationId) => {
+export const deleteNotification = async (notificationId: number) => {
   const response = await apiClient.delete(`/api/users/notifications/${notificationId}/`);
   return response.data;
 };
