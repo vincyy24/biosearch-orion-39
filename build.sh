@@ -11,7 +11,8 @@ fi
 cd frontend
 npm install 
 
-# Build the frontend using the local node_modules path
+# Use npx to run vite from node_modules
+echo "Building frontend application..."
 npx vite build
 
 # Navigate back to root

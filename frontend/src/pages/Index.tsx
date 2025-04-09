@@ -15,7 +15,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { incrementSearches } = useAnalytics();
+  const { incrementSearches, addResearchHours } = useAnalytics();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,9 +77,12 @@ const Index = () => {
     return () => {
       const endTime = new Date();
       const sessionTimeHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-      // We would increment research hours here, but we don't want to in the cleanup function
+      // Only log if the session was longer than 1 minute
+      if (sessionTimeHours > 0.016) { // more than 1 minute
+        addResearchHours(sessionTimeHours);
+      }
     };
-  }, []);
+  }, [addResearchHours]);
 
   return (
     <AppLayout>
