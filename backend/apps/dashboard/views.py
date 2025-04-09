@@ -160,10 +160,7 @@ class RecentDatasetsView(APIView):
     API view to get recent public datasets for the homepage.
     """
     def get(self, request):
-        recent_datasets = FileUpload.objects.filter(
-            is_public=True
-        ).order_by('-upload_date')[:5]
-        
+        recent_datasets = FileUpload.objects.filter().order_by('-created_at')[:5]
         datasets = []
         for dataset in recent_datasets:
             datasets.append({

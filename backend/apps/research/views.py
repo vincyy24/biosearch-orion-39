@@ -1069,12 +1069,12 @@ def get_user_role_in_project(user, project):
         return None
 
 
-def _check_access(user, project_id):
-    project = get_object_or_404(Research, project_id=project_id)
+def _check_access(user, research_id):
+    research = get_object_or_404(Research, research_id=research_id)
     # Check if user has access to this project
-    if not has_project_access(user, project):
-        return JsonResponse({"error": "You don't have access to this project"}, status=403)
-    return project
+    if not has_project_access(user, research):
+        return JsonResponse({"error": "You don't have access to this research"}, status=403)
+    return research
 
 
 # Add these URL patterns to your urls.py

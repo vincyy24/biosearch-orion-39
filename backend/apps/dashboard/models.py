@@ -1,5 +1,5 @@
 from django.db import models
-
+from apps.common.models import TimeStampedModel
 # class DataAnalysisPipeline(models.Model):
 #     """Model for defining data analysis workflows"""
     
@@ -9,5 +9,5 @@ from django.db import models
 class VoltammetryData(models.Model):
     pass
 
-class FileUpload(models.Model):
+class FileUpload(TimeStampedModel):
     pass
