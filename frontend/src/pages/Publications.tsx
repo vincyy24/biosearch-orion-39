@@ -19,7 +19,7 @@ const Publications = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
-  
+
   const [loading, setLoading] = useState(true);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [filteredPublications, setFilteredPublications] = useState<Publication[]>([]);
@@ -38,16 +38,16 @@ const Publications = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/api/publications/');
-      
+
       // If the API isn't working yet, use sample data
       let publicationsData = response.data?.results || getSamplePublications();
-      
+
       // Ensure all publications have researchers array
       publicationsData = publicationsData.map((pub: Publication) => ({
         ...pub,
         researchers: pub.researchers || [],
       }));
-      
+
       setPublications(publicationsData);
       applyFilters(publicationsData, searchQuery, activeTab);
     } catch (error) {
@@ -56,7 +56,7 @@ const Publications = () => {
       const sampleData = getSamplePublications();
       setPublications(sampleData);
       applyFilters(sampleData, searchQuery, activeTab);
-      
+
       toast({
         variant: "destructive",
         title: "Error",
@@ -119,7 +119,7 @@ const Publications = () => {
 
   const applyFilters = (data: Publication[], query: string, tab: string) => {
     let filtered = [...data];
-    
+
     // Apply search query
     if (query) {
       const searchTerms = query.toLowerCase().split(" ");
@@ -127,15 +127,15 @@ const Publications = () => {
         const titleMatch = pub.title.toLowerCase().includes(query.toLowerCase());
         const doiMatch = pub.doi.toLowerCase().includes(query.toLowerCase());
         const journalMatch = pub.journal.toLowerCase().includes(query.toLowerCase());
-        const researchersMatch = pub.researchers?.some(r => 
+        const researchersMatch = pub.researchers?.some(r =>
           r.name.toLowerCase().includes(query.toLowerCase()) ||
           r.institution.toLowerCase().includes(query.toLowerCase())
         );
-        
+
         return titleMatch || doiMatch || journalMatch || researchersMatch;
       });
     }
-    
+
     // Apply tab filter
     if (tab === "my") {
       // In a real app, this would filter to show only the user's publications
@@ -146,7 +146,7 @@ const Publications = () => {
     } else if (tab === "peer_reviewed") {
       filtered = filtered.filter(pub => pub.is_peer_reviewed);
     }
-    
+
     // Apply sorting
     if (sortBy === "date_desc") {
       filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -157,7 +157,7 @@ const Publications = () => {
     } else if (sortBy === "title_desc") {
       filtered.sort((a, b) => b.title.localeCompare(a.title));
     }
-    
+
     setFilteredPublications(filtered);
     setTotalPages(Math.ceil(filtered.length / itemsPerPage));
     setCurrentPage(1); // Reset to first page when filters change
@@ -198,7 +198,7 @@ const Publications = () => {
             </p>
           </div>
           {isAuthenticated && (
-            <Button 
+            <Button
               onClick={() => navigate("/publications/register")}
               className="mt-4 sm:mt-0"
             >
@@ -222,7 +222,7 @@ const Publications = () => {
                 />
               </div>
             </form>
-            
+
             <div className="flex gap-2">
               <div className="w-[180px]">
                 <Select value={sortBy} onValueChange={handleSortChange}>
@@ -238,7 +238,7 @@ const Publications = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <Button variant="outline" onClick={() => setSearchQuery("")}>
                 <Filter className="mr-2 h-4 w-4" />
                 Reset
@@ -253,7 +253,7 @@ const Publications = () => {
               <TabsTrigger value="private">Private</TabsTrigger>
               <TabsTrigger value="peer_reviewed">Peer-Reviewed</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="all" className="mt-6">
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -288,7 +288,7 @@ const Publications = () => {
                       />
                     ))}
                   </div>
-                  
+
                   {totalPages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
@@ -308,7 +308,7 @@ const Publications = () => {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="my" className="mt-6">
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -343,7 +343,7 @@ const Publications = () => {
                       />
                     ))}
                   </div>
-                  
+
                   {totalPages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
@@ -363,7 +363,7 @@ const Publications = () => {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="private" className="mt-6">
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -398,7 +398,7 @@ const Publications = () => {
                       />
                     ))}
                   </div>
-                  
+
                   {totalPages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
@@ -418,7 +418,7 @@ const Publications = () => {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="peer_reviewed" className="mt-6">
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -453,7 +453,7 @@ const Publications = () => {
                       />
                     ))}
                   </div>
-                  
+
                   {totalPages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination

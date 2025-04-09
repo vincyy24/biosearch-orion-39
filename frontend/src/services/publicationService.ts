@@ -1,4 +1,4 @@
-
+import { Publication } from '@/types/common';
 import apiClient from './api';
 import { CrossrefApiResponse } from '@/types/apiResponse';
 
@@ -9,13 +9,13 @@ export interface PublicationFilters {
 }
 
 // Publication APIs
-export const fetchPublications = async (page = 1, perPage = 10, query = '', filters = {}) => {
+export const fetchPublications = async (page = 1, perPage = 10, query = '', filters = {}): Promise<Publication[] | null> => {
   const params = { page, per_page: perPage, query, ...filters };
   const response = await apiClient.get('/api/publications/', { params });
   return response.data;
 };
 
-export const fetchPublicationDetails = async (doi: string) => {
+export const fetchPublicationDetails = async (doi: string): Promise<Publication | null> => {
   const response = await apiClient.get(`/api/publications/${doi}/`);
   return response.data;
 };

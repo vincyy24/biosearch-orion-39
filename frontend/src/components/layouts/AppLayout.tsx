@@ -34,7 +34,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   }, []);
 
   // Determine whether to show the sidebar based on auth status
-  const shouldShowSidebar = showSidebar && isAuthenticated && !isMobile;
+  const shouldShowSidebar = showSidebar && !isMobile;
 
   return (
     <SidebarProvider>

@@ -2,12 +2,12 @@
 import apiClient from './api';
 
 export const loginUser = async (email: string, password: string) => {
-  const response = await apiClient.post('/api/login/', { email, password });
+  const response = await apiClient.post('/api/auth/login/', { email, password });
   return response.data;
 };
 
 export const logoutUser = async () => {
-  const response = await apiClient.post('/api/logout/');
+  const response = await apiClient.post('/api/auth/logout/');
   return response.data;
 };
 
