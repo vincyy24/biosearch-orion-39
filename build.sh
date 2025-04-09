@@ -11,8 +11,8 @@ fi
 cd frontend
 npm install 
 
-# Build the frontend
-npm run build
+# Build the frontend using the local node_modules path
+npx vite build
 
 # Navigate back to root
 cd ..
