@@ -31,14 +31,23 @@ class Experiment(TimeStampedModel):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     researcher = models.ForeignKey(
-        'auth.User', on_delete=models.CASCADE, related_name='experiments')
+        'auth.User',
+        on_delete=models.CASCADE,
+        related_name='experiments'
+    )
     instrument = models.ForeignKey(
-        Instrument, on_delete=models.CASCADE, related_name='experiments')
+        Instrument,
+        on_delete=models.CASCADE,
+        related_name='experiments'
+    )
     electrode = models.ForeignKey(
-        Electrode, on_delete=models.CASCADE, related_name='experiments')    
+        Electrode,
+        on_delete=models.CASCADE,
+        related_name='experiments'
+    )
     voltammetry_technique = models.ForeignKey(
         VoltammetryTechnique, on_delete=models.CASCADE, related_name='experiments')
-    
+
     experiment_type = models.CharField(max_length=50, choices=[
         ('cyclic', 'Cyclic Voltammetry'),
         ('differential_pulse', 'Differential Pulse Voltammetry'),

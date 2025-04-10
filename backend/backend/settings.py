@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'dj_rest_auth.registration',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
+    # 'django_ratelimit',
 
     # Custom Apps
     'apps.analytics',
@@ -73,14 +74,6 @@ app_settings.SIGNUP_FIELDS["username"]["required"] = True
 app_settings.SIGNUP_FIELDS['password1']['required'] = True
 app_settings.SIGNUP_FIELDS['password2']['required'] = True
 
-
-# REST framework settings
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-}
 
 MIDDLEWARE = [
     # CORS middleware should be at the top
@@ -115,6 +108,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "X-CSRFToken",
 ]
 
+
 # CSRF settings
 CSRF_COOKIE_SAMESITE = 'Lax'  # or 'None' with secure=True in production
 CSRF_COOKIE_HTTPONLY = False  # False so that JavaScript can access it
@@ -125,12 +119,22 @@ SESSION_COOKIE_HTTPONLY = True
 if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
+        # More security headers
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 
 # Frontend URL for password reset links
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:8000')
 
-# Django Plotly Dash settings
+# Add security headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+# Django Plotly Dash settings
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',
@@ -142,13 +146,28 @@ PLOTLY_DASH = {
 
 # Rest Framework settings
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day',
+        'auth': '20/hour',  # For authentication endpoints
+    },
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_VERSION': 'v1',
+    'ALLOWED_VERSIONS': ['v1'],
 }
 
 # Grappelli admin settings

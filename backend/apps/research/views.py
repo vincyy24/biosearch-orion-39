@@ -1,3 +1,4 @@
+import traceback
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -23,7 +24,7 @@ from apps.users.models import OrcidProfile
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ResearchProjects(APIView):
+class ResearchView(APIView):
     """Handle research projects listing and creation"""
     @method_decorator(login_required)
     def get(self, request):
@@ -48,11 +49,11 @@ class ResearchProjects(APIView):
         results = []
         for project in page_obj:
             results.append({
-                'id': project.project_id,
+                'id': project.research_id,
                 'title': project.title,
                 'description': project.description,
                 'status': project.status,
-                'is_public': project.is_public,
+                # 'is_public': project.is_public,
                 'created_at': project.created_at.isoformat(),
                 'updated_at': project.updated_at.isoformat(),
                 'head_researcher': {
@@ -78,34 +79,32 @@ class ResearchProjects(APIView):
     def post(self, request):
         # Create a new research project
         try:
-            data = json.loads(request.body)
+            data = request.data
             title = data.get('title')
             description = data.get('description', '')
-            is_public = data.get('is_public', False)
 
             if not title:
                 return JsonResponse({"error": "Title is required"}, status=400)
 
             # Generate a unique project ID
-            project_id = f"RP-{uuid.uuid4().hex[:8].upper()}"
+            research_id = f"RP-{uuid.uuid4().hex[:8].upper()}"
 
             # Create the project
             project = Research.objects.create(
-                project_id=project_id,
+                research_id=research_id,
                 title=title,
                 description=description,
                 head_researcher=request.user,
-                is_public=is_public
             )
 
             return JsonResponse({
                 'message': 'Research project created successfully',
                 'project': {
-                    'id': project.project_id,
+                    'id': project.research_id,
                     'title': project.title,
                     'description': project.description,
                     'status': project.status,
-                    'is_public': project.is_public,
+                    # 'is_public': project.is_public,
                     'created_at': project.created_at.isoformat(),
                     'head_researcher': {
                         'id': request.user.id,
@@ -116,17 +115,18 @@ class ResearchProjects(APIView):
             })
 
         except Exception as e:
+            print(traceback.print_exc())
             return JsonResponse({"error": str(e)}, status=500)
 
 
 @method_decorator(csrf_exempt, "dispatch")
-class ResearchProjectDetail(APIView):
+class ResearchDetailView(APIView):
     """Handle individual research project operations"""
     # Get the project
 
     @method_decorator(login_required)
-    def get(self, request, project_id):
-        project = _check_access(request.user, project_id)
+    def get(self, request, research_id):
+        project = _check_access(request.user, research_id)
         # Get project details including collaborators
         collaborators = []
         for collab in project.collaborators.all():
@@ -154,7 +154,7 @@ class ResearchProjectDetail(APIView):
             })
 
         return JsonResponse({
-            'id': project.project_id,
+            'id': project.research_id,
             'title': project.title,
             'description': project.description,
             'status': project.status,
@@ -174,8 +174,8 @@ class ResearchProjectDetail(APIView):
         })
 
     @method_decorator(login_required)
-    def put(self, request, project_id):
-        project = self._check_access(request.user, project_id)
+    def put(self, request, research_id):
+        project = self._check_access(request.user, research_id)
         # Update project details
         # Only head researcher or managers can update
         if not can_manage_project(request.user, project):
@@ -199,7 +199,7 @@ class ResearchProjectDetail(APIView):
             return JsonResponse({
                 'message': 'Research project updated successfully',
                 'project': {
-                    'id': project.project_id,
+                    'id': project.research_id,
                     'title': project.title,
                     'description': project.description,
                     'status': project.status,
@@ -212,8 +212,8 @@ class ResearchProjectDetail(APIView):
             return JsonResponse({"error": str(e)}, status=500)
 
     @method_decorator(login_required)
-    def delete(self, request, project_id):
-        project = self._check_access(request.user, project_id)
+    def delete(self, request, research_id):
+        project = self._check_access(request.user, research_id)
         # Delete project
         # Only head researcher can delete
         if project.head_researcher != request.user:
@@ -228,12 +228,12 @@ class ResearchProjectDetail(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class AddCollaborator(APIView):
+class AddCollaboratorView(APIView):
     """Add a collaborator to a research project"""
 
     @method_decorator(login_required)
-    def post(self, request, project_id):
-        project = _check_access(request.user, project_id)
+    def post(self, request, research_id):
+        project = _check_access(request.user, research_id)
         try:
             data = json.loads(request.body)
             username_or_email = data.get('username_or_email')
@@ -289,13 +289,13 @@ class AddCollaborator(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ManageCollaborator(APIView):
+class ManageCollaboratorView(APIView):
     """Update or remove a collaborator"""
     # Get the collaborator
     @method_decorator(login_required)
-    def put(self, request, collaborator_id, project_id):
+    def put(self, request, collaborator_id, research_id):
         # Update collaborator role
-        project = _check_access(request.user, project_id)
+        project = _check_access(request.user, research_id)
         collaborator = get_object_or_404(
             ResearchCollaborator, id=collaborator_id, project=project)
         try:
@@ -329,9 +329,9 @@ class ManageCollaborator(APIView):
             return JsonResponse({"error": str(e)}, status=500)
 
     @method_decorator(login_required)
-    def delete(self, request, collaborator_id, project_id):
+    def delete(self, request, collaborator_id, research_id):
         # Remove collaborator
-        project = _check_access(request.user, project_id)
+        project = _check_access(request.user, research_id)
         collaborator = get_object_or_404(
             ResearchCollaborator, id=collaborator_id, project=project)
         username = collaborator.user.username
@@ -343,11 +343,11 @@ class ManageCollaborator(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class AssignExperiment(APIView):
+class AssignExperimentView(APIView):
     """Assign an experiment to a research project"""
     @method_decorator(login_required)
-    def post(self, request, project_id):
-        project = _check_access(request.user, project_id)
+    def post(self, request, research_id):
+        project = _check_access(request.user, research_id)
         try:
             data = json.loads(request.body)
             experiment_id = data.get('experiment_id')
@@ -360,7 +360,7 @@ class AssignExperiment(APIView):
                 Experiment, experiment_id=experiment_id)
 
             # Assign to project
-            experiment.research_project = project
+            experiment.research = project
             experiment.save()
 
             return JsonResponse({
@@ -378,11 +378,11 @@ class AssignExperiment(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class DatasetComparisons(APIView):
+class DatasetComparisonsView(APIView):
     """Create or list dataset comparisons"""
 
     @method_decorator(login_required)
-    def post(self, request):
+    def post(self, request, research_id=None):
         try:
             data = json.loads(request.body)
             title = data.get('title')
@@ -405,10 +405,24 @@ class DatasetComparisons(APIView):
                 except Experiment.DoesNotExist:
                     return JsonResponse({"error": f"Dataset {dataset_id} not found"}, status=404)
 
-            # Check if user has access to all datasets
-            for dataset in datasets:
-                if dataset.research_project and not has_project_access(request.user, dataset.research_project) and not dataset.research_project.is_public:
-                    return JsonResponse({"error": f"You don't have access to dataset {dataset.experiment_id}"}, status=403)
+            # If research_id is provided, validate the project and datasets
+            if research_id:
+                research = get_object_or_404(Research, research_id=research_id)
+
+                # Check if user has access to the project
+                if not has_project_access(request.user, research):
+                    return JsonResponse({"error": "You don't have access to this project"}, status=403)
+
+                # Ensure all datasets belong to the project
+                for dataset in datasets:
+                    if dataset.research != research:
+                        return JsonResponse({"error": f"Dataset {dataset.experiment_id} does not belong to the project"}, status=400)
+
+            # Check if user has access to all datasets (if research_id is not provided)
+            if not research_id:
+                for dataset in datasets:
+                    if dataset.research and not has_project_access(request.user, dataset.research):
+                        return JsonResponse({"error": f"You don't have access to dataset {dataset.experiment_id}"}, status=403)
 
             # Generate a unique comparison ID
             comparison_id = f"CMP-{uuid.uuid4().hex[:8].upper()}"
@@ -421,7 +435,7 @@ class DatasetComparisons(APIView):
                 description=description,
                 created_by=request.user,
                 datasets=dataset_ids,
-                is_public=is_public,
+                research=research if research_id else None,
                 # Simulated comparison results
                 comparison_results={
                     "summary": "Comparison between multiple datasets",
@@ -448,11 +462,11 @@ class DatasetComparisons(APIView):
             return JsonResponse({"error": str(e)}, status=500)
 
     @method_decorator(login_required)
-    def get(self, request, project_id=None):
+    def get(self, request, research_id=None):
         # List comparisons
-        # If project_id is provided, filter by project
-        if project_id:
-            project = get_object_or_404(Research, project_id=project_id)
+        # If research_id is provided, filter by project
+        if research_id:
+            project = get_object_or_404(Research, research_id=research_id)
 
             # Check if user has access to project
             if not has_project_access(request.user, project) and not project.is_public:
@@ -520,7 +534,7 @@ class ComparisonDetail(APIView):
             for dataset_id in comparison.datasets:
                 try:
                     dataset = Experiment.objects.get(experiment_id=dataset_id)
-                    if dataset.research_project and has_project_access(request.user, dataset.research_project):
+                    if dataset.research and has_project_access(request.user, dataset.research):
                         has_access = True
                         break
                 except Experiment.DoesNotExist:
@@ -569,9 +583,9 @@ class InviteCollaboratorView(APIView):
     """Handle invitations to collaborate on research projects"""
 
     @method_decorator(login_required)
-    def post(self, request, project_id):
+    def post(self, request, research_id):
         """Send invitation to a user to collaborate on a project"""
-        project = get_object_or_404(Research, project_id=project_id)
+        project = get_object_or_404(Research, research_id=research_id)
 
         # Check if user has permission to invite collaborators
         if not can_manage_project(request.user, project):
@@ -675,9 +689,9 @@ class InviteCollaboratorView(APIView):
 class ResearchVersionsView(APIView):
     """Handle version history for research projects"""
 
-    def get(self, request, project_id):
+    def get(self, request, research_id):
         """Get version history for a research project"""
-        project = get_object_or_404(Research, project_id=project_id)
+        project = get_object_or_404(Research, research_id=research_id)
 
         # Check if user has access to this project
         if not has_project_access(request.user, project) and not project.is_public:
@@ -716,14 +730,14 @@ class ResearchVersionsView(APIView):
         ]
 
         return JsonResponse({
-            'project_id': project.project_id,
+            'research_id': project.research_id,
             'title': project.title,
             'versions': versions
         })
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ResearchUpload(APIView):
+class ResearchUploadView(APIView):
     """Handle file uploads for research projects"""
 
     @method_decorator(login_required)
@@ -767,13 +781,13 @@ class ResearchUpload(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class ResearchFileUploadView(APIView):
     @method_decorator(login_required)
-    def post(self, request, project_id=None):
+    def post(self, request, research_id=None):
         """Upload a file to a research project"""
-        if not project_id:
+        if not research_id:
             return JsonResponse({"error": "Project ID is required"}, status=400)
 
         try:
-            project = get_object_or_404(Research, project_id=project_id)
+            project = get_object_or_404(Research, research_id=research_id)
 
             # Check if the current user is authorized to upload to this project
             if (request.user != project.head_researcher and
@@ -790,7 +804,7 @@ class ResearchFileUploadView(APIView):
             file_name = f"{uuid.uuid4()}_{file.name}"
 
             # Create directory if it doesn't exist
-            upload_path = os.path.join('research', project_id, 'datasets')
+            upload_path = os.path.join('research', research_id, 'datasets')
             full_path = os.path.join(settings.MEDIA_ROOT, upload_path)
             os.makedirs(full_path, exist_ok=True)
 
@@ -807,7 +821,7 @@ class ResearchFileUploadView(APIView):
                 file_type=file.content_type,
                 is_public=request.POST.get(
                     'is_public', 'false').lower() == 'true' and project.is_public,
-                research_project=project,
+                research=project,
             )
 
             return JsonResponse({
@@ -825,11 +839,11 @@ class ResearchFileUploadView(APIView):
     """Handle file uploads for research projects with text content storage"""
 
     @method_decorator(login_required)
-    def post(self, request, project_id=None):
+    def post(self, request, research_id=None):
         try:
-            # Check if project_id is provided
-            if project_id:
-                project = _check_access(request.user, project_id)
+            # Check if research_id is provided
+            if research_id:
+                project = _check_access(request.user, research_id)
 
                 # Check if user is head researcher or can contribute
                 if not (project.head_researcher == request.user or can_contribute_to_project(request.user, project)):
@@ -854,7 +868,7 @@ class ResearchFileUploadView(APIView):
                 description=description,
                 experiment_type=experiment_type,
                 is_public=is_public,
-                research_project=project if project_id else None
+                research=project if research_id else None
             )
 
             return JsonResponse({
@@ -884,7 +898,7 @@ class ResearchFileVersionView(APIView):
 
             # Check if user has access to the file
             if original_file.uploaded_by != request.user and (
-                (original_file.research_project and not has_project_access(request.user, original_file.research_project)) and
+                (original_file.research and not has_project_access(request.user, original_file.research)) and
                 not original_file.is_public
             ):
                 return JsonResponse({"error": "You don't have access to this file"}, status=403)
@@ -937,9 +951,9 @@ class ResearchFileVersionView(APIView):
 
             # Check if user has access to modify the file
             if original_file.uploaded_by != request.user and (
-                original_file.research_project and
+                original_file.research and
                 not can_contribute_to_project(
-                    request.user, original_file.research_project)
+                    request.user, original_file.research)
             ):
                 return JsonResponse({"error": "You don't have permission to modify this file"}, status=403)
 
@@ -979,7 +993,7 @@ class ResearchFileDownloadView(APIView):
 
             # Check if user has access to the file
             if file_upload.uploaded_by != request.user and (
-                (file_upload.research_project and not has_project_access(request.user, file_upload.research_project)) and
+                (file_upload.research and not has_project_access(request.user, file_upload.research)) and
                 not file_upload.is_public
             ):
                 return JsonResponse({"error": "You don't have access to this file"}, status=403)
@@ -1075,11 +1089,3 @@ def _check_access(user, research_id):
     if not has_project_access(user, research):
         return JsonResponse({"error": "You don't have access to this research"}, status=403)
     return research
-
-
-# Add these URL patterns to your urls.py
-"""
-path('research/projects/<str:project_id>/upload/', ResearchFileUploadView.as_view(), name='research_file_upload'),
-path('research/files/<int:file_id>/versions/', ResearchFileVersionView.as_view(), name='research_file_versions'),
-path('research/files/<int:file_id>/download/', ResearchFileDownloadView.as_view(), name='research_file_download'),
-"""

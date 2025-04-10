@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -42,7 +43,14 @@ class DataCategory(models.Model):
 
 
 class Dataset(CreatedAtModel):
-    title = models.CharField(max_length=255)
+    id = models.UUIDField(auto_created=True, default=uuid.uuid4)
+    title = models.CharField(max_length=255, primary_key=True)
+    content = models.TextField(
+        help_text="Content of the dataset, typically raw data or metadata",
+        blank=False,
+        null=False,
+        default=''
+    )
     description = models.TextField(blank=True, default='')
     file_path = models.CharField(max_length=500)
     file_size = models.BigIntegerField()

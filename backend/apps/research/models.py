@@ -20,7 +20,7 @@ class Research(TimeStampedModel):
     head_researcher = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='headed_researches')
     collaborators = models.ForeignKey(
-        'collaboration.ResearchCollaborator', on_delete=models.CASCADE, related_name='researches')
+        'collaboration.ResearchCollaborator', on_delete=models.CASCADE, related_name='researches', null=True)
     status = models.CharField(max_length=20, choices=STATUS, default='active')
 
     def __str__(self):

@@ -457,63 +457,6 @@ class NotificationSettingsView(APIView):
         # ...
         
         return Response(settings)
-class EmailVerificationView(APIView):
-    """
-    API view to handle email verification.
-    """
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        uid = request.data.get('uid')
-        token = request.data.get('token')
-        
-        if not uid or not token:
-            return Response(
-                {'error': 'UID and token are required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            # Decode the user ID
-            user_id = force_str(urlsafe_base64_decode(uid))
-            user = User.objects.get(pk=user_id)
-            
-            # Verify token
-            if default_token_generator.check_token(user, token):
-                # Activate user
-                user.is_active = True
-                user.save()
-                
-                # Log user in
-                login(request, user)
-                
-                is_admin = user.is_staff or user.is_superuser
-                
-                return Response({
-                    'message': 'Email verified successfully',
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'name': user.get_full_name() or user.username,
-                    'role': 'admin' if is_admin else 'user'
-                })
-            else:
-                return Response(
-                    {'error': 'Invalid or expired verification token'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-                
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'User not found'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            return Response(
-                {'error': str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
 
 # ORCID API endpoints
 ORCID_API_URL = "https://pub.orcid.org/v3.0"

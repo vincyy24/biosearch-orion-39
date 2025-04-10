@@ -40,7 +40,7 @@ class InviteCollaboratorView(APIView):
             
             # Create invitation record
             invitation = CollaborationInvite.objects.create(
-                project_id=research,
+                research_id=research,
                 inviter=request.user,
                 invitee=user,
                 email=email,
@@ -68,21 +68,21 @@ class InviteCollaboratorView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    def get(self, request, project_id):
+    def get(self, request, research_id):
         # Get all invitations for a project
-        invitations = CollaborationInvite.objects.filter(project_id=project_id).values(
+        invitations = CollaborationInvite.objects.filter(research_id=research_id).values(
             'id', 'invitee__username', 'invitee__email', 'email', 'orcid_id', 'role', 'status', 'created_at'
         )
         
         return Response(list(invitations))
     
 # Helper functions for collaboration invites
-def send_collaboration_notification(user, inviter, project_id, role):
+def send_collaboration_notification(user, inviter, research_id, role):
     """Send in-app notification for collaboration invite."""
     # Implementation for sending in-app notification
-    print(f"Sending notification to {user.email} for project {project_id} with role {role}")
+    print(f"Sending notification to {user.email} for project {research_id} with role {role}")
 
-def send_collaboration_email(email, inviter, project_id, role):
+def send_collaboration_email(email, inviter, research_id, role):
     """Send email notification for collaboration invite."""
     # Implementation for sending email
-    print(f"Sending email to {email} for project {project_id} with role {role}")
+    print(f"Sending email to {email} for project {research_id} with role {role}")

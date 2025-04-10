@@ -1,4 +1,3 @@
-
 from django.db.models import Q
 from django.middleware.csrf import get_token
 from rest_framework import status

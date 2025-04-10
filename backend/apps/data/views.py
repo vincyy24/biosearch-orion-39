@@ -1,3 +1,4 @@
+import traceback
 from django.http import HttpResponse
 from rest_framework import serializers
 from rest_framework import status
@@ -7,8 +8,9 @@ from rest_framework.response import Response
 import io
 import pandas as pd
 
-from .models import DataCategory, DataType, FileUpload
+from .models import DataCategory, DataType, Dataset, FileUpload
 from .serializers import DataCategorySerializer, DataTypeSerializer, FileUploadSerializer
+
 
 class DataTypeListView(ListAPIView):
     """
@@ -24,6 +26,7 @@ class DataCategoriesListView(ListAPIView):
     """
     queryset = DataCategory.objects.all()
     serializer_class = DataCategorySerializer
+
 
 class FileUploadCreateView(CreateAPIView):
     """
@@ -51,7 +54,8 @@ class FileUploadCreateView(CreateAPIView):
             try:
                 category = DataCategory.objects.get(id=category_id)
             except DataCategory.DoesNotExist:
-                raise serializers.ValidationError({'error': 'Invalid category'})
+                raise serializers.ValidationError(
+                    {'error': 'Invalid category'})
 
         # Read and store file content
         content = file.read().decode('utf-8')
@@ -79,88 +83,139 @@ class DownloadView(ListAPIView):
     """
     API view to handle file downloads, converting stored text data to the requested format.
     """
-    def get(self, request):
-        dataset = request.query_params.get('dataset')
-        file_format = request.query_params.get('format', 'csv')
-        delimiter = request.query_params.get('delimiter', ',')  # For custom format
-        
-        if not dataset:
-            return Response({'error': 'Dataset is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if file_format not in ['csv', 'tsv', 'txt']:
-            return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+    # def get(self, request):
+    #     dataset = request.query_params.get('dataset')
+    #     file_format = request.query_params.get('format', 'csv')
+    #     delimiter = request.query_params.get(
+    #         'delimiter', ',')  # For custom format
+
+    #     if not dataset:
+    #         return Response({'error': 'Dataset is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    #     if file_format not in ['csv', 'tsv', 'txt']:
+    #         return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
+
+    #     try:
+    #         file_upload = FileUpload.objects.get(id=dataset)
+
+    #         is_public = file_upload.is_public
+    #         is_owner = request.user.is_authenticated and request.user == file_upload.user
+    #         is_staff = request.user.is_authenticated and request.user.is_staff
+
+    #         if not (is_public or is_owner or is_staff):
+    #             return Response(
+    #                 {'error': 'Access denied: This dataset is private'},
+    #                 status=status.HTTP_403_FORBIDDEN
+    #             )
+
+    #         file_upload.downloads_count += 1
+    #         file_upload.save()
+
+    #         # Get the file content from the database
+    #         content = file_upload.file_content
+
+    #         if not content:
+    #             return Response(
+    #                 {'error': 'File content not found'},
+    #                 status=status.HTTP_404_NOT_FOUND
+    #             )
+
+    #         # Process the content based on the original delimiter and requested format
+    #         original_delimiter = file_upload.delimiter or ','
+
+    #         try:
+    #             # Parse the content as CSV
+    #             df = pd.read_csv(io.StringIO(content), sep=original_delimiter)
+
+    #             if file_format == 'csv':
+    #                 output_delimiter = ','
+    #                 content_type = 'text/csv'
+    #                 file_ext = 'csv'
+    #             elif file_format == 'tsv':
+    #                 output_delimiter = '\t'
+    #                 content_type = 'text/tab-separated-values'
+    #                 file_ext = 'tsv'
+    #             else:  # txt with custom delimiter
+    #                 output_delimiter = delimiter
+    #                 content_type = 'text/plain'
+    #                 file_ext = 'txt'
+
+    #             response = HttpResponse(content_type=content_type)
+    #             response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}.{file_ext}"'
+
+    #             if file_format == 'csv' or file_format == 'tsv' or file_format == 'txt':
+    #                 df.to_csv(path_or_buf=response,
+    #                           sep=output_delimiter, index=False)
+
+    #             return response
+
+    #         except Exception as e:
+    #             return Response(
+    #                 {'error': f'Failed to convert file: {str(e)}'},
+    #                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    #             )
+
+    #     except FileUpload.DoesNotExist:
+    #         return self._generate_sample_data(dataset, file_format, delimiter)
+    #     except Exception as e:
+    #         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get(self, request, dataset_id):
+        if not dataset_id:
+            return Response({'error': 'Dataset ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        format = request.query_params.get('format', 'csv')
+        delimiter = request.query_params.get('delimiter', ',')
+        headers = bool(int(request.query_params.get('headers', '1')))
+        encoding = request.query_params.get('encoding', 'utf-8')
+        skiprows = request.query_params.get('skiprows', 0)
+
         try:
-            file_upload = FileUpload.objects.get(id=dataset)
-            
-            is_public = file_upload.is_public
-            is_owner = request.user.is_authenticated and request.user == file_upload.user
-            is_staff = request.user.is_authenticated and request.user.is_staff
-            
-            if not (is_public or is_owner or is_staff):
-                return Response(
-                    {'error': 'Access denied: This dataset is private'}, 
-                    status=status.HTTP_403_FORBIDDEN
-                )
-                
-            file_upload.downloads_count += 1
-            file_upload.save()
-            
-            # Get the file content from the database
-            content = file_upload.file_content
-            
+            dataset = Dataset.objects.get(id=dataset_id)
+            content = dataset.content
             if not content:
-                return Response(
-                    {'error': 'File content not found'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
+                return Response({'error': 'File content not found'}, status=status.HTTP_404_NOT_FOUND)
+
             # Process the content based on the original delimiter and requested format
-            original_delimiter = file_upload.delimiter or ','
-            
-            try:
-                # Parse the content as CSV
-                df = pd.read_csv(io.StringIO(content), sep=original_delimiter)
-                
-                if file_format == 'csv':
-                    output_delimiter = ','
-                    content_type = 'text/csv'
-                    file_ext = 'csv'
-                elif file_format == 'tsv':
-                    output_delimiter = '\t'
-                    content_type = 'text/tab-separated-values'
-                    file_ext = 'tsv'
-                else:  # txt with custom delimiter
-                    output_delimiter = delimiter
-                    content_type = 'text/plain'
-                    file_ext = 'txt'
-                
-                response = HttpResponse(content_type=content_type)
-                response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}.{file_ext}"'
-                
-                if file_format == 'csv' or file_format == 'tsv' or file_format == 'txt':
-                    df.to_csv(path_or_buf=response, sep=output_delimiter, index=False)
-                
-                return response
-                
-            except Exception as e:
-                return Response(
-                    {'error': f'Failed to convert file: {str(e)}'}, 
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            original_delimiter = ','
+            df = pd.read_csv(io.StringIO(
+                content), sep=original_delimiter, encoding=encoding, skiprows=int(skiprows))
+
+            if format == 'csv':
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = f'attachment; filename="{dataset.title}.csv"'
+                df.to_csv(
+                    path_or_buf=response,
+                    sep=delimiter,
+                    index=False,
+                    header=headers
                 )
-                
+                return response
+
+            elif format == 'excel':
+                response = HttpResponse(
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = f'attachment; filename="{dataset.title}.xlsx"'
+                with io.BytesIO() as output:
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        df.to_excel(writer, index=False, header=headers)
+                    response.write(output.getvalue())
+                return response
+            else:
+                return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
         except FileUpload.DoesNotExist:
-            return self._generate_sample_data(dataset, file_format, delimiter)
+            return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            print(traceback.print_exc())
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
     def _generate_sample_data(self, dataset_id, file_format, delimiter):
         if 'voltammetry' in dataset_id.lower():
             import numpy as np
             potential = np.linspace(-0.5, 0.5, 100).tolist()
             current = np.sin(potential).tolist()
             time_us = np.linspace(0, 1000, 100).tolist()
-            
+
             data = {
                 'Potential (V)': potential,
                 'Current (mA)': current,
@@ -172,16 +227,17 @@ class DownloadView(ListAPIView):
                 'Value': [i * 1.5 for i in range(1, 101)],
                 'Category': ['A' if i % 3 == 0 else 'B' if i % 3 == 1 else 'C' for i in range(1, 101)]
             }
-            
+
         if file_format == 'csv':
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{dataset_id}.csv"'
             df = pd.DataFrame(data)
             df.to_csv(path_or_buf=response, index=False)
             return response
-            
+
         elif file_format == 'excel':
-            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             response['Content-Disposition'] = f'attachment; filename="{dataset_id}.xlsx"'
             df = pd.DataFrame(data)
             with io.BytesIO() as output:
