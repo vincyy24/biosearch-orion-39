@@ -1,29 +1,13 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchRecentDatasets } from "@/services/api";
+import { fetchRecentDatasets } from "@/services/dataService";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Download, Users, FileText, ArrowRight, FlaskConical, Cpu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Dataset {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  access: 'public' | 'private';
-  author: string;
-  date: string;
-  downloads: number;
-  method?: string;
-  electrode?: string;
-  instrument?: string;
-  experiment_type?: string;
-  electrode_material?: string;
-}
+import { Dataset } from "@/types/common";
 
 const RecentDatasets = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -35,7 +19,7 @@ const RecentDatasets = () => {
     try {
       setLoading(true);
       const data = await fetchRecentDatasets();
-      setDatasets(data.results || []);
+      setDatasets(data || []);
       setError(null);
     } catch (err: any) {
       console.error("Failed to load recent datasets:", err);

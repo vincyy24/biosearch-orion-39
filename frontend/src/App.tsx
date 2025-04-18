@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -54,7 +53,7 @@ const routes = [
   { path: "/research/new", element: <ProtectedRoute><ResearchRegistration /></ProtectedRoute> },
   { path: "/research/:id", element: <ResearchProjectDetail /> },
   { path: "/publications", element: <Publications /> },
-  { path: "/publications/new", element: <ProtectedRoute><PublicationRegistration /></ProtectedRoute> },
+  { path: "/publications/register", element: <ProtectedRoute><PublicationRegistration /></ProtectedRoute> },
   { path: "/publications/:doi", element: <PublicationDetail /> },
   { path: "/profile", element: <ProtectedRoute><UserProfile /></ProtectedRoute> },
   { path: "/profile/:username", element: <UserProfile /> },

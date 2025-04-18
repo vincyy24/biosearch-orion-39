@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
@@ -10,7 +9,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ThemeProvider: React.FC<{ children: React.ReactNode; }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     // Check if theme is stored in localStorage
     const savedTheme = localStorage.getItem("theme") as Theme;
@@ -24,7 +23,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Update localStorage and document class when theme changes
   useEffect(() => {
     localStorage.setItem("theme", theme);
-    
+
     // Update the HTML document class
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
@@ -34,13 +33,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Initial system preference check
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       if (!localStorage.getItem("theme")) {
         setTheme(e.matches ? "dark" : "light");
       }
     };
-    
+
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);

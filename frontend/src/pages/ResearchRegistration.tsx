@@ -1,4 +1,3 @@
-import React from "react";
 import AppLayout from "@/components/layouts/AppLayout";
 import ResearchRegistrationComponent from "@/components/research/ResearchRegistration";
 

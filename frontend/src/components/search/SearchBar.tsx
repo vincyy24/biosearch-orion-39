@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { SearchIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';

@@ -79,7 +79,7 @@ export function useExperiment<TData>(experimentId: string, options?: UseQueryOpt
   return useApiQuery<TData>(
     ['experiment', experimentId],
     async () => {
-      const response = await apiClient.get(`/api/dashboard/voltammetry/${experimentId}/`);
+      const response = await apiClient.get(`dashboard/voltammetry/${experimentId}/`);
       return response.data;
     },
     options

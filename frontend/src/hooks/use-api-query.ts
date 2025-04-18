@@ -7,7 +7,7 @@ import apiClient from '@/services/api';
 export function useApiQuery<T>(
   queryKey: string | readonly unknown[],
   fetchFn: () => Promise<T>,
-  options?: Omit<UseQueryOptions<T, Error, T, any>, 'queryKey' | 'queryFn'>
+  options?: Pick<UseQueryOptions<T, Error, T, any>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: Array.isArray(queryKey) ? queryKey : [queryKey],
@@ -15,16 +15,16 @@ export function useApiQuery<T>(
     ...options,
     onError: (error) => {
       console.error(`Query error for ${Array.isArray(queryKey) ? queryKey[0] : queryKey}:`, error);
-      
+
       // Show toast notification
       toast({
         title: 'Error',
         description: error.message || 'An error occurred while fetching data',
         variant: 'destructive',
       });
-      
+
       // Call original onError if provided
-      if (options?.onError) {
+      if (options && typeof options.onError === 'function') {
         options.onError(error);
       }
     }
@@ -37,8 +37,8 @@ export function useApiMutation<TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
   options?: Omit<UseMutationOptions<TData, Error, TVariables, unknown>, 'mutationKey' | 'mutationFn'>
 ) {
-  const queryClient = useQueryClient();
-  
+  // Removed unused queryClient declaration
+
   return useMutation({
     mutationKey: [mutationKey],
     mutationFn,
@@ -48,10 +48,10 @@ export function useApiMutation<TData, TVariables>(
       if (options?.meta?.suppressSuccessToast !== true) {
         toast({
           title: 'Success',
-          description: options?.meta?.successMessage || 'Operation completed successfully',
+          description: String(options?.meta?.successMessage || 'Operation completed successfully'),
         });
       }
-      
+
       // Call original onSuccess if provided
       if (options?.onSuccess) {
         options.onSuccess(data, variables, context);
@@ -59,14 +59,14 @@ export function useApiMutation<TData, TVariables>(
     },
     onError: (error, variables, context) => {
       console.error(`Mutation error for ${mutationKey}:`, error);
-      
+
       // Show error toast
       toast({
         title: 'Error',
         description: error.message || 'An error occurred',
         variant: 'destructive',
       });
-      
+
       // Call original onError if provided
       if (options?.onError) {
         options.onError(error, variables, context);
@@ -80,7 +80,7 @@ export function useExperiment(experimentId: string, options?: UseQueryOptions) {
   return useApiQuery(
     ['experiment', experimentId],
     async () => {
-      const response = await apiClient.get(`/api/dashboard/voltammetry/${experimentId}/`);
+      const response = await apiClient.get(`dashboard/voltammetry/${experimentId}/`);
       return response.data;
     },
     options
@@ -89,28 +89,28 @@ export function useExperiment(experimentId: string, options?: UseQueryOptions) {
 
 // Specialized hook for experiment data export
 export function useExportExperiment(experimentId: string, format: 'csv' | 'json' | 'excel') {
-  return useApiMutation<{ success: boolean }, void>(
+  return useApiMutation<{ success: boolean; }, void>(
     'exportExperiment',
     async () => {
-      const response = await apiClient.get(`/api/experiment-export/${experimentId}/?format=${format}`, {
+      const response = await apiClient.get(`experiment-export/${experimentId}/?format=${format}`, {
         responseType: 'blob'
       });
-      
+
       // For file downloads, we need to handle the response as a blob
-      const blob = await response.blob();
+      const blob = await response.data.blob();
       const url = window.URL.createObjectURL(blob);
-      
+
       // Get filename from Content-Disposition header if available
       const contentDisposition = response.headers['content-disposition'];
       let filename = `experiment_${experimentId}.${format}`;
-      
+
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/);
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1];
         }
       }
-      
+
       // Create a link element and trigger download
       const a = document.createElement('a');
       a.href = url;
@@ -119,7 +119,7 @@ export function useExportExperiment(experimentId: string, format: 'csv' | 'json'
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       return { success: true };
     },
     {
@@ -135,7 +135,7 @@ export function useResearchProjects(page = 1, pageSize = 10) {
   return useApiQuery(
     ['researchProjects', page, pageSize],
     async () => {
-      const response = await apiClient.get('/api/research/projects/', {
+      const response = await apiClient.get('research/projects/', {
         params: { page, page_size: pageSize }
       });
       return response.data;
@@ -147,7 +147,7 @@ export function useResearchProject(projectId: string) {
   return useApiQuery(
     ['researchProject', projectId],
     async () => {
-      const response = await apiClient.get(`/api/research/projects/${projectId}/`);
+      const response = await apiClient.get(`research/projects/${projectId}/`);
       return response.data;
     }
   );
@@ -159,7 +159,7 @@ export function usePublications(page = 1, perPage = 10, query = '', filters = {}
     ['publications', page, perPage, query, filters],
     async () => {
       const params = { page, per_page: perPage, query, ...filters };
-      const response = await apiClient.get('/api/publications/', { params });
+      const response = await apiClient.get('publications/', { params });
       return response.data;
     }
   );
@@ -169,7 +169,7 @@ export function usePublication(doi: string) {
   return useApiQuery(
     ['publication', doi],
     async () => {
-      const response = await apiClient.get(`/api/publications/${doi}/`);
+      const response = await apiClient.get(`publications/${doi}/`);
       return response.data;
     }
   );
@@ -180,7 +180,7 @@ export function useUserProfile(username: string) {
   return useApiQuery(
     ['userProfile', username],
     async () => {
-      const response = await apiClient.get(`/api/users/profile/${username}/`);
+      const response = await apiClient.get(`users/profile/${username}/`);
       return response.data;
     }
   );
@@ -190,7 +190,7 @@ export function useUserSettings() {
   return useApiQuery(
     ['userSettings'],
     async () => {
-      const response = await apiClient.get('/api/users/settings/');
+      const response = await apiClient.get('users/settings/');
       return response.data;
     }
   );
@@ -200,7 +200,7 @@ export function useUserNotifications(page = 1, perPage = 10) {
   return useApiQuery(
     ['userNotifications', page, perPage],
     async () => {
-      const response = await apiClient.get('/api/users/notifications/', {
+      const response = await apiClient.get('users/notifications/', {
         params: { page, per_page: perPage }
       });
       return response.data;

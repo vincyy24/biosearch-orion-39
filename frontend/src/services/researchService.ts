@@ -12,7 +12,7 @@ interface ResearchProject {
 // Research Project APIs
 export const fetchResearchProjects = async (page = 1, pageSize = 10) => {
   try {
-    const response = await apiClient.get('/api/research/projects/', {
+    const response = await apiClient.get('research/', {
       params: { page, page_size: pageSize }
     });
     return response.data;
@@ -24,7 +24,7 @@ export const fetchResearchProjects = async (page = 1, pageSize = 10) => {
 
 export const fetchPublicResearchProjects = async (page = 1, pageSize = 10) => {
   try {
-    const response = await apiClient.get('/api/research/projects/public/', {
+    const response = await apiClient.get('research/public/', {
       params: { page, page_size: pageSize }
     });
     return response.data;
@@ -34,9 +34,9 @@ export const fetchPublicResearchProjects = async (page = 1, pageSize = 10) => {
   }
 };
 
-export const createResearchProject = async (data: { title: string; description?: string; is_public?: boolean }) => {
+export const createResearchProject = async (data: { title: string; description?: string; is_public?: boolean; }) => {
   try {
-    const response = await apiClient.post('/api/research/projects/', data);
+    const response = await apiClient.post('research/', data);
     return response.data;
   } catch (error) {
     console.error("Error creating research project:", error);
@@ -46,7 +46,7 @@ export const createResearchProject = async (data: { title: string; description?:
 
 export const fetchResearchProjectDetails = async (projectId: string) => {
   try {
-    const response = await apiClient.get(`/api/research/projects/${projectId}/`);
+    const response = await apiClient.get(`research/${projectId}/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching project ${projectId} details:`, error);
@@ -56,10 +56,10 @@ export const fetchResearchProjectDetails = async (projectId: string) => {
 
 export const updateResearchProject = async (
   projectId: string,
-  data: { title?: string; description?: string; is_public?: boolean; status?: string }
+  data: { title?: string; description?: string; is_public?: boolean; status?: string; }
 ) => {
   try {
-    const response = await apiClient.put(`/api/research/projects/${projectId}/`, data);
+    const response = await apiClient.put(`research/${projectId}/`, data);
     return response.data;
   } catch (error) {
     console.error(`Error updating project ${projectId}:`, error);
@@ -67,21 +67,21 @@ export const updateResearchProject = async (
   }
 };
 
-export const updateResearchVisibility = async (projectId: string, isPublic: boolean) => {
-  try {
-    const response = await apiClient.patch(`/api/research/projects/${projectId}/visibility/`, {
-      is_public: isPublic
-    });
-    return response.data;
-  } catch (error) {
-    console.error(`Error updating project ${projectId} visibility:`, error);
-    throw error;
-  }
-};
+// export const updateResearchVisibility = async (projectId: string, isPublic: boolean) => {
+//   try {
+//     const response = await apiClient.patch(`research/${projectId}/visibility/`, {
+//       is_public: isPublic
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error(`Error updating project ${projectId} visibility:`, error);
+//     throw error;
+//   }
+// };
 
 export const deleteResearchProject = async (projectId: string) => {
   try {
-    const response = await apiClient.delete(`/api/research/projects/${projectId}/`);
+    const response = await apiClient.delete(`research/${projectId}/`);
     return response.data;
   } catch (error) {
     console.error(`Error deleting project ${projectId}:`, error);
@@ -92,10 +92,10 @@ export const deleteResearchProject = async (projectId: string) => {
 // Collaborator Management APIs
 export const addCollaborator = async (
   projectId: string,
-  data: { username_or_email: string; role?: string }
+  data: { username_or_email: string; role?: string; }
 ) => {
   try {
-    const response = await apiClient.post(`/api/research/projects/${projectId}/collaborators/add/`, data);
+    const response = await apiClient.post(`research/${projectId}/collaborators/add/`, data);
     return response.data;
   } catch (error) {
     console.error(`Error adding collaborator to project ${projectId}:`, error);
@@ -106,10 +106,10 @@ export const addCollaborator = async (
 export const updateCollaborator = async (
   projectId: string,
   collaboratorId: number,
-  data: { role: string }
+  data: { role: string; }
 ) => {
   try {
-    const response = await apiClient.put(`/api/research/projects/${projectId}/collaborators/${collaboratorId}/`, data);
+    const response = await apiClient.put(`research/${projectId}/collaborators/${collaboratorId}/`, data);
     return response.data;
   } catch (error) {
     console.error(`Error updating collaborator ${collaboratorId} in project ${projectId}:`, error);
@@ -119,7 +119,7 @@ export const updateCollaborator = async (
 
 export const removeCollaborator = async (projectId: string, collaboratorId: number) => {
   try {
-    const response = await apiClient.delete(`/api/research/projects/${projectId}/collaborators/${collaboratorId}/`);
+    const response = await apiClient.delete(`research/${projectId}/collaborators/${collaboratorId}/`);
     return response.data;
   } catch (error) {
     console.error(`Error removing collaborator ${collaboratorId} from project ${projectId}:`, error);
@@ -130,8 +130,8 @@ export const removeCollaborator = async (projectId: string, collaboratorId: numb
 // Experiment Management APIs
 export const assignExperiment = async (projectId: string, experimentId: string) => {
   try {
-    const response = await apiClient.post(`/api/research/projects/${projectId}/experiments/assign/`, { 
-      experiment_id: experimentId 
+    const response = await apiClient.post(`research/${projectId}/experiments/assign/`, {
+      experiment_id: experimentId
     });
     return response.data;
   } catch (error) {
@@ -147,13 +147,13 @@ export const createDatasetComparison = async (
     description?: string;
     dataset_ids: string[];
     is_public?: boolean;
-    project_id?: string;
+    research_id?: string;
   }
 ) => {
   try {
-    const url = data.project_id
-      ? `/api/research/projects/${data.project_id}/comparisons/`
-      : `/api/research/comparisons/`;
+    const url = data.research_id
+      ? `research/${data.research_id}/comparisons/`
+      : `research/comparisons/`;
 
     const response = await apiClient.post(url, {
       title: data.title,
@@ -171,8 +171,8 @@ export const createDatasetComparison = async (
 export const fetchDatasetComparisons = async (projectId?: string, page = 1, pageSize = 10) => {
   try {
     const url = projectId
-      ? `/api/research/projects/${projectId}/comparisons/`
-      : `/api/research/comparisons/`;
+      ? `research/${projectId}/comparisons/`
+      : `research/comparisons/`;
 
     const response = await apiClient.get(url, {
       params: { page, page_size: pageSize }
@@ -186,7 +186,7 @@ export const fetchDatasetComparisons = async (projectId?: string, page = 1, page
 
 export const fetchComparisonDetails = async (comparisonId: string) => {
   try {
-    const response = await apiClient.get(`/api/research/comparisons/${comparisonId}/`);
+    const response = await apiClient.get(`research/comparisons/${comparisonId}/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching comparison ${comparisonId} details:`, error);
@@ -197,7 +197,7 @@ export const fetchComparisonDetails = async (comparisonId: string) => {
 // ORCID Verification APIs
 export const initiateOrcidVerification = async (orcidId: string) => {
   try {
-    const response = await apiClient.post('/api/orcid/verify/', { orcid_id: orcidId });
+    const response = await apiClient.post('orcid/verify/', { orcid_id: orcidId });
     return response.data;
   } catch (error) {
     console.error("Error initiating ORCID verification:", error);
@@ -207,7 +207,7 @@ export const initiateOrcidVerification = async (orcidId: string) => {
 
 export const confirmOrcidVerification = async (verificationCode: string) => {
   try {
-    const response = await apiClient.post('/api/orcid/confirm/', { verification_code: verificationCode });
+    const response = await apiClient.post('orcid/confirm/', { verification_code: verificationCode });
     return response.data;
   } catch (error) {
     console.error("Error confirming ORCID verification:", error);
@@ -217,7 +217,7 @@ export const confirmOrcidVerification = async (verificationCode: string) => {
 
 export const getOrcidProfile = async () => {
   try {
-    const response = await apiClient.get('/api/orcid/profile/');
+    const response = await apiClient.get('orcid/profile/');
     return response.data;
   } catch (error) {
     console.error("Error getting ORCID profile:", error);
@@ -226,9 +226,9 @@ export const getOrcidProfile = async () => {
 };
 
 // Invite collaborator
-export const inviteCollaborator = async (projectId: string, data: { email?: string; orcid_id?: string; role?: string }) => {
+export const inviteCollaborator = async (projectId: string, data: { email?: string; orcid_id?: string; role?: string; }) => {
   try {
-    const response = await apiClient.post(`/api/research/projects/${projectId}/invite/`, data);
+    const response = await apiClient.post(`research/${projectId}/invite/`, data);
     return response.data;
   } catch (error) {
     console.error(`Error inviting collaborator to project ${projectId}:`, error);
@@ -239,7 +239,7 @@ export const inviteCollaborator = async (projectId: string, data: { email?: stri
 // Research file management
 export const uploadResearchFile = async (projectId: string, formData: FormData) => {
   try {
-    const response = await apiClient.post(`/api/research/projects/${projectId}/upload/`, formData, {
+    const response = await apiClient.post(`research/${projectId}/upload/`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       }
@@ -253,7 +253,7 @@ export const uploadResearchFile = async (projectId: string, formData: FormData) 
 
 export const fetchResearchVersions = async (projectId: string) => {
   try {
-    const response = await apiClient.get(`/api/research/projects/${projectId}/versions/`);
+    const response = await apiClient.get(`research/${projectId}/versions/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching versions for project ${projectId}:`, error);

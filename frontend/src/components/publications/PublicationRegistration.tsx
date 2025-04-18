@@ -1,23 +1,7 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+  Alert,
+  AlertDescription
+} from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,16 +12,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Alert, 
-  AlertDescription 
-} from "@/components/ui/alert";
-import { FileCheck, HelpCircle, Info, Link2, Loader2, Search, AlertCircle } from "lucide-react";
-import { registerPublication, verifyDOI, searchCrossRefByDOI } from "@/services/publicationService";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { registerPublication, searchCrossRefByDOI, verifyDOI } from "@/services/publicationService";
 import { CrossrefApiResponse, CrossrefPublicationItem } from "@/types/apiResponse";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, Loader2, Search } from "lucide-react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { z } from "zod";
 
 const formSchema = z.object({
   doi: z.string().min(1, "DOI is required"), // Ensure DOI is required
@@ -103,35 +101,36 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
   const onSubmit = async (data: FormValues) => {
     try {
       const response = await registerPublication(data);
-      
+
       toast({
         title: "Publication registered",
         description: "Your publication has been successfully registered.",
       });
-      
+
       if (onComplete) {
         onComplete();
       } else {
-        navigate(`/publications/${response.doi}`);
+        navigate(`/publications/${response.doi.replace("/", "_")}`);
       }
-    } catch (error: any) {
-      if (error.message.includes("already exists")) {
-        const match = error.message.match(/DOI\s+([a-zA-Z0-9./]+)/i);
-        if (match && match[1]) {
-          setExistingPublicationDoi(match[1]);
+    } catch (errorResponse) {
+      const {error, exists, doi} = errorResponse.response.data;
+      if (error.includes("already exists")) {
+        const match = doi.match(/10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&'<>])[!-~])+/);
+        if (match && match[0]) {
+          setExistingPublicationDoi(match[0]);
           setShowExistingPublicationDialog(true);
         } else {
           toast({
             variant: "destructive",
             title: "Registration failed",
-            description: error.message,
+            description: error,
           });
         }
       } else {
         toast({
           variant: "destructive",
           title: "Registration failed",
-          description: error.message,
+          description: error,
         });
       }
     }
@@ -151,7 +150,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
     setIsVerifyingDOI(true);
     try {
       const response: CrossrefApiResponse = await searchCrossRefByDOI(doi);
-      
+
       if (response?.message?.items && response.message.items.length > 0) {
         const publication = response.message.items[0];
         setDoiVerificationResult(publication);
@@ -176,16 +175,16 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
 
   const applyDoiData = () => {
     if (!doiVerificationResult) return;
-    
+
     const publication = doiVerificationResult;
-    
+
     const researchers = publication.author?.map(author => ({
       name: `${author.given} ${author.family}`,
       institution: author.affiliation && author.affiliation.length > 0 ? author.affiliation[0].name : "",
       email: "",
       orcid_id: author.ORCID ? author.ORCID.replace("http://orcid.org/", "") : "",
     })) || [];
-    
+
     form.setValue("title", publication.title[0] || "");
     form.setValue("abstract", publication.abstract || "");
     form.setValue("journal", publication["container-title"]?.[0] || "");
@@ -196,9 +195,9 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
     form.setValue("publisher", publication.publisher || "");
     form.setValue("url", publication.URL || "");
     form.setValue("researchers", researchers);
-    
+
     setShowDoiPreviewDialog(false);
-    
+
     toast({
       title: "Data Applied",
       description: "Publication data has been filled in from CrossRef.",
@@ -220,6 +219,9 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
       form.setValue("researchers", [...researchers]);
     }
   };
+
+  console.log(doiVerificationResult);
+  
 
   return (
     <div className="space-y-6">
@@ -465,7 +467,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                         Researcher {index + 1}
                         {index === 0 && " (Primary)"}
                       </h4>
-                      {index > 0 && (
+                      {/* {index > 0 && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -475,7 +477,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                         >
                           Remove
                         </Button>
-                      )}
+                      )} */}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -642,7 +644,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
               The following information was found for DOI: {form.getValues("doi")}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           {doiVerificationResult && (
             <Tabs defaultValue="basic" className="w-full">
               <TabsList className="grid grid-cols-3">
@@ -650,54 +652,54 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                 <TabsTrigger value="authors">Authors</TabsTrigger>
                 <TabsTrigger value="additional">Additional Info</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="basic" className="space-y-4 py-4">
                 <div className="space-y-2">
                   <h4 className="font-semibold text-sm">Title</h4>
                   <p>{doiVerificationResult.title[0]}</p>
                 </div>
-                
+
                 {doiVerificationResult.abstract && (
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Abstract</h4>
                     <p className="text-sm">{doiVerificationResult.abstract}</p>
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Journal</h4>
                     <p>{doiVerificationResult["container-title"]?.[0] || "N/A"}</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Publisher</h4>
                     <p>{doiVerificationResult.publisher || "N/A"}</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Volume</h4>
                     <p>{doiVerificationResult.volume || "N/A"}</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Issue</h4>
                     <p>{doiVerificationResult.issue || "N/A"}</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Pages</h4>
                     <p>{doiVerificationResult.page || "N/A"}</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Year</h4>
                     <p>{doiVerificationResult.published?.["date-parts"]?.[0]?.[0] || "N/A"}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h4 className="font-semibold text-sm">URL</h4>
                   <p>
@@ -707,7 +709,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                   </p>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="authors" className="space-y-4 py-4">
                 {doiVerificationResult.author?.map((author, i) => (
                   <div key={i} className="p-3 border rounded-md">
@@ -716,20 +718,20 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                         <h4 className="font-semibold text-sm">Name</h4>
                         <p>{author.given} {author.family}</p>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h4 className="font-semibold text-sm">Sequence</h4>
                         <p>{author.sequence === "first" ? "Primary" : author.sequence}</p>
                       </div>
                     </div>
-                    
+
                     {author.affiliation && author.affiliation.length > 0 && (
                       <div className="mt-2 space-y-2">
                         <h4 className="font-semibold text-sm">Affiliation</h4>
                         <p>{author.affiliation.map(aff => aff.name).join(", ")}</p>
                       </div>
                     )}
-                    
+
                     {author.ORCID && (
                       <div className="mt-2 space-y-2">
                         <h4 className="font-semibold text-sm">ORCID</h4>
@@ -743,7 +745,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                   </div>
                 )) || <p>No author information available</p>}
               </TabsContent>
-              
+
               <TabsContent value="additional" className="space-y-4 py-4">
                 {doiVerificationResult.funder && doiVerificationResult.funder.length > 0 && (
                   <div className="space-y-2">
@@ -762,7 +764,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                     </ul>
                   </div>
                 )}
-                
+
                 {doiVerificationResult.link && doiVerificationResult.link.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Additional Links</h4>
@@ -777,19 +779,19 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
                     </ul>
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">References Count</h4>
                     <p>{doiVerificationResult["references-count"] || "N/A"}</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Cited By Count</h4>
                     <p>{doiVerificationResult["is-referenced-by-count"] || "N/A"}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h4 className="font-semibold text-sm">Type</h4>
                   <p>{doiVerificationResult.type}</p>
@@ -797,7 +799,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
               </TabsContent>
             </Tabs>
           )}
-          
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={applyDoiData}>Use This Data</AlertDialogAction>
@@ -813,7 +815,7 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
               A publication with DOI <span className="font-medium">{existingPublicationDoi}</span> is already registered in the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <div className="py-4">
             <Alert>
               <AlertCircle className="h-4 w-4" />
@@ -822,12 +824,12 @@ const PublicationRegistration: React.FC<PublicationRegistrationProps> = ({
               </AlertDescription>
             </Alert>
           </div>
-          
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               setShowExistingPublicationDialog(false);
-              navigate(`/publications/${existingPublicationDoi}`);
+              navigate(`/publications/${existingPublicationDoi.replace("/", "_")}`);
             }}>
               View Publication
             </AlertDialogAction>

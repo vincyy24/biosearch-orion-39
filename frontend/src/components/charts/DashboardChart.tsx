@@ -1,18 +1,17 @@
-
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
 } from "recharts";
 
 // Sample data for the dashboard chart
@@ -63,13 +62,13 @@ const DashboardChart = () => {
         margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
       >
         <CartesianGrid vertical={false} strokeDasharray="3 3" />
-        <XAxis 
-          dataKey="name" 
+        <XAxis
+          dataKey="name"
           tick={{ fill: 'var(--foreground)' }}
           tickLine={{ stroke: 'var(--foreground)' }}
           axisLine={{ stroke: 'var(--border)' }}
         />
-        <YAxis 
+        <YAxis
           tick={{ fill: 'var(--foreground)' }}
           tickLine={{ stroke: 'var(--foreground)' }}
           axisLine={{ stroke: 'var(--border)' }}

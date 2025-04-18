@@ -1,4 +1,3 @@
-
 // Common types used throughout the application
 
 // User-related types
@@ -14,6 +13,16 @@ export interface User {
   orcid_id?: string;
   orcid_verified?: boolean;
   is_researcher?: boolean;
+}
+export interface UserProfile {
+  id: string;
+  username: string;
+  name: string;
+  publications: Publication[];
+  datasets: Dataset[];
+  joined_date: string;
+  orcid_id?: string;
+  email?: string;
 }
 
 // Experiment-related types
@@ -35,7 +44,7 @@ export interface Experiment {
   data_points: DataPoint[];
   version: number;
   is_latest_version: boolean;
-  research_project_id?: string;
+  research_research_id?: string;
 }
 
 export interface DataPoint {
@@ -85,6 +94,8 @@ export interface Publication {
   created_at: string;
   abstract: string;
   is_peer_reviewed: boolean;
+  datasets: Dataset[];
+  url: string;
 }
 
 // Analysis-related types
@@ -202,4 +213,23 @@ export interface OrcidProfile {
     year: number;
     url?: string;
   }[];
+}
+
+export interface Dataset {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  access: 'public' | 'private';
+  author: string;
+  date: string;
+  downloads: number;
+  method?: string;
+  electrode?: string;
+  instrument?: string;
+  experiment_type?: string;
+  electrode_material?: string;
+  file_type: string;
+  created_at: string;
+  file_size: number;
 }

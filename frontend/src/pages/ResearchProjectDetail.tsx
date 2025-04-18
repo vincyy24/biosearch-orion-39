@@ -192,7 +192,7 @@ const ResearchProjectDetail = () => {
                   <dl className="space-y-2">
                     <div className="flex justify-between">
                       <dt className="font-medium">Project ID:</dt>
-                      <dd className="text-muted-foreground">{project.project_id}</dd>
+                      <dd className="text-muted-foreground">{project.research_id}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="font-medium">Status:</dt>

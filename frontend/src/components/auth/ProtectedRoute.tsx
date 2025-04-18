@@ -1,4 +1,3 @@
-
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +10,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const { isAuthenticated, user, loading } = useAuth();
-  
+
   // Check if user has admin role if available in the auth context
   const isAdmin = user?.role === 'admin';
 

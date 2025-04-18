@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -61,24 +60,24 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
       });
       return;
     }
-    
+
     setLoading(true);
     try {
       // In a real app, this would call the API
       // For now, we'll simulate the API call with mock data
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Simulate search results
       const mockResults: User[] = [
         { id: "u1", username: "janesmith", email: "jane.smith@example.com", name: "Dr. Jane Smith" },
         { id: "u2", username: "michaelchen", email: "michael.chen@example.com", name: "Dr. Michael Chen" },
         { id: "u3", username: "sarahjohnson", email: "sarah.johnson@example.com", name: "Sarah Johnson" }
-      ].filter(user => 
-        user.username.includes(searchQuery.toLowerCase()) || 
+      ].filter(user =>
+        user.username.includes(searchQuery.toLowerCase()) ||
         user.email.includes(searchQuery.toLowerCase()) ||
         (user.name && user.name.toLowerCase().includes(searchQuery.toLowerCase()))
       );
-      
+
       setSearchResults(mockResults);
       if (mockResults.length === 0) {
         toast({
@@ -133,24 +132,24 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
 
       // Prepare invite data
       const inviteData = {
-        project_id: projectId,
+        research_id: projectId,
         email: activeTab === "email" ? email : activeTab === "search" ? selectedUser?.email : undefined,
         orcid_id: activeTab === "orcid" ? orcidId : undefined,
         role
       };
 
       console.log("Sending invitation with data:", inviteData);
-      
+
       // Mock API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       toast({
         title: "Invitation sent",
-        description: activeTab === "email" 
-          ? `Invitation sent to ${email}` 
+        description: activeTab === "email"
+          ? `Invitation sent to ${email}`
           : activeTab === "orcid"
-          ? `Invitation sent to ORCID ID: ${orcidId}`
-          : `Invitation sent to ${selectedUser?.name || selectedUser?.username}`
+            ? `Invitation sent to ORCID ID: ${orcidId}`
+            : `Invitation sent to ${selectedUser?.name || selectedUser?.username}`
       });
 
       setOpen(false);
@@ -265,9 +264,9 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
                       className="pl-9"
                     />
                   </div>
-                  <Button 
-                    type="button" 
-                    variant="secondary" 
+                  <Button
+                    type="button"
+                    variant="secondary"
                     onClick={handleSearch}
                     disabled={loading || !searchQuery.trim() || searchQuery.length < 2}
                   >
@@ -282,11 +281,10 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
               {searchResults.length > 0 && (
                 <div className="border rounded-md overflow-hidden mt-2">
                   {searchResults.map((user) => (
-                    <div 
+                    <div
                       key={user.id}
-                      className={`flex items-center justify-between p-3 cursor-pointer hover:bg-muted ${
-                        selectedUser?.id === user.id ? "bg-primary/5" : ""
-                      }`}
+                      className={`flex items-center justify-between p-3 cursor-pointer hover:bg-muted ${selectedUser?.id === user.id ? "bg-primary/5" : ""
+                        }`}
                       onClick={() => setSelectedUser(user)}
                     >
                       <div>
@@ -302,7 +300,7 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
                   ))}
                 </div>
               )}
-              
+
               {searchQuery && searchResults.length === 0 && !loading && (
                 <div className="text-center py-3 border rounded-md text-muted-foreground">
                   No users found matching "{searchQuery}"
@@ -324,11 +322,11 @@ const InviteCollaboratorDialog: React.FC<InviteCollaboratorDialogProps> = ({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              {role === "viewer" 
-                ? "Viewers can view data but cannot make changes." 
-                : role === "contributor" 
-                ? "Contributors can add data and make changes." 
-                : "Admins can manage collaborators and have full control."}
+              {role === "viewer"
+                ? "Viewers can view data but cannot make changes."
+                : role === "contributor"
+                  ? "Contributors can add data and make changes."
+                  : "Admins can manage collaborators and have full control."}
             </p>
           </div>
 

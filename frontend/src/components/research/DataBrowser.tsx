@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,7 +50,7 @@ const DataBrowser: React.FC<DataBrowserProps> = ({
   const fetchExperimentData = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/api/experiments/${experimentId}/data/`);
+      const response = await apiClient.get(`experiments/${experimentId}/data/`);
       
       if (response.data && response.data.data_points) {
         setData(response.data.data_points);

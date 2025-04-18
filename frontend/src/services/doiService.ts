@@ -130,7 +130,7 @@ export const searchPublicationsByDOI = async (doiList: string[]): Promise<Format
 export const getResearcherPublications = async (orcidId: string): Promise<FormattedDOIMetadata[]> => {
   try {
     // For ORCID publications, call our backend API
-    const response = await apiClient.get(`/api/orcid/publications/${orcidId}`);
+    const response = await apiClient.get(`orcid/publications/${orcidId}`);
     
     if (response.status === 200 && response.data) {
       return response.data.items.map((item: any) => formatDOIMetadata(item)).filter(Boolean) as FormattedDOIMetadata[];

@@ -1,25 +1,22 @@
-
 import React, { useState } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie } from "recharts";
-import { Loader2, Download, Eye, Bookmark, Users, TrendingUp, Calendar, RefreshCw } from "lucide-react";
+import { Loader2, Download, Eye, Bookmark, Calendar, RefreshCw } from "lucide-react";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Analytics = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
-  const { data, isLoading, error, refreshData } = useAnalytics();
+  const { isAuthenticated } = useAuth();
+  const { analytics, isLoading, refreshData } = useAnalytics();
+  const { theme } = useTheme();
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState("30d");
   const [refreshing, setRefreshing] = useState(false);
@@ -59,32 +56,32 @@ const Analytics = () => {
   const generateTimeSeriesData = (period: string) => {
     const now = new Date();
     const data = [];
-    
+
     let days = 30;
     if (period === "7d") days = 7;
     if (period === "90d") days = 90;
     if (period === "1y") days = 365;
-    
+
     for (let i = 0; i < days; i++) {
       const date = new Date(now);
       date.setDate(date.getDate() - (days - i - 1));
-      
+
       // Generate random but realistic looking data
       const views = Math.floor(Math.random() * 50) + 10;
       const downloads = Math.floor(Math.random() * 15) + 5;
-      
+
       data.push({
         date: date.toISOString().split('T')[0],
         views,
         downloads
       });
     }
-    
+
     return data;
   };
 
   const timeSeriesData = generateTimeSeriesData(timeRange);
-  
+
   // Sample data for pie chart
   const experimentTypeData = [
     { name: 'Cyclic Voltammetry', value: 40 },
@@ -93,7 +90,7 @@ const Analytics = () => {
     { name: 'Chronoamperometry', value: 10 },
     { name: 'Other', value: 5 }
   ];
-  
+
   // Sample data for bar chart
   const userActivityData = [
     { name: 'Mon', uploads: 12, downloads: 19 },
@@ -110,6 +107,8 @@ const Analytics = () => {
   if (!isAuthenticated) {
     return null; // Don't render anything if not authenticated
   }
+
+  const toolTipStyle = { backgroundColor: theme === "dark" ? "hsl( 222.2 84% 4.9%)" : "#fff", borderRadius: 5 };
 
   return (
     <AppLayout>
@@ -155,14 +154,14 @@ const Analytics = () => {
                 <CardContent>
                   <div className="flex items-center">
                     <Eye className="h-5 w-5 text-primary mr-2" />
-                    <div className="text-2xl font-bold">{data.totalViews.toLocaleString()}</div>
+                      <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    +{Math.floor(data.totalViews * 0.12)} from previous period
+                      +{Math.floor(analytics.views * 0.12)} from previous period
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">Total Downloads</CardTitle>
@@ -170,14 +169,14 @@ const Analytics = () => {
                 <CardContent>
                   <div className="flex items-center">
                     <Download className="h-5 w-5 text-primary mr-2" />
-                    <div className="text-2xl font-bold">{data.totalDownloads.toLocaleString()}</div>
+                      <div className="text-2xl font-bold">{analytics.downloads.toLocaleString()}</div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    +{Math.floor(data.totalDownloads * 0.08)} from previous period
+                      +{Math.floor(analytics.downloads * 0.08)} from previous period
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">Saved Items</CardTitle>
@@ -185,10 +184,10 @@ const Analytics = () => {
                 <CardContent>
                   <div className="flex items-center">
                     <Bookmark className="h-5 w-5 text-primary mr-2" />
-                    <div className="text-2xl font-bold">{data.totalSavedItems.toLocaleString()}</div>
+                      <div className="text-2xl font-bold">{analytics.savedItems.toLocaleString()}</div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    +{Math.floor(data.totalSavedItems * 0.15)} from previous period
+                      +{Math.floor(analytics.savedItems * 0.15)} from previous period
                   </p>
                 </CardContent>
               </Card>
@@ -209,8 +208,8 @@ const Analytics = () => {
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
+                      <XAxis
+                        dataKey="date"
                         tickFormatter={(date) => {
                           // Simplify date format based on time range
                           if (timeRange === "7d") {
@@ -223,7 +222,8 @@ const Analytics = () => {
                         }}
                       />
                       <YAxis />
-                      <Tooltip 
+                      <Tooltip
+                        contentStyle={toolTipStyle}
                         labelFormatter={(date) => new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       />
                       <Legend />
@@ -233,7 +233,7 @@ const Analytics = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle>Experiment Types</CardTitle>
@@ -280,7 +280,7 @@ const Analytics = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
-                      <Tooltip />
+                      <Tooltip contentStyle={toolTipStyle} />
                       <Legend />
                       <Bar dataKey="uploads" fill="#8884d8" name="Uploads" />
                       <Bar dataKey="downloads" fill="#82ca9d" name="Downloads" />
@@ -288,7 +288,7 @@ const Analytics = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle>Most Popular Data</CardTitle>
@@ -298,7 +298,7 @@ const Analytics = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {data.popularData.slice(0, 5).map((item, i) => (
+                    {analytics.popularData.slice(0, 5).map((item, i) => (
                       <div key={item.id} className="flex items-start gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-medium">
                           {i + 1}
@@ -310,8 +310,8 @@ const Analytics = () => {
                           <p className="text-xs text-muted-foreground">
                             {item.views} views
                           </p>
-                          <Progress 
-                            value={(item.views / data.popularData[0].views) * 100}
+                          <Progress
+                            value={(item.views / analytics.popularData[0].views) * 100}
                             className="h-1.5 mt-2"
                           />
                         </div>

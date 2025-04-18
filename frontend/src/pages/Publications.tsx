@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layouts/AppLayout";
@@ -38,7 +37,7 @@ const Publications = () => {
   const fetchPublicationsData = async () => {
     try {
       setLoading(true);
-      
+
       let response;
       if (activeTab === "my" && isAuthenticated) {
         // Fetch only user's publications
@@ -66,7 +65,7 @@ const Publications = () => {
       console.error("Error fetching publications:", error);
       setPublications([]);
       setFilteredPublications([]);
-      
+
       toast({
         variant: "destructive",
         title: "Error",
@@ -247,7 +246,7 @@ const Publications = () => {
       </div>
     </AppLayout>
   );
-  
+
   function renderPublicationList() {
     if (loading) {
       return (
@@ -273,8 +272,8 @@ const Publications = () => {
           ))}
         </div>
       );
-    } 
-    
+    }
+
     if (paginatedPublications.length > 0) {
       return (
         <>
@@ -283,7 +282,7 @@ const Publications = () => {
               <PublicationCard
                 key={publication.id || publication.doi}
                 publication={publication}
-                onView={() => navigate(`/publications/${publication.doi}`)}
+                onView={() => navigate(`/publications/${publication.doi.replace("/", "_")}`)}
               />
             ))}
           </div>
@@ -300,7 +299,7 @@ const Publications = () => {
         </>
       );
     }
-    
+
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-medium">No publications found</h3>

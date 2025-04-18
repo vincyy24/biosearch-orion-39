@@ -1,9 +1,7 @@
-
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Database, FileText, BarChart3, Download, BookOpen, Lock, Users } from "lucide-react";
+import { Search, Database, BarChart3, Download, BookOpen, Lock, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";

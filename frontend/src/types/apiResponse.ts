@@ -11,30 +11,30 @@ export interface CrossrefAuthor {
 
 export interface CrossrefLink {
   URL: string;
-  content-type: string;
-  content-version: string;
-  intended-application: string;
+  "content-type": string;
+  "content-version": string;
+  "intended-application": string;
 }
 
 export interface CrossrefFunder {
   DOI?: string;
   name: string;
-  doi-asserted-by?: string;
+  "doi-asserted-by"?: string;
   award?: string[];
 }
 
 export interface CrossrefReference {
   key: string;
   doi?: string;
-  doi-asserted-by?: string;
+  "doi-asserted-by"?: string;
   unstructured?: string;
   volume?: string;
-  journal-title?: string;
-  article-title?: string;
+  "journal-title"?: string;
+  "article-title"?: string;
   year?: string;
   author?: string;
   issue?: string;
-  first-page?: string;
+  "first-page"?: string;
 }
 
 export interface CrossrefPublicationItem {

@@ -1,4 +1,3 @@
-
 import { Publication } from '@/types/common';
 import apiClient from './api';
 import { CrossrefApiResponse } from '@/types/apiResponse';
@@ -14,7 +13,7 @@ export interface PublicationFilters {
 export const fetchPublications = async (page = 1, perPage = 10, query = '', filters = {}): Promise<Publication[]> => {
   try {
     const params = { page, per_page: perPage, query, ...filters };
-    const response = await apiClient.get('/api/publications/', { params });
+    const response = await apiClient.get('publications/', { params });
     return response.data;
   } catch (error) {
     console.error("Error fetching publications:", error);
@@ -25,7 +24,7 @@ export const fetchPublications = async (page = 1, perPage = 10, query = '', filt
 export const fetchMyPublications = async (page = 1, perPage = 10, query = ''): Promise<Publication[]> => {
   try {
     const params = { page, per_page: perPage, query, owner_only: true };
-    const response = await apiClient.get('/api/publications/my/', { params });
+    const response = await apiClient.get('publications/my/', { params });
     return response.data;
   } catch (error) {
     console.error("Error fetching my publications:", error);
@@ -35,7 +34,7 @@ export const fetchMyPublications = async (page = 1, perPage = 10, query = ''): P
 
 export const fetchPublicationDetails = async (doi: string): Promise<Publication | null> => {
   try {
-    const response = await apiClient.get(`/api/publications/${doi}/`);
+    const response = await apiClient.get(`publications/${doi.replace("/", "_")}/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching publication details for DOI ${doi}:`, error);
@@ -45,7 +44,8 @@ export const fetchPublicationDetails = async (doi: string): Promise<Publication 
 
 export const registerPublication = async (data: any) => {
   try {
-    const response = await apiClient.post('/api/publications/register/', data);
+    console.log(data);
+    const response = await apiClient.post('publications/register/', data);    
     return response.data;
   } catch (error) {
     console.error("Error registering publication:", error);
@@ -55,7 +55,7 @@ export const registerPublication = async (data: any) => {
 
 export const uploadDatasetToPublication = async (doi: string, formData: FormData) => {
   try {
-    const response = await apiClient.post(`/api/publications/${doi}/upload/`, formData, {
+    const response = await apiClient.post(`publications/${doi}/upload/`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       }
@@ -69,7 +69,7 @@ export const uploadDatasetToPublication = async (doi: string, formData: FormData
 
 export const fetchPublicationAnalysis = async (doi: string) => {
   try {
-    const response = await apiClient.get(`/api/publications/${doi}/analysis/`);
+    const response = await apiClient.get(`publications/${doi}/analysis/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching publication analysis for DOI ${doi}:`, error);
@@ -77,9 +77,9 @@ export const fetchPublicationAnalysis = async (doi: string) => {
   }
 };
 
-export const downloadDataset = async (datasetId: number) => {
+export const downloadDataset = async (datasetId: number, format = 'csv', delimiter = ',', headers = true, encoding = 'utf-8') => {
   try {
-    window.location.href = `${apiClient.defaults.baseURL}/api/datasets/${datasetId}/download/`;
+    window.location.href = `${apiClient.defaults.baseURL}data/${datasetId}/download/?format=${format}&delimiter=${delimiter}&headers=${headers}&encoding=${encoding}&skiprows=0`;
     return true;
   } catch (error) {
     console.error(`Error downloading dataset ${datasetId}:`, error);
@@ -120,7 +120,7 @@ export interface DatasetTextUploadParams {
 
 export const uploadDatasetAsText = async (doi: string, data: DatasetTextUploadParams) => {
   try {
-    const response = await apiClient.post(`/api/publications/${doi}/upload-text/`, data);
+    const response = await apiClient.post(`publications/${doi}/upload-text/`, data);
     return response.data;
   } catch (error) {
     console.error(`Error uploading text dataset to publication ${doi}:`, error);
@@ -130,7 +130,7 @@ export const uploadDatasetAsText = async (doi: string, data: DatasetTextUploadPa
 
 export const downloadDatasetWithFormat = async (datasetId: number, format: 'csv' | 'tsv' | 'txt', customDelimiter?: string) => {
   try {
-    let url = `${apiClient.defaults.baseURL}/api/datasets/${datasetId}/download/?format=${format}`;
+    let url = `${apiClient.defaults.baseURL}datasets/${datasetId}/download/?format=${format}`;
     if (format === 'txt' && customDelimiter) {
       url += `&delimiter=${encodeURIComponent(customDelimiter)}`;
     }
@@ -144,7 +144,7 @@ export const downloadDatasetWithFormat = async (datasetId: number, format: 'csv'
 
 export const updatePublicationVisibility = async (doi: string, isPublic: boolean) => {
   try {
-    const response = await apiClient.patch(`/api/publications/${doi}/visibility/`, {
+    const response = await apiClient.patch(`publications/${doi}/visibility/`, {
       is_public: isPublic
     });
     return response.data;

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AppLayout from "@/components/layouts/AppLayout";
 import { BookOpen, FileText, Video } from "lucide-react";

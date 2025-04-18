@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,9 @@ import {
   Building,
   Mail,
   Microscope,
-  GitBranch
+  GitBranch,
+  LockIcon,
+  GlobeIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,46 +27,36 @@ import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import PublicationDetail from "@/components/publications/PublicationDetail";
 import ResearchVersionHistory from "@/components/research/ResearchVersionHistory";
-
-interface Dataset {
-  id: string;
-  title: string;
-  description: string;
-  file_path: string;
-  file_size: number;
-  file_type: string;
-  created_at: string;
-  is_public: boolean;
-}
+import { fetchPublicationDetails } from "@/services/publicationService";
+import { Dataset, Publication } from "@/types/common";
 
 const PublicationDetailPage = () => {
+  const {doi} = useParams();
   const [searchParams] = useSearchParams();
-  const doi = searchParams.get("doi");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [publication, setPublication] = useState<any>(null);
+  const [publication, setPublication] = useState<Publication>(null);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "details");
 
   useEffect(() => {
-    fetchPublicationDetails();
+    fetchPublicationDetail();
   }, [doi]);
 
-  const fetchPublicationDetails = async () => {
+  const fetchPublicationDetail = async () => {
     if (!doi) return;
 
     try {
       setLoading(true);
-      console.log(doi);
+      const data = await fetchPublicationDetails(doi);
+
+      setPublication(data);
+      console.log(publication);
       
 
-      const response = await axios.get(`/api/publications/${doi.replace("/", "_")}/`);
-
-      setPublication(response.data);
-
-      if (response.data.datasets) {
-        setDatasets(response.data.datasets);
+      if (data.datasets) {
+        setDatasets(data.datasets);
       }
     } catch (error) {
       console.error("Error fetching publication details:", error);
@@ -78,18 +70,17 @@ const PublicationDetailPage = () => {
     }
   };
 
-  const handleDownloadDataset = async (datasetId: string) => {
+  const handleDownloadDataset = async (dataset: Dataset) => {
     try {
       // In a real app this would call an API endpoint to download the file
-      const response = await axios.get(`/api/datasets/${datasetId}/download/`, {
+      const response = await axios.get(`/api/v0/data/${dataset.id}/download/`, {
         responseType: 'blob'
       });
-
       // Create a download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `dataset-${datasetId}.csv`);
+      link.setAttribute('download', `dataset-${dataset.title}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -192,15 +183,6 @@ const PublicationDetailPage = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-3xl font-bold">{publication.title}</h1>
-              {publication.is_public ? (
-                <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                  Public
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100">
-                  Private
-                </Badge>
-              )}
             </div>
             <p className="text-muted-foreground">
               {publication.journal}, {publication.year} • DOI: {publication.doi}
@@ -208,16 +190,21 @@ const PublicationDetailPage = () => {
           </div>
 
           <div className="flex gap-2">
+          {publication.is_public ? (
+                <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 flex flex-row gap-1">
+                  <GlobeIcon/> Public
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 py-2 flex flex-row gap-1">
+                <LockIcon/> Private
+                </Badge>
+              )}
             <Button
               variant="outline"
               onClick={() => window.open(`https://doi.org/${publication.doi}`, '_blank')}
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               View Original
-            </Button>
-            <Button onClick={() => navigate(`/upload?publication=${publication.doi}`)}>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Data
             </Button>
           </div>
         </div>
@@ -248,7 +235,7 @@ const PublicationDetailPage = () => {
                 <PublicationDetail publication={{
                   title: publication.title,
                   journal: publication.journal,
-                  year: publication.year,
+                  year: publication.year.toString(),
                   authors: publication.researchers.map((r: any) => ({
                     name: r.name,
                     isMain: r.is_primary,
@@ -256,7 +243,7 @@ const PublicationDetailPage = () => {
                   })),
                   doi: publication.doi,
                   abstract: publication.abstract,
-                  publisher: publication.publisher,
+                  publisher: publication.journal,
                   url: publication.url || `https://doi.org/${publication.doi}`,
                   type: "Journal Article",
                   subjects: [],
@@ -356,7 +343,7 @@ const PublicationDetailPage = () => {
                               <div className="space-y-2">
                                 <div className="flex items-center">
                                   <h3 className="font-medium">{dataset.title}</h3>
-                                  {dataset.is_public ? (
+                                  {publication.is_public ? (
                                     <Badge className="ml-2" variant="outline">Public</Badge>
                                   ) : (
                                     <Badge className="ml-2" variant="outline">Private</Badge>
@@ -386,7 +373,7 @@ const PublicationDetailPage = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDownloadDataset(dataset.id)}
+                                  onClick={() => handleDownloadDataset(dataset)}
                                 >
                                   <FileDown className="h-4 w-4 mr-1.5" />
                                   Download
@@ -467,7 +454,7 @@ const PublicationDetailPage = () => {
               </CardHeader>
               <CardContent>
                 <ResearchVersionHistory
-                  // versions={}
+                  versions={[]}
                   onViewVersion={handleViewVersion}
                   onDownloadVersion={handleDownloadVersion}
                 />

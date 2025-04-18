@@ -1,10 +1,9 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { 
-  getCurrentUser, 
-  loginUser, 
-  logoutUser, 
+import {
+  getCurrentUser,
+  loginUser,
+  logoutUser,
   registerUser,
   resetPassword as resetPasswordService,
   confirmResetPassword as confirmResetPasswordService
@@ -18,6 +17,7 @@ interface User {
   first_name?: string;
   last_name?: string;
   is_staff?: boolean;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -30,7 +30,7 @@ interface AuthContextType {
   signup: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
-  confirmResetPassword: (token: string, password: string) => Promise<boolean>;
+  confirmResetPassword: (token: string, uid: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,7 +56,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         setLoading(true);
         const currentUser = await getCurrentUser();
-        
         if (currentUser) {
           // Transform the user data to match our User interface
           setUser({
@@ -66,7 +65,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             first_name: currentUser.first_name,
             last_name: currentUser.last_name,
             is_staff: currentUser.is_staff,
-            name: currentUser.first_name ? `${currentUser.first_name} ${currentUser.last_name || ''}`.trim() : currentUser.username
+            role: currentUser.role,
+            name: currentUser.name || currentUser.first_name ? `${currentUser.first_name} ${currentUser.last_name || ''}`.trim() : currentUser.username
           });
         } else {
           setUser(null);
@@ -87,14 +87,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(true);
 
       const response = await loginUser(email, password);
-      
+
       if (response && response.user) {
         const userData = response.user;
         setUser({
           id: userData.id.toString(),
           username: userData.username,
           email: userData.email,
-          name: userData.username // Default to username if name not provided
+          role: userData.role,
+          name: userData.name || userData.username
         });
 
         toast({
@@ -104,7 +105,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Login error:', error);
@@ -203,10 +204,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const confirmResetPassword = async (token: string, password: string): Promise<boolean> => {
+  const confirmResetPassword = async (token: string, uid: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      await confirmResetPasswordService(token, password);
+      await confirmResetPasswordService(uid, token, password);
       toast({
         title: "Password reset successful",
         description: "Your password has been updated. You can now log in with your new password.",
@@ -231,7 +232,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         user,
         isAuthenticated: !!user,
         loading,
-        isAdmin: user?.is_staff,
+        isAdmin: user?.is_staff || user?.role === 'admin',
         login,
         loginWithGoogle,
         signup,

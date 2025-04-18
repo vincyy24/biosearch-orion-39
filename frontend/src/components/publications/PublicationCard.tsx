@@ -9,7 +9,7 @@ import { Publication } from "@/types/common";
 
 interface PublicationCardProps {
   publication: Publication;
-  onView: () => void
+  onView: () => void;
 }
 
 const PublicationCard = ({

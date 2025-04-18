@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,7 +61,7 @@ const ResearchVersionHistory: React.FC<ResearchVersionHistoryProps> = ({
   const fetchProjectVersions = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/api/research/projects/${projectId}/versions/`);
+      const response = await apiClient.get(`research/projects/${projectId}/versions/`);
       
       if (response.data && response.data.versions) {
         // Map API response to our component's expected format
@@ -96,7 +95,7 @@ const ResearchVersionHistory: React.FC<ResearchVersionHistoryProps> = ({
   const fetchFileVersions = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/api/research/files/${fileId}/versions/`);
+      const response = await apiClient.get(`research/files/${fileId}/versions/`);
       
       if (response.data && response.data.versions) {
         // Map API response to our component's expected format

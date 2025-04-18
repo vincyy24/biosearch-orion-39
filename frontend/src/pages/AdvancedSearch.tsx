@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CalendarIcon, FilterIcon, SlidersHorizontal } from 'lucide-react';
+import { CalendarIcon, FilterIcon, SearchIcon, SlidersHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,7 @@ import { Calendar } from '@/components/ui/calendar';
 import AppLayout from '@/components/layouts/AppLayout';
 import SearchBar from '@/components/search/SearchBar';
 import { toast } from '@/hooks/use-toast';
+import apiClient from '@/services/api';
 
 interface SearchResult {
   experiment_id: string;
@@ -71,9 +72,9 @@ const AdvancedSearch: React.FC = () => {
   useEffect(() => {
     const fetchExperimentTypes = async () => {
       try {
-        const response = await fetch('/api/experiment-types/');
-        if (response.ok) {
-          const data = await response.json();
+        const response = await apiClient.get('experiment-types/');
+        if (response.status === 200) {
+          const data = await response.data.json();
           setExperimentTypes(data.types);
         }
       } catch (error) {

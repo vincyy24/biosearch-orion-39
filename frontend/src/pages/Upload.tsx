@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layouts/AppLayout";
@@ -18,6 +17,8 @@ import { searchPublicationsByDOI } from "@/services/doiService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/services/api";
+import { fetchMyPublications } from "@/services/publicationService";
+import { Publication } from "@/types/common";
 
 interface FileInfo {
   id: string;
@@ -40,13 +41,6 @@ interface Project {
   title: string;
   is_public: boolean;
   is_head: boolean; // Added to check if user is head researcher
-}
-
-interface Publication {
-  doi: string;
-  title: string;
-  year: string;
-  is_public: boolean;
 }
 
 const Upload = () => {
@@ -100,7 +94,7 @@ const Upload = () => {
           is_head: Boolean(project.is_head)
         }));
         setProjects(projectsWithVisibility || []);
-        
+
         // Filter projects to show only those where user is head researcher
         const userHeadProjects = projectsWithVisibility.filter((project: Project) => project.is_head);
         setFilteredProjects(userHeadProjects);
@@ -116,18 +110,8 @@ const Upload = () => {
 
     const loadPublications = async () => {
       try {
-        // This would typically come from an API endpoint with user's publications
-        const sampleDois = [
-          "10.1021/jacs.0c01924",
-          "10.1038/s41586-020-2649-2"
-        ];
-        const pubData = await searchPublicationsByDOI(sampleDois);
-        // Add is_public property
-        const publicationsWithVisibility = pubData.map((pub: any) => ({
-          ...pub,
-          is_public: Boolean(pub.is_public)
-        }));
-        setPublications(publicationsWithVisibility || []);
+        const myPublications = await fetchMyPublications();
+        setPublications(myPublications || []);
       } catch (error) {
         console.error("Error loading publications:", error);
       }
@@ -334,16 +318,11 @@ const Upload = () => {
     try {
       const uploadPromises = uploadState.files.map(async (fileInfo) => {
         const formData = new FormData();
-        
         if (fileInfo.file) {
-          // Read the file as text
-          const fileText = await fileInfo.file.text();
-          
-          // Append the text content instead of the file
-          formData.append('file_content', fileText);
-          formData.append('file_name', fileInfo.fileName);
+          // Append the file directly
+          formData.append('file', fileInfo.file);
+          formData.append('title', fileInfo.fileName);
           formData.append('description', fileInfo.description);
-          formData.append('file_type', fileInfo.dataType);
           formData.append('experiment_type', fileInfo.experimentType);
           formData.append('is_public', uploadState.isPublic.toString());
         }
@@ -352,10 +331,14 @@ const Upload = () => {
         if (activeTab === "project" && uploadState.projectId) {
           url = `/api/research/projects/${uploadState.projectId}/upload/`;
         } else if (activeTab === "publication" && uploadState.publicationDoi) {
-          url = `/api/publications/${uploadState.publicationDoi}/upload/`;
+          url = `publications/${uploadState.publicationDoi.replace("/", "_")}/upload/`;
         }
 
-        return apiClient.post(url, formData);
+        return apiClient.post(url, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
       });
 
       await Promise.all(uploadPromises);
@@ -369,7 +352,7 @@ const Upload = () => {
       if (activeTab === "project") {
         navigate(`/research/${uploadState.projectId}`);
       } else {
-        navigate(`/publications/${uploadState.publicationDoi}`);
+        navigate(`/publications/${uploadState.publicationDoi.replace("/", "_")}`);
       }
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -387,7 +370,7 @@ const Upload = () => {
     (activeTab === "publication" && !uploadState.publicationDoi);
 
   if (!isAuthenticated) {
-    return null; // Don't render anything if not authenticated
+    return null;
   }
 
   return (
@@ -482,8 +465,8 @@ const Upload = () => {
                               <SelectValue placeholder="Select a publication" />
                             </SelectTrigger>
                             <SelectContent>
-                              {publications.map((pub, index) => (
-                                <SelectItem key={index} value={pub.doi}>
+                              {publications.map((pub) => (
+                                <SelectItem key={pub.doi} value={pub.doi}>
                                   {pub.title} ({pub.year}) {!pub.is_public && "(Private)"}
                                 </SelectItem>
                               ))}

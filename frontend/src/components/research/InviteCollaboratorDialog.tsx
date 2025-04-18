@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -60,7 +59,7 @@ const InviteCollaboratorDialog = ({
         ...(activeTab === "email" ? { email } : { orcid_id: orcidId })
       };
 
-      const response = await apiClient.post(`/api/research/projects/${projectId}/invite/`, payload);
+      const response = await apiClient.post(`research/projects/${projectId}/invite/`, payload);
 
       toast({
         title: "Invitation sent",

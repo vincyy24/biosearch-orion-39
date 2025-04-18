@@ -10,33 +10,9 @@ import { BookOpen, Database, ExternalLink, Mail, MessageSquare, User, Users } fr
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import PublicationCard from "@/components/publications/PublicationCard";
-import { fetchUserProfile } from "@/services/api";
-
-interface Publication {
-  id: string;
-  title: string;
-  journal: string;
-  year: string;
-  doi?: string;
-}
-
-interface Dataset {
-  id: string;
-  file_name: string;
-  description: string;
-  upload_date: string;
-}
-
-interface UserProfile {
-  id: string;
-  username: string;
-  name: string;
-  publications: Publication[];
-  datasets: Dataset[];
-  joined_date: string;
-  orcid_id?: string;
-  email?: string;
-}
+import { fetchUserProfile } from "@/services/userService";
+import { UserProfile } from "@/types/common";
+import { useNavigate } from "react-router-dom";
 
 interface ViewUserProfileProps {
   username: string;
@@ -49,6 +25,7 @@ const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) 
   const [activeTab, setActiveTab] = useState("overview");
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate()
   
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -211,13 +188,13 @@ const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) 
                     <div className="space-y-3">
                       {profile.datasets.slice(0, 2).map(dataset => (
                         <div key={dataset.id} className="rounded-lg border p-3">
-                          <h4 className="font-medium">{dataset.file_name}</h4>
+                          <h4 className="font-medium">{dataset.title}</h4>
                           <p className="text-sm text-muted-foreground mt-1">
                             {dataset.description.substring(0, 60)}
                             {dataset.description.length > 60 ? '...' : ''}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Uploaded on {new Date(dataset.upload_date).toLocaleDateString()}
+                            Uploaded on {new Date(dataset.date).toLocaleDateString()}
                           </p>
                         </div>
                       ))}
@@ -252,14 +229,9 @@ const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) 
                   {profile.publications.map(pub => (
                     <PublicationCard 
                       key={pub.id}
-                      publication={{
-                        id: pub.id,
-                        title: pub.title,
-                        journal: pub.journal,
-                        year: pub.year,
-                        doi: pub.doi || "",
-                      }}
-                      onView={() => {}} // Would navigate to publication detail
+                      publication={pub}
+                       // Would navigate to publication detail
+                      onView={() => {navigate(`/publications/${pub.doi.replace('/', '-')}`)}}
                     />
                   ))}
                 </div>
@@ -275,12 +247,12 @@ const ViewUserProfile: React.FC<ViewUserProfileProps> = ({ username, onError }) 
                   {profile.datasets.map(dataset => (
                     <Card key={dataset.id}>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">{dataset.file_name}</CardTitle>
+                        <CardTitle className="text-lg">{dataset.title}</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <p className="text-muted-foreground">{dataset.description}</p>
                         <p className="text-sm mt-2">
-                          Uploaded on {new Date(dataset.upload_date).toLocaleDateString()}
+                          Uploaded on {new Date(dataset.date).toLocaleDateString()}
                         </p>
                         <Button className="mt-3" size="sm">View Dataset</Button>
                       </CardContent>

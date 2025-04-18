@@ -1,4 +1,3 @@
-
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
